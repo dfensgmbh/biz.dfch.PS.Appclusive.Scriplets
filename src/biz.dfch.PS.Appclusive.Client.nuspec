@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>biz.dfch.PS.Appclusive.Client</id>
+    <version>0.0.1</version>
+    <title>biz.dfch.PS.Appclusive.Client</title>
+    <authors>d-fens GmbH</authors>
+    <owners>Ronald Rink</owners>
+    <licenseUrl>https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/master/logo-32x32.png</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>=============================
+
+Module: biz.dfch.PS.Appclusive.Client
+
+d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
+
+This Microsoft PowerShell module contains Cmdlets to perform various base actions and utility/convenience functions with the our open-source based automation framework "Appclusive".
+
+You can also download this module via [NuGet](http://nuget.org) with [Install-Package biz.dfch.PS.Appclusive.Client](https://www.nuget.org/packages/biz.dfch.PS.Appclusive.Client/)
+
+See http://appclusive.net
+
+biz.dfch.CS.Appclusive.Api and the other (Microsoft) DLLs are not part of this Apache 2.0 licensed project but are only put here for convenience.
+
+See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detailed description on how to use the Cmdlets in this module.
+</description>
+    <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
+    <releaseNotes>20151011</releaseNotes>
+    <copyright>(c) 2015 d-fens GmbH</copyright>
+    <language>en-US</language>
+    <tags>dfch PowerShell Appclusive Automation OData</tags>
+    <dependencies>
+      <dependency id="biz.dfch.PS.System.Logging" version="1.0.5" />
+      <dependency id="biz.dfch.PS.System.Utilities" version="1.0.7" />
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Data.Entity" targetFramework="" />
+      <frameworkAssembly assemblyName="System.Data.Services.Client" targetFramework="" />
+    </frameworkAssemblies>
+  </metadata>
+  <files xmlns="">
+    <file src="biz.dfch.PS.Appclusive.Client.psm1" target="biz.dfch.PS.Appclusive.Client.psm1" />
+    <file src="biz.dfch.PS.Appclusive.Client.psd1" target="biz.dfch.PS.Appclusive.Client.psd1" />
+    <file src="biz.dfch.PS.Appclusive.Client.xml" target="biz.dfch.PS.Appclusive.Client.xml" />
+    <file src="..\LICENSE" target="LICENSE" />
+    <file src="..\NOTICE" target="NOTICE" />
+    <file src="..\README.md" target="README.md" />
+    <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="Microsoft.Data.Edm.dll" />
+    <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="Microsoft.Data.OData.dll" />
+    <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="Microsoft.Data.Services.Client.dll" />
+    <file src="..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll" target="System.Spatial.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Api.1.0.1\lib\biz.dfch.CS.Appclusive.Api.dll" target="biz.dfch.CS.Appclusive.Api.dll" />
+    <file src="Import-Module.ps1" target="Import-Module.ps1" />
+    <file src="Enter-Server.ps1" target="Enter-Server.ps1" />
+  </files>
+</package>
