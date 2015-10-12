@@ -62,7 +62,7 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 			$result[1].Value | Should Be $Value2;
 		}
 
-		It "Remove-KeyNameValueThatDoesNotExist-ShouldBeReturnNewEntity" -Test {
+		It "Remove-KeyNameValueThatDoesNotExist-ShouldReturnNewEntity" -Test {
 			# Arrange
 			$Key = "Key-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
