@@ -2,7 +2,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
+Describe -Tags "Set-ManagementCredential" "Set-ManagementCredential" {
 
 	Mock Export-ModuleMember { return $null; }
 	
@@ -10,73 +10,50 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 	
 	$svc = Enter-AppclusiveServer;
 
-	Context "Get-ManagementCredential" {
+	Context "Set-ManagementCredential" {
 	
 		# Context wide constants
 		# N/A
 
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
+		It "Set-ManagementCredential-ShouldReturnNewEntity" -Test {
 			# Arrange
-			# N/A
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$Password = "Password-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
+			$result = Set-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password -CreateIfNotExist;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+			$result.Name | Should Be $Name;
+			$result.Username | Should Be $Username;
+			$result.Password | Should Not Be $Password;
+			$result.Password -eq $result.EncryptedPassword | Should Be $true;
 		}
 
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+		It "Set-ManagementCredentialWithNewUsernameAndDescription-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
-			# N/A
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			$NewDescription = "NewDescription-{0}" -f [guid]::NewGuid().ToString();
+			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$NewUsername = "NewUsername-{0}" -f [guid]::NewGuid().ToString();
+			$Password = "Password-{0}" -f [guid]::NewGuid().ToString();
+			$result1 = Set-ManagementCredential -svc $svc -Name $Name -Description $Description -Username $Username -Password $Password -CreateIfNotExist;
+			$result1 | Should Not Be $null;
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
+			$result = Set-ManagementCredential -svc $svc -Name $Name -Description $NewDescription -Username $NewUsername;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
+			$result.Description | Should Be $NewDescription;
+			$result.Username | Should Be $NewUsername;
+			$result.Password -eq $result.EncryptedPassword | Should Be $true;
+			$result.Password | Should Be $result1.Password;
 		}
-
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Be $null;
-		}	}
+	}
 }
 
 #
