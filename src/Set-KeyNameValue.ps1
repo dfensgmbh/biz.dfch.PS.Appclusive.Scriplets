@@ -125,6 +125,10 @@ Param
 	[Parameter(Mandatory = $false)]
 	[string] $NewValue
 	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[string] $Description
+	,
 	# Specifies to create a KNV if it does not exist
 	[Parameter(Mandatory = $false)]
 	[Alias("c")]
@@ -215,6 +219,10 @@ try
 	if($NewKey) { $knv.Key = $NewKey; }
 	if($NewName) { $knv.Name = $NewName; }
 	if($NewValue) { $knv.Value = $NewValue; }
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$knv.Description = $Description;
+	}
 	$svc.Core.UpdateObject($knv);
 	$r = $svc.Core.SaveChanges();
 

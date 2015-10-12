@@ -82,6 +82,10 @@ Param
 	[Alias("v")]
 	[string] $Value
 	,
+	# Specifies the value to modify
+	[Parameter(Mandatory = $false)]
+	[string] $Description
+	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias("Services")]
@@ -148,7 +152,14 @@ try
 	}
 	if($PSCmdlet.ShouldProcess($KeyNameValueContents))
 	{
-		$r = Set-KeyNameValue -Key $Key -Name $Name -Value $Value -CreateIfNotExist -svc $svc -As $As;
+		if($PSBoundParameters.ContainsKey('Description'))
+		{
+			$r = Set-KeyNameValue -Key $Key -Name $Name -Value $Value -Description $Description -CreateIfNotExist -svc $svc -As $As;
+		}
+		else
+		{
+			$r = Set-KeyNameValue -Key $Key -Name $Name -Value $Value -CreateIfNotExist -svc $svc -As $As;
+		}
 		$OutputParameter = $r;
 	}
 	# $r = $knv;

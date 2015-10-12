@@ -2,7 +2,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
+Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 
 	Mock Export-ModuleMember { return $null; }
 	
@@ -10,80 +10,182 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 	
 	$svc = Enter-AppclusiveServer;
 
-	Context "Remove-KeyNameValue" {
+	Context "Set-KeyNameValue" {
 	
 		# Context wide constants
 		# N/A
 
-		It "Remove-KeyNameValueSingleEntity-ShouldReturnRemovedEntity" -Test {
+		It "Set-KeyNameValueWithCreateIfNotExist-ShouldBeReturnNewEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$resultCreate = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
-			$resultCreate | Should Not Be $null;
-			$resultCreate.Id | Should Not Be 0;
-			$resultCreate.Key | Should Be $Key;
-			$resultCreate.Name | Should Be $Name;
-			$resultCreate.Value | Should Be $Value;
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description -CreateIfNotExist;
 
 			# Assert
 			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
 			$result.Key | Should Be $Key;
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
+			$result.Description | Should Be $Description;
 		}
 
-		It "Remove-KeyNameValueMultipleEntities-ShouldReturnRemovedEntity" -Test {
+		It "Set-KeyNameValueWithoutCreateIfNotExist-ShouldBeReturnNull" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$Value1 = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$resultCreate1 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value1;
-			$resultCreate1 | Should Not Be $null;
-			$Value2 = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$resultCreate2 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value2;
-			$resultCreate2 | Should Not Be $null;
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Count | Should Be 2;
-			$result[0].Key | Should Be $Key;
-			$result[0].Name | Should Be $Name;
-			$result[0].Value | Should Be $Value1;
-			$result[1].Key | Should Be $Key;
-			$result[1].Name | Should Be $Name;
-			$result[1].Value | Should Be $Value2;
-		}
-
-		It "Remove-KeyNameValueThatDoesNotExist-ShouldBeReturnNewEntity" -Test {
-			# Arrange
-			$Key = "Key-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
-			
-			# Act
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -CreateIfNotExist:$false;
 
 			# Assert
 			$result | Should Be $null;
 		}
 
-		It "Remove-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
+		It "Set-KeyNameValueWithNewValue-ShouldBeReturnUpdatedEntity" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			
+			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
+			$resultCreated | Should Not Be $null;
+			
+			# Act
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -NewValue $NewValue -CreateIfNotExist:$false;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
+			$result.Key | Should Be $Key;
+			$result.Name | Should Be $Name;
+			$result.Value | Should Be $NewValue;
+			$result.Description | Should Be $Description;
+		}
+
+		It "Set-KeyNameValueWithNewName-ShouldBeReturnUpdatedEntity" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			
+			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
+			$resultCreated | Should Not Be $null;
+			
+			# Act
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -NewName $NewName -Value $Value -CreateIfNotExist:$false;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
+			$result.Key | Should Be $Key;
+			$result.Name | Should Be $NewName;
+			$result.Value | Should Be $Value;
+			$result.Description | Should Be $Description;
+		}
+
+		It "Set-KeyNameValueWithNewKey-ShouldBeReturnUpdatedEntity" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			
+			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
+			$resultCreated | Should Not Be $null;
+			
+			# Act
+			$result = Set-KeyNameValue -svc $svc -Key $Key -NewKey $NewKey -Name $Name -Value $Value -CreateIfNotExist:$false;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
+			$result.Key | Should Be $NewKey;
+			$result.Name | Should Be $Name;
+			$result.Value | Should Be $Value;
+			$result.Description | Should Be $Description;
+		}
+
+		It "Set-KeyNameValueWithNewKeyNameValue-ShouldBeReturnUpdatedEntity" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			
+			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
+			$resultCreated | Should Not Be $null;
+			
+			# Act
+			$result = Set-KeyNameValue -svc $svc -Key $Key -NewKey $NewKey -Name $Name -NewName $NewName -Value $Value -NewValue $NewValue -CreateIfNotExist:$false;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
+			$result.Key | Should Be $NewKey;
+			$result.Name | Should Be $NewName;
+			$result.Value | Should Be $NewValue;
+			$result.Description | Should Be $Description;
+		}
+
+		It "Set-KeyNameValueWithNewKeyNameValueDescription-ShouldBeReturnUpdatedEntity" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			$NewDescription = "NewDescription-{0}" -f [guid]::NewGuid().ToString();
+			
+			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
+			$resultCreated | Should Not Be $null;
+			
+			# Act
+			$result = Set-KeyNameValue -svc $svc -Key $Key -NewKey $NewKey -Name $Name -NewName $NewName -Value $Value -NewValue $NewValue -CreateIfNotExist:$false -Description $NewDescription;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
+			$result.Key | Should Be $NewKey;
+			$result.Name | Should Be $NewName;
+			$result.Value | Should Be $NewValue;
+			$result.Description | Should Be $NewDescription;
+		}
+
+		It "Set-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
+			
+			$resultCreated1 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
+			$resultCreated2 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue;
 			
 			# Act
-			$result1 = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -NewValue $NewValue;
 
 			# Assert
 			$result | Should Be $null;
