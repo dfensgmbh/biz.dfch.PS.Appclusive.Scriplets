@@ -1,116 +1,240 @@
-function Enter-Server {
+function Set-KeyNameValue {
 <#
 .SYNOPSIS
-Performs a login to an Appclusive server.
+
+Sets or creates a K/N/V entry in Appclusive.
+
 
 
 .DESCRIPTION
-Performs a login to an Appclusive server. 
 
-This is the first Cmdlet to be executed and required for all other Cmdlets of this module. It creates service references to the routers of the application.
+Sets or creates a K/N/V entry in Appclusive.
+
+By updating a K/N/V entry you can specify if you want to update the Key, Name, Value or any combination thereof.
+
 
 
 .OUTPUTS
-This Cmdlet returns a hashtable with references to the DataServiceContexts of the application. On failure it returns $null.
 
+default | json | json-pretty | xml | xml-pretty | PSCredential | Clear
 
-.INPUTS
-See PARAMETER section for a description of input parameters.
+.EXAMPLE
+
+Create a new K/N/V entry if it does not exists.
+
+Set-KeyNameValue myKey myName myValue -CreateIfNotExist
+
+Id         : 3131
+Key        : myKey
+Name       : myName
+Value      : myValue
+CreatedBy  : SERVER1\Administrator
+Created    : 11/13/2014 11:08:46 PM +00:00
+ModifiedBy : SERVER1\Administrator
+Modified   : 11/13/2014 11:08:46 PM +00:00
+RowVersion : {0, 0, 0, 0...}
 
 
 .EXAMPLE
-$svc = Enter-Appclusive;
-$svc
 
-Name            Value
-----            -----
-Diagnostics     biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics
-CoreData        biz.dfch.CS.Appclusive.Api.Core.Core
+Update an existing K/N/V with new key and new value.
 
-Perform a login to an Appclusive server with default credentials (current user) and against server defined within module configuration xml file.
+Set-KeyNameValue myKey -NewKey myNewKey myName myValue -NewValue myNewValue
 
+Id         : 3131
+Key        : myNewKey
+Name       : myName
+Value      : myNewValue
+CreatedBy  : SERVER1\Administrator
+Created    : 11/13/2014 11:08:46 PM +00:00
+ModifiedBy : SERVER1\Administrator
+Modified   : 11/13/2014 11:08:46 PM +00:00
+RowVersion : {0, 0, 0, 0...}
+
+
+.EXAMPLE
+
+Update an existing K/N/V with new key and new value. Return format is json with pretty-print.
+
+
+Set-KeyNameValue myNewKey -NewKey myNewKey2 myName myNewValue -NewValue myNewValue2 -as json-pretty
+{
+  "Id":  3131,
+  "Key":  "myNewKey2",
+  "Name":  "myName",
+  "Value":  "myNewValue2",
+  "CreatedBy":  "SERVER1\\Administrator",
+  "Created":  "\/Date(1415920126010)\/",
+  "ModifiedBy":  "SERVER1\\Administrator",
+  "Modified":  "\/Date(1415920126010)\/",
+  "RowVersion":  [
+	0,
+	0,
+	0,
+	0,
+	0,
+	2,
+	152,
+	17
+    ]
+}
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/
+
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-KeyNameValue/
 
 
 .NOTES
-See module manifest for required software versions and dependencies at: 
-http://dfch.biz/biz/dfch/PS/Appclusive/Client/biz.dfch.PS.Appclusive.Client.psd1/
 
+See module manifest for dependencies and further requirements.
 
 #>
 [CmdletBinding(
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/'
+    SupportsShouldProcess = $false
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-KeyNameValue/'
 )]
-[OutputType([hashtable])]
 Param 
 (
-	# [Optional] The ServerBaseUri such as 'https://appclusive/'. If you do not 
-	# specify this value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 0)]
-	[Uri] $ServerBaseUri = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).ServerBaseUri
-	, 
-	# [Optional] The BaseUrl such as '/Appclusive/'. If you do not specify this 
-	# value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 1)]
-	[string] $BaseUrl = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).BaseUrl
-	, 
-	# Encrypted credentials as [System.Management.Automation.PSCredential] with 
-	# which to perform login. Default is credential as specified in the module 
-	# configuration file.
-	[Parameter(Mandatory = $false, Position = 2)]
-	[alias("cred")]
-	$Credential = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Credential
+	# Specifies the key to modify
+	[Parameter(Mandatory = $true, Position = 0)]
+	[Alias("k")]
+	[string] $Key
+	,
+	# Specifies the new key name
+	[Parameter(Mandatory = $false)]
+	[string] $NewKey
+	,
+	# Specifies the name to modify
+	[Parameter(Mandatory = $true, Position = 1)]
+	[Alias("n")]
+	[string] $Name
+	,
+	# Specifies the new name name
+	[Parameter(Mandatory = $false)]
+	[string] $NewName
+	,
+	# Specifies the value to modify
+	[Parameter(Mandatory = $true, Position = 2)]
+	[Alias("v")]
+	[string] $Value
+	,
+	# Specifies the new value name to modify
+	[Parameter(Mandatory = $false)]
+	[string] $NewValue
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[string] $Description
+	,
+	# Specifies to create a KNV if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias("Services")]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias("ReturnFormat")]
+	[string] $As = 'default'
 )
 
 BEGIN 
 {
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
+
+$datBegin = [datetime]::Now;
+[string] $fn = $MyInvocation.MyCommand.Name;
+Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
 }
-# BEGIN 
+# BEGIN
 
 PROCESS 
 {
 
-[boolean] $fReturn = $false;
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+$AddedEntity = $null;
 
 try 
 {
 	# Parameter validation
-	# N/A
-	
-	[Uri] $Uri = '{0}{1}' -f $ServerBaseUri.AbsoluteUri.TrimEnd('/'), ('{0}/' -f $BaseUrl.TrimEnd('/'));
-	foreach($k in (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.Keys) 
-	{ 
-		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.$k;
-		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $k, $UriService.AbsoluteUri);
-		switch($k) 
-		{
-		'Diagnostics' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		'Core' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Core.Core($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		default 
-		{
-			Log-Error $fn ("Unknown service '{0}': '{1}'. Skipping ..." -f $k, $UriService.AbsoluteUri);
-		}
-		}
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
+	{
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
+		throw($gotoError);
 	}
 
-	$OutputParameter = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services;
+	$Exp = @();
+	$KeyNameValueContents = @();
+	if($Key) 
+	{ 
+		$Exp += ("(tolower(Key) eq '{0}')" -f $Key.ToLower());
+		$KeyNameValueContents += $Key;
+	}
+	if($Name) 
+	{ 
+		$Exp += ("(tolower(Name) eq '{0}')" -f $Name.ToLower());
+		$KeyNameValueContents += $Name;
+	}
+	if($Value) 
+	{ 
+		$Exp += ("(tolower(Value) eq '{0}')" -f $Value.ToLower());
+		$KeyNameValueContents += $Value;
+	}
+	$FilterExpression = [String]::Join(' and ', $Exp);
+	$KeyNameValueContentsString = [String]::Join(',', $KeyNameValueContents);
+
+	$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	if(!$CreateIfNotExist -And !$knv) 
+	{
+		$msg = "Key/Name/Value: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $KeyNameValueContentsString;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
+	}
+	if(!$knv) 
+	{
+		$knv = New-Object biz.dfch.CS.Appclusive.Api.Core.KeyNameValue;
+		$knv.Key = $Key;
+		$knv.Name = $Name;
+		$knv.Value = $Value;
+		$svc.Core.AddToKeyNameValues($knv);
+		$AddedEntity = $knv;
+		$knv.Created = [System.DateTimeOffset]::Now;
+		$knv.Modified = $knv.Created;
+		$knv.CreatedBy = $ENV:USERNAME;
+		$knv.ModifiedBy = $ENV:USERNAME;
+		$knv.Tid = "1";
+	}
+	if($NewKey) { $knv.Key = $NewKey; }
+	if($NewName) { $knv.Name = $NewName; }
+	if($NewValue) { $knv.Value = $NewValue; }
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$knv.Description = $Description;
+	}
+	$svc.Core.UpdateObject($knv);
+	$r = $svc.Core.SaveChanges();
+
+	$r = $knv;
+	switch($As) 
+	{
+		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
+		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
+		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
+		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
+		Default { $OutputParameter = $r; }
+	}
 	$fReturn = $true;
 
 }
@@ -118,7 +242,7 @@ catch
 {
 	if($gotoSuccess -eq $_.Exception.Message) 
 	{
-			$fReturn = $true;
+		$fReturn = $true;
 	} 
 	else 
 	{
@@ -129,7 +253,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn "Login to Uri '$Uri' with Username '$Username' FAILED [$_].";
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
@@ -151,6 +275,8 @@ catch
 		}
 		$fReturn = $false;
 		$OutputParameter = $null;
+		
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
 	}
 }
 finally 
@@ -158,23 +284,24 @@ finally
 	# Clean up
 	# N/A
 }
-return $OutputParameter;
 
 }
 # PROCESS
 
 END 
 {
-	$datEnd = [datetime]::Now;
-	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
+
 }
 # END
 
-} # function
-
-Set-Alias -Name Connect- -Value 'Enter-Server';
-Set-Alias -Name Enter- -Value 'Enter-Server';
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias Connect-, Enter-; } 
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-KeyNameValue; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -195,8 +322,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUinvqKU2t9nTQwJkPtoItottF
-# 79OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0s355wLrjmcj1UxaRMFJW8aI
+# Wb2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +422,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTL763k+hWP+N1b
-# 3/aOWSmdFr8k7zANBgkqhkiG9w0BAQEFAASCAQC3ZDi+1Nl9j7cVZXHw/Kyhdgrx
-# bpuey0y/4S9Qn3V8ltFWaS/btbsaWPlxx+X6FBAZgPYvKma6IFHKeVnswU1hStt2
-# U1Gbp3hQxkLyMrJ1YUuJDlJbei9Z/JaBcTgEEsiD168Hy4bdkNy9J6cDGcooZc0I
-# L3KjhfLc5zmaq3YWyUBwlD6s3cPltqNXCOUTJkXItCgXB8A/tPbtmPYMQnq02RqN
-# keDVlIukgC74Tn1cKlKznSbw3jRhr2rHbKBJXe4Phptph5kuUNJfOt3n8Trac7nP
-# 2CU2TTu0+zFx9sdZAIPNIwxOVrsO665oPunSR9jmos3ZB1w6AdPhK1Hl01d0oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRa9zHCo/flpAhP
+# o8JvQF96IuQ3wzANBgkqhkiG9w0BAQEFAASCAQBdDgX6c4yLQqo9sMyOvzLHmSRF
+# nhmY3hpil4+NEHZWyRfzfP4I34PqRULaO++AsKqJzudjw1oNRL9BosyGulyiNz5k
+# 03B0PLSmt4m76VfHZY/kokctql8+rl5asCjqY057aYXCAFyHtqXULxFzydC/3Rej
+# 21Qi8qlxM7lkmiyCuIKEGm3JV8VPN6EMyeN/eoZaIneB2X/cX2h1bkuVVmpg7sZp
+# Z/i9UmX+v/AB71GNiaM2RfZFIlwo5XEEpzXehT5+3nOzE227w15ONNwE+eoF76w7
+# Ms8U3V1qIDItduOp74pqcsTSVcWgxXEsy1yc4vkehtJglyEvL07ENcCup5hkoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAxMjE1NDkwM1owIwYJKoZIhvcNAQkEMRYEFJrCIvR/2C+slpGqr0SayvbsjhB3
+# MTAxMjE1NDkxNFowIwYJKoZIhvcNAQkEMRYEFM8WCUUOfywfaEIR9+/CivwGixrF
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBSVqNIM56MRNDu46Bx
-# u/FJIVx05hRNEf49xPcs9UrRoU4TNibRbzmSbO/FSNjBDpxXch0+/6ngAayBicLg
-# CUsSTkcj89CVnWtpngS6uENYq1L3dC9eaxMOoAZBGh6XlHtxCdEsBe4eLKWvbcj8
-# EarSQOrU1KtrWA9u024/Z2QpZ8yhSg3/gucNkze0I5RwBycW8zG+OS9wcT+aGS7Z
-# efk4Es09d5a51XCUtUu1a+DKegUZI8rhY0t5N2QbcRf79gCO5pK4rdun8u++cD9l
-# GuEothnxB5fD+5aKXyXgzZCeICC2h9o+gdnN9HOvzfQKb3ZtxGq+TT1y25Gg50rk
-# CYXE
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCcY+nIPttg1ptOhwv2
+# LMfhmQdhFMKEG8bQwFeL+jDyV2lUTbCg4KphJVJ7LgGIX6fVwb2UFsofvthwPC7y
+# C0wn29FrviJW7b32onvVeRhMUuvSn0ksRFdvD63+w41xfnm2c+XQrC45imTF8Hjd
+# bLE8LCKV/OG2Iahtm7icZq3DzmWWuQj+Ui2S5uOK97NXMywKCz/tUX6G2plAPYHG
+# adAcRZF9mpyX/LQGYCJOgXCE3vJ7UgL6TYjvVXhB3mnnelfvK9cR8g1eogecRXXg
+# HkmnQnDRzgNOqhfW1EYYF7uf9KRcJyyJCHF9Z6T7ZkVilB18jHzt/PjvUQ2xSbhK
+# Y0Or
 # SIG # End signature block
