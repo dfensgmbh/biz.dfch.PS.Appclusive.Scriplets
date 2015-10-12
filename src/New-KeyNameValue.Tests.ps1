@@ -15,7 +15,7 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 		# Context wide constants
 		# N/A
 
-		It "New-KeyNameValue-ShouldBeReturnNewEntity" -Test {
+		It "New-KeyNameValue-ShouldReturnNewEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
@@ -32,7 +32,7 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 			$result.Value | Should Be $Value;
 		}
 
-		It "New-KeyNameValueWithDescription-ShouldBeReturnNewEntity" -Test {
+		It "New-KeyNameValueWithDescription-ShouldReturnNewEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
