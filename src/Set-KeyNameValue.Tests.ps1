@@ -188,6 +188,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -NewValue $NewValue;
 
 			# Assert
+			# this raises an error and must be fixed in the controller
 			$result | Should Be $null;
 		}
 	}
