@@ -15,7 +15,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 		# Context wide constants
 		# N/A
 
-		It "Set-KeyNameValueWithCreateIfNotExist-ShouldBeReturnNewEntity" -Test {
+		It "Set-KeyNameValueWithCreateIfNotExist-ShouldReturnNewEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
@@ -34,7 +34,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Description | Should Be $Description;
 		}
 
-		It "Set-KeyNameValueWithoutCreateIfNotExist-ShouldBeReturnNull" -Test {
+		It "Set-KeyNameValueWithoutCreateIfNotExist-ShouldReturnNull" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
@@ -48,7 +48,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result | Should Be $null;
 		}
 
-		It "Set-KeyNameValueWithNewValue-ShouldBeReturnUpdatedEntity" -Test {
+		It "Set-KeyNameValueWithNewValue-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
@@ -73,7 +73,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Description | Should Be $Description;
 		}
 
-		It "Set-KeyNameValueWithNewName-ShouldBeReturnUpdatedEntity" -Test {
+		It "Set-KeyNameValueWithNewName-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
@@ -98,7 +98,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Description | Should Be $Description;
 		}
 
-		It "Set-KeyNameValueWithNewKey-ShouldBeReturnUpdatedEntity" -Test {
+		It "Set-KeyNameValueWithNewKey-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
@@ -123,7 +123,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Description | Should Be $Description;
 		}
 
-		It "Set-KeyNameValueWithNewKeyNameValue-ShouldBeReturnUpdatedEntity" -Test {
+		It "Set-KeyNameValueWithNewKeyNameValue-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
@@ -148,7 +148,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Description | Should Be $Description;
 		}
 
-		It "Set-KeyNameValueWithNewKeyNameValueDescription-ShouldBeReturnUpdatedEntity" -Test {
+		It "Set-KeyNameValueWithNewKeyNameValueDescription-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
