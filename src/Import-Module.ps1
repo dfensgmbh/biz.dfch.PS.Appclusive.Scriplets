@@ -10,7 +10,7 @@
 # https://connect.microsoft.com/PowerShell/feedback/details/903654/scripts-loaded-via-a-scriptstoprocess-attribute-in-a-module-manifest-appear-as-if-they-are-loaded-modules
 
 # 
-# Copyright 2014-2015 Ronald Rink, d-fens GmbH
+# Copyright 2014-2015 d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

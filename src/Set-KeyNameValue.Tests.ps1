@@ -194,7 +194,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 }
 
 #
-# Copyright 2015 Ronald Rink, d-fens GmbH
+# Copyright 2015 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
