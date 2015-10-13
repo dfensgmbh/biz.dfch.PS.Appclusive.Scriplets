@@ -142,3 +142,36 @@ $svc.Core.SaveChanges();
 CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
 Import-Module .\ConfigurationManager.psd1 -verbose;
 CD P02:
+
+# EntityTypes
+$svc = Enter-AppclusiveServer;
+
+$et = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType
+$et;
+$svc.Core.AddToEntityTypes($et);
+$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order';
+$et.Description = 'Order entity definition';
+$et.Parameters = '{"Executing-Continue":"Completed","Executing-Cancel":"Failed"}';
+$et.Created = [System.DateTimeOffset]::Now;
+$et.Modified = $et.Created;
+$et.CreatedBy = "SYSTEM";
+$et.ModifiedBy = $et.CreatedBy;
+$et.Tid = "1";
+$et.Id = 0;
+$svc.Core.UpdateObject($et);
+$svc.Core.SaveChanges();
+
+$et = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType
+$et;
+$svc.Core.AddToEntityTypes($et);
+$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval';
+$et.Description = 'Approval entity definition';
+$et.Parameters = '{"Created-Continue":"Approval","Created-Cancel":"Failed","Approval-Continue":"WaitingToRun","Approval-Cancel":"Declined","WaitingToRun-Continue":"Completed","WaitingToRun-Cancel":"Failed"}';;
+$et.Created = [System.DateTimeOffset]::Now;
+$et.Modified = $et.Created;
+$et.CreatedBy = "SYSTEM";
+$et.ModifiedBy = $et.CreatedBy;
+$et.Tid = "1";
+$et.Id = 0;
+$svc.Core.UpdateObject($et);
+$svc.Core.SaveChanges();
