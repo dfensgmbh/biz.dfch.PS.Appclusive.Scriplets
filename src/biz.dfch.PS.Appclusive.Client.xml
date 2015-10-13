@@ -38,11 +38,11 @@
           <DCT>
             <En>
               <S N="Key">Core</S>
-              <S N="Value">Core.svc</S>
+              <S N="Value">Core</S>
             </En>
             <En>
               <S N="Key">Diagnostics</S>
-              <S N="Value">Diagnostics.svc</S>
+              <S N="Value">Diagnostics</S>
             </En>
           </DCT>
         </Obj>
