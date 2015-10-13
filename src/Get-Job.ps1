@@ -1,45 +1,68 @@
-function Remove-KeyNameValue {
-<#
-.SYNOPSIS
-Removes a KNV entry from the KNV store.
-
-.DESCRIPTION
-Removes a KNV entry from the KNV store.
-
-The Cmdlet lets you remove an existing entry from the KNV store.
-
-.EXAMPLE
-Remove-KeyNameValue myKey myName myValue -Confirm
-
-Removes the KNV myKey/myName/myValue with explicit confirmation.
-#>
+function Get-Job {
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
-    ConfirmImpact = 'High'
+    ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-KeyNameValue/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/'
+	,
+	DefaultParameterSetName = 'list'
 )]
-Param 
+PARAM 
 (
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Key
+	# Specifies the name of the entity
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
+	[int] $Id
 	,
-	# The name name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 1, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
+	[Alias("n")]
 	[string] $Name
 	,
-	# The value name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 2, ParameterSetName = 'name')]
-	[string] $Value
+	# Filter by creator
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[string] $CreatedBy
+	,
+	# Filter by modifier
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[string] $ModifiedBy
+	,
+	# Specify the attributes of the entity to return
+	[Parameter(Mandatory = $false)]
+	[string[]] $Select = @()
+	,
+	# Specifies to return only values without header information. 
+	# This parameter takes precendes over the 'Select' parameter.
+	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Alias("HideTableHeaders")]
+	[switch] $ValueOnly
+	,
+	# This value is only returned if the regular search would have returned no results
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Alias("default")]
+	$DefaultValue
+	,
+	# Specifies to deserialize JSON payloads
+	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Alias("Convert")]
+	[switch] $ConvertFromJson
+	,
+	# Limits the output to the specified number of entries
+	[Parameter(Mandatory = $false)]
+	[Alias("top")]
+	[int] $First
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias("Services")]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
-	# Specifies the return format of the Cnmdlet
+	# Indicates to return all file information
+	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
+	[switch] $ListAvailable = $false
+	,
+	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
 	[alias("ReturnFormat")]
@@ -48,11 +71,24 @@ Param
 
 BEGIN 
 {
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	
+	$EntitySetName = 'ManagementCredentials';
+	
+	# Parameter validation
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
+		$PSCmdlet.ThrowTerminatingError($e);
+	} # if
+	
+	if($Select) 
+	{
+		$Select = $Select | Select -Unique;
+		$SelectString = [String]::Join(',',$Select);
+	}
 }
 # BEGIN
 
@@ -66,52 +102,106 @@ $OutputParameter = $null;
 
 try 
 {
-
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$Exp = @();
-	if($Key) 
-	{ 
-		$Exp += ("(tolower(Key) eq '{0}')" -f $Key.ToLower());
-	}
-	if($Name) 
-	{ 
-		$Exp += ("(tolower(Name) eq '{0}')" -f $Name.ToLower());
-	}
-	if($Value) 
-	{ 
-		$Exp += ("(tolower(Value) eq '{0}')" -f $Value.ToLower());
-	}
-	$FilterExpression = [String]::Join(' and ', $Exp);
-
-	$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter',$FilterExpression);
-	$r = @();
 	
-	$objectFound = $false;
-	foreach($item in $knv) 
+	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 	{
-		$objectFound = $true;
-		$itemString = '{0}/{1}/{2}' -f $item.Key, $item.Name, $item.Value;
-		if($PSCmdlet.ShouldProcess($itemString)) 
+		throw($gotoSuccess);
+	}
+
+	if($PSCmdlet.ParameterSetName -eq 'list') 
+	{
+		if($Select) 
 		{
-			$r += ($item | Select -Property Key, Name, Value);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
+			if($PSBoundParameters.ContainsKey('First'))
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select -Property $Select;
+			}
+			else
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select -Property $Select;
+			}
+		}
+		else 
+		{
+			if($PSBoundParameters.ContainsKey('First'))
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
+			}
+			else
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
+			}
+		}
+	} 
+	else 
+	{
+		$Exp = @();
+		if($PSCmdlet.ParameterSetName -eq 'id')
+		{
+			$Exp += ("Id eq {0}" -f $Id);
+		}
+		if($Name) 
+		{ 
+			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
+		}
+		if($CreatedBy) { 
+			$Exp += ("(substringof('{0}', tolower(CreatedBy)) eq true)" -f $CreatedBy.ToLower());
+		} # if
+		if($ModifiedBy) { 
+			$Exp += ("(substringof('{0}', tolower(ModifiedBy)) eq true)" -f $ModifiedBy.ToLower());
+		} # if
+		$FilterExpression = [String]::Join(' and ', $Exp);
+	
+		if($Select) 
+		{
+			if($PSBoundParameters.ContainsKey('First'))
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select -Property $Select;
+			}
+			else
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
+			}
+		}
+		else 
+		{
+			if($PSBoundParameters.ContainsKey('First'))
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
+			}
+			else
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			}
+		}
+		if(1 -eq $Select.Count -And $ValueOnly)
+		{
+			$Response = $Response.$Select;
+		}
+		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
+		{
+			$Response = $DefaultValue;
+		}
+		if($ValueOnly -And $ConvertFromJson)
+		{
+			$ResponseTemp = New-Object System.Collections.ArrayList;
+			foreach($item in $Response)
+			{
+				try
+				{
+					$null = $ResponseTemp.Add((ConvertFrom-Json -InputObject $item));
+				}
+				catch
+				{
+					$null = $ResponseTemp.Add($item);
+				}
+			}
+			$Response = $ResponseTemp.ToArray();
 		}
 	}
-	if(!$objectFound)
-	{
-		$msg = "No object found that matches your criteria: '{0}'/'{1}'/'{2}'" -f $Key, $Name, $Value;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
 
+	$r = $Response;
 	switch($As) 
 	{
 		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
@@ -121,6 +211,7 @@ try
 		Default { $OutputParameter = $r; }
 	}
 	$fReturn = $true;
+
 }
 catch 
 {
@@ -172,16 +263,19 @@ finally
 
 END 
 {
+
 $datEnd = [datetime]::Now;
 Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
 # Return values are always and only returned via OutputParameter.
 return $OutputParameter;
+
 }
 # END
 
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue; } 
+} # function
+
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -202,8 +296,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0LOg0FgMFwCyl8Sz8EfyKy8L
-# QpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUeGbyPGVKJMgdOqvEG6xyutK2
+# MjCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -302,26 +396,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRp2GwzzwHVhjkR
-# 1Llbcv6vBpj+7TANBgkqhkiG9w0BAQEFAASCAQAv8vTi9Smrd4Crjiy/P9SmjxX1
-# qTECH+GZTaCh2GgX36RXPIFfWOI7Ro2fdSC8Bbut3gk8FMmNr7Ysl9cUENjH7AjW
-# oSkOfgou9Gi1f/0L2yoMH/8l3oczn8f20OvWpWMFVKt6geNzDrC3FeI6DQJdAZqG
-# F27i7VglOrumDrPjOM9CAxfE0ABiDfZtv7f1EaNjUxCviIQkwwT9QK6JO1Wb/u9u
-# krcxThRLEzK0/fHCKHv4Wk6HD9u0CtgEYrubN+kZu8ajIGsREBPwrXC8b0BdHmGr
-# 3FAv+otdbai/mpoFyEecqEsR6XmflgAgqi+2zDdr29s0AEPUty90IypGJ98xoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRjO7vpR2TMQ0Dy
+# 4aOTqWdj9Ch1gDANBgkqhkiG9w0BAQEFAASCAQBjDE8pF0ARBAr347i/NAKmvlyy
+# sGkqcnma/g+PzNh6vVTNXZdAgSJb7F5MqP9DfNtxZ5tidGYzsrRRhNE7YJN5lsXw
+# xr5gSp8eKr3DbcmKk32Wl5Qi9B8V6GI+oCVpFB8Q4i6gDOiOnYMd6NCOjoMiXVc6
+# j1a5FI5PfsIaZRjjBzkZ0whTcp6XhOxe9BLozDIpNgZpdTmCqKq+0BVhSxa5XET6
+# Z3xpa7uGR+1uYZTgk2qWtnHagV5neW1lGSf87sSX5f11sZsY3Ej5daFtPFk7NE/s
+# D5v0YuXRAl3Owvn/t7jAJgfMuT1nyz0k5dVOz7Dddkj05mOJn7TN8/EQA1H9oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAxMzExMjcwMVowIwYJKoZIhvcNAQkEMRYEFHwXADJDAJbAdfIifQDxDbpVkFI6
+# MTAxMzExMjY1NFowIwYJKoZIhvcNAQkEMRYEFDBLJAHeq0NZdJ/t2lMBsI17ADyv
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy1fZQdJKVDQw6chZZ
-# EEwt48NZLRHiEXiO8WI0Wo8QpGPPIWfcpw5iu06lxCbHVYAu0Gu2Bi0+DfT3yQ28
-# RVf1lCRQekD9drcX2U+WVWpBAlydWuf/tdZxnbJAMgY6NyxPcWRfDCeJysheTTuT
-# 76YTh7fGXdP/VlqPT6st4lXH478sZ0J5ijKUYVY1At6C7vqJ00BZyDUqGTvYLAhF
-# CqA+6Oa9gG9lZ+fnco1TVIaM1qjC0EVjuQ+cxr3n7G2dkxYcHzP6cPyOhpHDmAne
-# +0Q3aVxRGl0KCK0g1xgMooYUZc0UO6QE09jBu7w3erwszo6SA+YZKe8wv3SbXi+m
-# Yykb
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBDQkni3AQawh8lpgPQ
+# /XWMrqqXatOrQt2iZXGGU+PKEoEh3DYgt8otX6hI5VcYR6C4D7HtiVEZLxSqo053
+# eG9MzdUKQj5Z6vlsvDZV1bvo2TLvsznPuD2OFTuMw0SV8j0wHCwyXWH9WCSdC+6e
+# 1FaAUANIt4focBypFOR/jpdOE4suYSoc8NAPls8/UpYObzppwZYbLigOkPSYaqc3
+# sURb5YJ+sFB9jSA7AmnGZ1Qo62nw9t7bi9oXY8p6Ip8KbB50F44Hnn8KupTp4G6n
+# uvmTJg0nIJYLThXSIWEyyHA20UEK7rE1PVmeiC9NONBWG1jutEfuuXrZq0MtiSSf
+# GUHL
 # SIG # End signature block

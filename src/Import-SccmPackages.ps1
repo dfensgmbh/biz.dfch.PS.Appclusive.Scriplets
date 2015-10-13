@@ -1,209 +1,133 @@
-function Remove-KeyNameValue {
-<#
-.SYNOPSIS
-Removes a KNV entry from the KNV store.
-
-.DESCRIPTION
-Removes a KNV entry from the KNV store.
-
-The Cmdlet lets you remove an existing entry from the KNV store.
-
-.EXAMPLE
-Remove-KeyNameValue myKey myName myValue -Confirm
-
-Removes the KNV myKey/myName/myValue with explicit confirmation.
-#>
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-KeyNameValue/'
-)]
-Param 
+Param
 (
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Key
+	[string] $CatalogueName = 'Default DaaS'
 	,
-	# The name name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 1, ParameterSetName = 'name')]
-	[string] $Name
+	$KeyName = 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems'
 	,
-	# The value name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 2, ParameterSetName = 'name')]
-	[string] $Value
+	$SccmModulePath = 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
 	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
+	$SiteName = 'P02'
 )
-
-BEGIN 
-{
 
 $datBegin = [datetime]::Now;
 [string] $fn = $MyInvocation.MyCommand.Name;
 Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
-}
-# BEGIN
+$svc = Enter-AppclusiveServer;
 
-PROCESS 
+$al = New-Object System.Collections.ArrayList;
+
+# CD $SccmModulePath
+# $null = Import-Module .\ConfigurationManager.psd1;
+# CD ('{0}:' -f $SiteName);
+
+Log-Debug $fn ("Loading packages from '{0}' ..." -f $SiteName)
+# $packages = (Get-CMCollection).Name;
+$packages = Import-CliXml '.\Import-SccmPackages.xml'
+Log-Info $fn ("Loading packages from '{0}' COMPLETED. Found {1} packages." -f $SiteName, $packages.Count)
+
+Log-Debug $fn ("Loading whiteLists from '{0}' ..." -f $KeyName);
+$whiteListValues = Get-KeyNameValue -svc $svc -Key $KeyName -Name Whitelist -Select Value;
+$whiteLists = $whiteListValues.Value;
+Log-Debug $fn ("Loading whiteLists from '{0}' COMPLETED [{1}]." -f $KeyName, $whiteLists.Count);
+Log-Debug $fn ("Loading blackLists from '{0}' ..." -f $KeyName);
+$blackListValues = Get-KeyNameValue -svc $svc -Key $KeyName -Name Blacklist -Select Value;
+$blackLists = $blackListValues.Value;
+Log-Debug $fn ("Loading blackLists from '{0}' COMPLETED [{1}]." -f $KeyName, $blackLists.Count);
+
+Log-Debug $fn ("Matching packages against whiteLists and blackLists ...");
+foreach($package in $packages)
 {
-
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
-
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$Exp = @();
-	if($Key) 
-	{ 
-		$Exp += ("(tolower(Key) eq '{0}')" -f $Key.ToLower());
-	}
-	if($Name) 
-	{ 
-		$Exp += ("(tolower(Name) eq '{0}')" -f $Name.ToLower());
-	}
-	if($Value) 
-	{ 
-		$Exp += ("(tolower(Value) eq '{0}')" -f $Value.ToLower());
-	}
-	$FilterExpression = [String]::Join(' and ', $Exp);
-
-	$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter',$FilterExpression);
-	$r = @();
-	
-	$objectFound = $false;
-	foreach($item in $knv) 
+	foreach($whiteList in $whiteLists)
 	{
-		$objectFound = $true;
-		$itemString = '{0}/{1}/{2}' -f $item.Key, $item.Name, $item.Value;
-		if($PSCmdlet.ShouldProcess($itemString)) 
+		if($package -imatch $whiteList)
 		{
-			$r += ($item | Select -Property Key, Name, Value);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
+			Log-Debug $fn ("{0}: whiteList matched package '{1}'" -f $whiteList, $package);
+			$null = $al.Add($package);
+			break;
 		}
 	}
-	if(!$objectFound)
+	foreach($blackList in $blackLists)
 	{
-		$msg = "No object found that matches your criteria: '{0}'/'{1}'/'{2}'" -f $Key, $Name, $Value;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
+		if($package -imatch $blackList)
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
+			Log-Debug $fn ("{0}: blackList matched package '{1}'" -f $blackList, $package);
+			if($al.Contains($package))
 			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
+				$null = $al.Remove($package);
 			}
+			break;
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
 	}
 }
-finally 
+Log-Info $fn ("Matching packages against whiteLists and blackLists COMPLETED. '{0}' packages remaining." -f $al.Count);
+
+Log-Debug $fn "Removing existing SCCM packages ...";
+$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Type eq 'SCCM'") | Select;
+foreach($catItem in $catItems)
 {
-	# Clean up
-	# N/A
+	try
+	{
+		Log-Debug $fn ("Removing SCCM package '{0}' ..." -f $catItem.Name);
+		$svc.Core.DeleteObject($catItem);
+		$svc.Core.SaveChanges();
+		Log-Info $fn ("Removing SCCM package '{0}' SUCCEEDED." -f $catItem.Name);
+	}
+	catch
+	{
+		Log-Error $fn ("Removing SCCM package '{0}' FAILED." -f $catItem.Name);
+	}
 }
 
-}
-# PROCESS
-
-END 
+Log-Debug $fn ("Attaching packages to catalogue. Resolving '{0}' ..." -f $CatalogueName);
+$CatalogueName = 'Default DaaS'
+$cat = $svc.Core.Catalogues |? Name -eq $CatalogueName;
+if($null -eq $cat)
 {
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
+	$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $CatalogueName;
+	throw $e;
 }
-# END
+Log-Info $fn ("Attaching packages to catalogue. Resolving '{0}' SUCCEEDED." -f $CatalogueName);
 
+Log-Debug $fn ("Processing '{0}' matching packages ...'" -f $al.Count);
+foreach($catItemName in $al)
+{
+	try
+	{
+		Log-Debug $fn ("Adding '{0}' to catalogue '{1}' ..." -f $catItemName, $cat.Name);
+		$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+		$svc.Core.AddToCatalogueItems($catItem);
+		$svc.Core.SetLink($catItem, "Catalogue", $cat);
+		$catItem.CatalogueId = $cat.Id;
+		$catItem.Type = 'SCCM';
+		$catItem.Version = 1;
+		$catItem.Name = $catItemName;
+		$catItem.Description = $catItemName;
+		$catItem.Created = [System.DateTimeOffset]::Now;
+		$catItem.Modified = $catItem.Created;
+		$catItem.ValidFrom = [System.DateTimeOffset]::MinValue;
+		$catItem.ValidUntil = [System.DateTimeOffset]::MaxValue;
+		$catItem.EndOfSale = [System.DateTimeOffset]::MaxValue;
+		$catItem.EndOfLife = [System.DateTimeOffset]::MaxValue;
+		$catItem.CreatedBy = "SYSTEM";
+		$catItem.ModifiedBy = $catItem.CreatedBy;
+		$catItem.Tid = "1";
+		$catItem.Id = 0;
+		$svc.Core.UpdateObject($catItem);
+		$svc.Core.SaveChanges();
+		Log-Info $fn ("Adding '{0}' to catalogue '{1}' SUCCEEDED." -f $catItemName, $cat.Name);
+	}
+	catch
+	{
+		Log-Error $fn ("Adding '{0}' to catalogue '{1}' FAILED." -f $catItemName, $cat.Name);
+	}
 }
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-# http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0LOg0FgMFwCyl8Sz8EfyKy8L
-# QpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqNeE63mxjdJdaIqE696qlzoc
+# Ur2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -302,26 +226,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRp2GwzzwHVhjkR
-# 1Llbcv6vBpj+7TANBgkqhkiG9w0BAQEFAASCAQAv8vTi9Smrd4Crjiy/P9SmjxX1
-# qTECH+GZTaCh2GgX36RXPIFfWOI7Ro2fdSC8Bbut3gk8FMmNr7Ysl9cUENjH7AjW
-# oSkOfgou9Gi1f/0L2yoMH/8l3oczn8f20OvWpWMFVKt6geNzDrC3FeI6DQJdAZqG
-# F27i7VglOrumDrPjOM9CAxfE0ABiDfZtv7f1EaNjUxCviIQkwwT9QK6JO1Wb/u9u
-# krcxThRLEzK0/fHCKHv4Wk6HD9u0CtgEYrubN+kZu8ajIGsREBPwrXC8b0BdHmGr
-# 3FAv+otdbai/mpoFyEecqEsR6XmflgAgqi+2zDdr29s0AEPUty90IypGJ98xoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRwKGJP3izWSumv
+# 1jwws6IPJu/jWTANBgkqhkiG9w0BAQEFAASCAQBuDYOS61Ht+8aI+YyyyNDbnmdh
+# oVto++P37aBY+/p+T85xCruucnG1WbzvGrpUac64QdQNgf5d6YUEiK1DvxZAv0Gj
+# f+mhWYfHEQvWEk6B2EMzNlk0bLv5zgCWH2j5su3E6Q0YsqILT+GC325pF6oV5zDU
+# njdmE2a/VwxxXReJa5Hluua1Pgn5ilGqI+H0v9clFK+I9HQZJJ+9cbIIWHwEnhdK
+# 3icfV81UiDw0CPICczVFXQ7lBCcMKCjHLqwLgTsr5Q7RNKQG6dMZcNOwKfJ3TnCp
+# qMOwHDplWWH2D3h7v99Mea48IAmmEsy5gOdc4S6Qn6oTLQhbVbFmBdhFBdVuoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAxMzExMjcwMVowIwYJKoZIhvcNAQkEMRYEFHwXADJDAJbAdfIifQDxDbpVkFI6
+# MTAxMzExMjY1OFowIwYJKoZIhvcNAQkEMRYEFKLY1EF7xGqY24u8Geu7M/zILBcy
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy1fZQdJKVDQw6chZZ
-# EEwt48NZLRHiEXiO8WI0Wo8QpGPPIWfcpw5iu06lxCbHVYAu0Gu2Bi0+DfT3yQ28
-# RVf1lCRQekD9drcX2U+WVWpBAlydWuf/tdZxnbJAMgY6NyxPcWRfDCeJysheTTuT
-# 76YTh7fGXdP/VlqPT6st4lXH478sZ0J5ijKUYVY1At6C7vqJ00BZyDUqGTvYLAhF
-# CqA+6Oa9gG9lZ+fnco1TVIaM1qjC0EVjuQ+cxr3n7G2dkxYcHzP6cPyOhpHDmAne
-# +0Q3aVxRGl0KCK0g1xgMooYUZc0UO6QE09jBu7w3erwszo6SA+YZKe8wv3SbXi+m
-# Yykb
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCVs8RC/swKkCtSfW8K
+# P/9j5DE79rDd5RHlrpPSobnerTAv3sjWDBKGxUdp4bXUaNM7ShLbyTGV3VcM13bu
+# kcBz8uzwKRTm/C1iZIZcuEGJS8lEQ9qMvWaUgkPE0HA0oYamiiftb1PL7fgqdf49
+# uEbrTCZIXRJ6m3fJX87X9eY39q25v2Bhf/kU4j3tXqyPU6rGAHypzojx+u5DnJM8
+# b3G2hEbOwePfVoUOwych4iP8smvJ0SgleY2JFKjaY5fFZZdAZMsYhdv9JaZBY3bg
+# eLxt0eMu7KU8mdr8wsv73jS+7Cyu0YoAl9HlYXuNzFxVDKsmi/TyxKTinOecK1M4
+# Cpim
 # SIG # End signature block
