@@ -60,6 +60,7 @@ New-KeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Managers.UpdateNoti
 New-KeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Blacklist' -Value 'Pilot$';
 New-KeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Blacklist' -Value 'Test$';
 New-KeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+Production$';
+New-KeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+\d$';
 New-KeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController' -Name 'Properties' -Value '{}';
 Get-KeyNameValue -svc $svc -ListAvailable;
 
@@ -140,7 +141,8 @@ $svc.Core.SaveChanges();
 # SCCM
 # http://thedesktopteam.com/blog/heinrich/sccm-2012-r2-powershell-basics-part-1/
 CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
-Import-Module .\ConfigurationManager.psd1 -verbose;
+# Import-Module .\ConfigurationManager.psd1 -verbose;
+Import-Module .\ConfigurationManager.psd1;
 CD P02:
 
 # EntityTypes
@@ -166,7 +168,7 @@ $et;
 $svc.Core.AddToEntityTypes($et);
 $et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval';
 $et.Description = 'Approval entity definition';
-$et.Parameters = '{"Created-Continue":"Approval","Created-Cancel":"Failed","Approval-Continue":"WaitingToRun","Approval-Cancel":"Declined","WaitingToRun-Continue":"Completed","WaitingToRun-Cancel":"Failed"}';;
+$et.Parameters = '{"Created-Continue":"Approval","Created-Cancel":"Failed","Approval-Continue":"WaitingToRun","Approval-Cancel":"Declined","WaitingToRun-Continue":"Completed","WaitingToRun-Cancel":"Failed"}';
 $et.Created = [System.DateTimeOffset]::Now;
 $et.Modified = $et.Created;
 $et.CreatedBy = "SYSTEM";
@@ -175,3 +177,110 @@ $et.Tid = "1";
 $et.Id = 0;
 $svc.Core.UpdateObject($et);
 $svc.Core.SaveChanges();
+
+$et = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType
+$et;
+$svc.Core.AddToEntityTypes($et);
+$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default';
+$et.Description = 'This is the definition for the default entity type';
+$et.Parameters = '{"Created-Continue":"Running","Created-Cancel":"InternalErrorState","Running-Continue":"Completed"}';
+$et.Created = [System.DateTimeOffset]::Now;
+$et.Modified = $et.Created;
+$et.CreatedBy = "SYSTEM";
+$et.ModifiedBy = $et.CreatedBy;
+$et.Tid = "1";
+$et.Id = 0;
+$svc.Core.UpdateObject($et);
+$svc.Core.SaveChanges();
+
+
+# load software packages from Sccm
+$svc = Enter-AppclusiveServer;
+
+$fn = "SccmImport";
+
+CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
+$null = Import-Module .\ConfigurationManager.psd1;
+CD P02:
+
+$al = New-Object System.Collections.ArrayList;
+$packages = (Get-CMCollection).Name;
+Log-Debug $fn ("SCCM: Processing '{0}' packages ..." -f $packages.Count)
+
+$whiteListValues = Get-KeyNameValue -svc $svc -Key biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems -Name Whitelist -Select Value;
+$whiteLists = $whiteListValues.Value;
+$blackListValues = Get-KeyNameValue -svc $svc -Key biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems -Name Blacklist -Select Value;
+$blackLists = $blackListValues.Value;
+
+foreach($package in $packages)
+{
+	foreach($whiteList in $whiteLists)
+	{
+		if($package -imatch $whiteList)
+		{
+			Log-Debug $fn ("{0}: whiteList matched package '{1}'" -f $whiteList, $package);
+			$null = $al.Add($package);
+			break;
+		}
+	}
+	foreach($blackList in $blackLists)
+	{
+		if($package -imatch $blackList)
+		{
+			Log-Debug $fn ("{0}: blackList matched package '{1}'" -f $blackList, $package);
+			if($al.Contains($package))
+			{
+				$null = $al.Remove($package);
+			}
+			break;
+		}
+	}
+}
+Log-Debug $fn ("Found '{0}' matching packages ...'" -f $al.Count);
+
+$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Type eq 'SCCM'") | Select;
+foreach($catItem in $catItems)
+{
+	try
+	{
+		$svc.Core.DeleteObject($catItem);
+		$svc.Core.SaveChanges();
+	}
+	catch
+	{
+		Write-Host ("removing catItem '{0}' FAILED." -f $catItem.Name);
+	}
+}
+
+if($null -eq $catItem)
+{
+	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+	$svc.Core.AddToCatalogueItems($catItem);
+	$svc.Core.SetLink($catItem, "Catalogue", $cat);
+}
+
+Log-Debug $fn ("Processing '{0}' matching packages ...'" -f $al.Count);
+foreach($catItemName in $al)
+{
+	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+	$svc.Core.AddToCatalogueItems($catItem);
+	$svc.Core.SetLink($catItem, "Catalogue", $cat);
+	$catItem.CatalogueId = $cat.Id;
+	$catItem.Type = 'SCCM';
+	$catItem.Version = 1;
+	$catItem.Name = $catItemName;
+	$catItem.Description = $catItemName;
+	$catItem.Created = [System.DateTimeOffset]::Now;
+	$catItem.Modified = $catItem.Created;
+	$catItem.ValidFrom = [System.DateTimeOffset]::MinValue;
+	$catItem.ValidUntil = [System.DateTimeOffset]::MaxValue;
+	$catItem.EndOfSale = [System.DateTimeOffset]::MaxValue;
+	$catItem.EndOfLife = [System.DateTimeOffset]::MaxValue;
+	$catItem.CreatedBy = "SYSTEM";
+	$catItem.ModifiedBy = $catItem.CreatedBy;
+	$catItem.Tid = "1";
+	$catItem.Id = 0;
+	$svc.Core.UpdateObject($catItem);
+	$svc.Core.SaveChanges();
+}
+
