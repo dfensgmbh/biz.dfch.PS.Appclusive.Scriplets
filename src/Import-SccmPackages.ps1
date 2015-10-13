@@ -15,23 +15,25 @@ Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $
 
 $svc = Enter-AppclusiveServer;
 
-CD $SccmModulePath
-$null = Import-Module .\ConfigurationManager.psd1;
-CD ('{0}:' -f $SiteName);
-
 $al = New-Object System.Collections.ArrayList;
+
+# CD $SccmModulePath
+# $null = Import-Module .\ConfigurationManager.psd1;
+# CD ('{0}:' -f $SiteName);
+
 Log-Debug $fn ("Loading packages from '{0}' ..." -f $SiteName)
-$packages = (Get-CMCollection).Name;
+# $packages = (Get-CMCollection).Name;
+$packages = Import-CliXml '.\Import-SccmPackages.xml'
 Log-Info $fn ("Loading packages from '{0}' COMPLETED. Found {1} packages." -f $SiteName, $packages.Count)
 
 Log-Debug $fn ("Loading whiteLists from '{0}' ..." -f $KeyName);
 $whiteListValues = Get-KeyNameValue -svc $svc -Key $KeyName -Name Whitelist -Select Value;
 $whiteLists = $whiteListValues.Value;
-Log-Debug $fn ("Loading whiteLists from '{0}' COMPLETED [{1}]." -f $KeyName, whiteLists.Count);
+Log-Debug $fn ("Loading whiteLists from '{0}' COMPLETED [{1}]." -f $KeyName, $whiteLists.Count);
 Log-Debug $fn ("Loading blackLists from '{0}' ..." -f $KeyName);
 $blackListValues = Get-KeyNameValue -svc $svc -Key $KeyName -Name Blacklist -Select Value;
 $blackLists = $blackListValues.Value;
-Log-Debug $fn ("Loading blackLists from '{0}' COMPLETED [{1}]." -f $KeyName, blackLists.Count);
+Log-Debug $fn ("Loading blackLists from '{0}' COMPLETED [{1}]." -f $KeyName, $blackLists.Count);
 
 Log-Debug $fn ("Matching packages against whiteLists and blackLists ...");
 foreach($package in $packages)
@@ -66,14 +68,14 @@ foreach($catItem in $catItems)
 {
 	try
 	{
-		Log-Debug ($fn "Removing SCCM package '{0}' ..." -f $catItem.Name);
+		Log-Debug $fn ("Removing SCCM package '{0}' ..." -f $catItem.Name);
 		$svc.Core.DeleteObject($catItem);
 		$svc.Core.SaveChanges();
-		Log-Info ($fn "Removing SCCM package '{0}' SUCCEEDED." -f $catItem.Name);
+		Log-Info $fn ("Removing SCCM package '{0}' SUCCEEDED." -f $catItem.Name);
 	}
 	catch
 	{
-		Log-Error ($fn "Removing SCCM package '{0}' FAILED." -f $catItem.Name);
+		Log-Error $fn ("Removing SCCM package '{0}' FAILED." -f $catItem.Name);
 	}
 }
 
