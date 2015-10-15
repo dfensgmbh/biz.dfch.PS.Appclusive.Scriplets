@@ -27,11 +27,11 @@ $packages = Import-CliXml '.\Import-SccmPackages.xml'
 Log-Info $fn ("Loading packages from '{0}' COMPLETED. Found {1} packages." -f $SiteName, $packages.Count)
 
 Log-Debug $fn ("Loading whiteLists from '{0}' ..." -f $KeyName);
-$whiteListValues = Get-KeyNameValue -svc $svc -Key $KeyName -Name Whitelist -Select Value;
+$whiteListValues = Get-AppclusiveKeyNameValue -svc $svc -Key $KeyName -Name Whitelist -Select Value;
 $whiteLists = $whiteListValues.Value;
 Log-Debug $fn ("Loading whiteLists from '{0}' COMPLETED [{1}]." -f $KeyName, $whiteLists.Count);
 Log-Debug $fn ("Loading blackLists from '{0}' ..." -f $KeyName);
-$blackListValues = Get-KeyNameValue -svc $svc -Key $KeyName -Name Blacklist -Select Value;
+$blackListValues = Get-AppclusiveKeyNameValue -svc $svc -Key $KeyName -Name Blacklist -Select Value;
 $blackLists = $blackListValues.Value;
 Log-Debug $fn ("Loading blackLists from '{0}' COMPLETED [{1}]." -f $KeyName, $blackLists.Count);
 
@@ -80,7 +80,6 @@ foreach($catItem in $catItems)
 }
 
 Log-Debug $fn ("Attaching packages to catalogue. Resolving '{0}' ..." -f $CatalogueName);
-$CatalogueName = 'Default DaaS'
 $cat = $svc.Core.Catalogues |? Name -eq $CatalogueName;
 if($null -eq $cat)
 {
