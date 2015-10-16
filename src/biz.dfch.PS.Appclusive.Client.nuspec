@@ -28,9 +28,9 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
     <releaseNotes>20151016
-	
-* collection property wurde aus dem catalogueitem removed
-* einige der deleteLink und createLlink methoden hab ich weggenommen</releaseNotes>
+
+* Collection property from CatalogueItem removed
+* various extra deleteLink and createLlink methods removed</releaseNotes>
     <copyright>(c) 2015 d-fens GmbH</copyright>
     <language>en-US</language>
     <tags>dfch PowerShell Appclusive Automation OData</tags>
