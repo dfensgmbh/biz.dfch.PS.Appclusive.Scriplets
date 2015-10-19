@@ -2,13 +2,9 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-function Stop-Pester($message)
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
 	$msg = $message;
-	if([string]::IsNullOrWhiteSpace($message))
-	{
-		$msg = "EMERGENCY: Script cannot continue.";
-	}
 	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
 	$PSCmdlet.ThrowTerminatingError($e);
 }
@@ -17,7 +13,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 
-	# . "$here\$sut"
+	. "$here\$sut"
 	
 	Context "Catalogue.Tests" {
 	
@@ -68,7 +64,6 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			
 			# Create new cartItem
 			$cartItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CartItem;
-			$cartItem | Should Not Be $null;
 			$cartItem.Tid = "1";
 			$cartItem.Quantity = 1;
 			$cartItem.CreatedBy = $ENV:USERNAME;
@@ -81,8 +76,6 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			
 			# Add cartItem
 			$svc.Core.AddToCartItems($cartItem);
-			$svc.Core.SetLink($cartItem, 'CatalogueItem', $catItem);
-			$svc.Core.UpdateObject($cartItem);
 			$result = $svc.Core.SaveChanges();
 			
 			# check result
@@ -95,6 +88,14 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
 			$cartItems.Count | Should Be 1;
 			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = $svc.Core.Carts |? CreatedBy -eq $cartItem.CreatedBy;
+			$cart | Should Be $null;
 		}
 	}
 }

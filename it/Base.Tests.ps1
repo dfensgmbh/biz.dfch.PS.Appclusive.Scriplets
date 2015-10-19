@@ -6,7 +6,7 @@ Describe -Tags "Base.Tests" "Base.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 
-	# . "$here\$sut"
+	. "$here\$sut"
 	
 	Context "Test-BaseModule" {
 	
@@ -21,7 +21,7 @@ Describe -Tags "Base.Tests" "Base.Tests" {
 			Import-Module $moduleName;
 			
 			# Act
-			$m = Get-Module 'biz.dfch.PS.Appclusive.Client';
+			$m = Get-Module $moduleName;
 
 			# Assert
 			$m | Should Not Be $null;
