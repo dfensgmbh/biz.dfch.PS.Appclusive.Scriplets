@@ -326,6 +326,22 @@ function Gates($Recreate)
 function Jobs($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
+
+	$jobs = $svc.Core.Jobs |? ParentId -ne $null;
+	foreach($item in $jobs)
+	{
+		try
+		{
+			$svc.Core.DeleteObject($item);
+			$svc.Core.SaveChanges();
+		}
+		catch
+		{
+			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
+		}
+	}
+	
+	$svc = Enter-AppclusiveServer;
 	
 	$jobs = $svc.Core.Jobs | Select;
 	foreach($item in $jobs)
@@ -337,12 +353,6 @@ function Jobs($Recreate)
 		}
 		catch
 		{
-			$entityDescriptor = $svc.Core.Entities |? Entity -eq $item;
-			if(!$entityDescriptor)
-			{
-				continue;
-			}
-			$svc.Core.Detach($entityDescriptor.Entity);
 			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
 		}
 	}
