@@ -53,6 +53,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$catItems | Should Not Be $null;
 			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
 			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
+			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
 		}
 	}
 
@@ -65,15 +66,8 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 	
-		It "Adding-CartItem-CreatesCart" -Test {
+		It "AddingCartItem-CreatesCart" -Test {
 
-			BeforeEach {
-				$moduleName = 'biz.dfch.PS.Appclusive.Client';
-				Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-				Import-Module $moduleName;
-				$svc = Enter-AppclusiveServer;
-			}
-			
 			# Get catItem
 			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
 			$catItem | Should Not Be $null;
@@ -95,6 +89,111 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
 			$cartItems.Count | Should Be 1;
 			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+
+		It "AddingNonVdiCartItemTwice-IncreasesCount" -Test {
+			
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			$cartItems[0].Quantity | Should Be 1;
+			
+			$svc = Enter-AppclusiveServer;
+			
+			# Create second cartItem
+			$cartItem2 = CreateCartItem -catItem $catItem;
+			
+			# Add second VDI cartItem
+			$svc.Core.AddToCartItems($cartItem2);
+			$result = $svc.Core.SaveChanges();
+			
+			# check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			$cartItems[0].Quantity | Should Be 2;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+		
+		It "AddingVdiCartItemTwice-Fails" -Test {
+			
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new VDI cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add VDI cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			# Create second VDI cartItem
+			$cartItem2 = CreateCartItem -catItem $catItem;
+
+			# Add second VDI cartItem
+			$svc.Core.AddToCartItems($cartItem2);
+			try 
+			{
+				$svc.Core.SaveChanges();
+			} catch 
+			{
+				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
+			}
+
+			$svc = Enter-AppclusiveServer;
+			$cart = GetCartOfUser -svc $svc;
 			
 			# Cleanup
 			$svc.Core.DeleteObject($cart);

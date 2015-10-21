@@ -41,6 +41,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$catItems | Should Not Be $null;
 			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
 			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
+			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
 		}
 		
 		It "CreatingCatalogueItem-Succeeds" -Test {
