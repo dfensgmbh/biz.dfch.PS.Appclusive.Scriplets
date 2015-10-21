@@ -228,6 +228,28 @@ function CatalogueItems($Recreate) {
 	$catItem.Id = 0;
 	$svc.Core.UpdateObject($catItem);
 	$svc.Core.SaveChanges();
+	
+	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+	$catItem;
+	$svc.Core.AddToCatalogueItems($catItem);
+	$svc.Core.SetLink($catItem, "Catalogue", $cat);
+	$catItem.CatalogueId = $cat.Id;
+	$catItem.Type = 'SW Package';
+	$catItem.Version = 1;
+	$catItem.Name = 'DSWR Autocad 12 Production';
+	$catItem.Description = 'DSWR Autocad 12 Production';
+	$catItem.Created = [System.DateTimeOffset]::Now;
+	$catItem.Modified = $catItem.Created;
+	$catItem.ValidFrom = [System.DateTimeOffset]::MinValue;
+	$catItem.ValidUntil = [System.DateTimeOffset]::MaxValue;
+	$catItem.EndOfSale = [System.DateTimeOffset]::MaxValue;
+	$catItem.EndOfLife = [System.DateTimeOffset]::MaxValue;
+	$catItem.CreatedBy = "SYSTEM";
+	$catItem.ModifiedBy = $catItem.CreatedBy;
+	$catItem.Tid = "1";
+	$catItem.Id = 0;
+	$svc.Core.UpdateObject($catItem);
+	$svc.Core.SaveChanges();
 }
 
 function EntityTypes($Recreate)
