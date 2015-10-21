@@ -9,12 +9,11 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "Cart.Tests" "Cart.Tests" {
+Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 
 	. "$here\$sut"
-	. "$here\Catalogue.ps1"
 	
 	Context "Catalogue.Tests" {
 	
@@ -28,17 +27,6 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
 			$svc = Enter-AppclusiveServer;
-		}
-		
-		It "GettingCarts-ReturnsZeroEntities" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$entitySet = $svc.Core.Carts;
-
-			# Assert
-			$entitySet | Should Be $null;
 		}
 
 		It "GettingCatalogue-Succeeds" -Test {
@@ -54,56 +42,28 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
 			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
 		}
-	}
-
-	Context "Cart.Tests" {
-	
-		BeforeEach {
-			$moduleName = 'biz.dfch.PS.Appclusive.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
-		}
-	
-		It "Adding-CartItem-CreatesCart" -Test {
-
-			BeforeEach {
-				$moduleName = 'biz.dfch.PS.Appclusive.Client';
-				Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-				Import-Module $moduleName;
-				$svc = Enter-AppclusiveServer;
-			}
+		
+		It "CreatingCatalogueItem-Succeeds" -Test {
+			# Arrange
 			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
+			# Act
+			$cat = GetCatalogueByName -svc $svc -catName $catName;
+			$cat | Should Not Be $null;
 			
-			# Create new cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add cartItem
-			$svc.Core.AddToCartItems($cartItem);
+			# Add catalogueItem
+			$catalogueItem = CreateCatalogueItem -cat $cat;
+			$svc.Core.AddToCatalogueItems($catalogueItem);
 			$result = $svc.Core.SaveChanges();
-
-			# check result
+			
+			# Assert
 			$result.StatusCode | Should Be 201;
 			$cartItem.Id | Should Not Be 0;
 			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			
 			# Cleanup
-			$svc.Core.DeleteObject($cart);
+			$svc.Core.DeleteObject($catalogueItem);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
+		}		
 	}
 }
 
