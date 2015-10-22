@@ -79,6 +79,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			
 			Start-Sleep -s 5;
 			
+			# Check result
 			$svc = Enter-AppclusiveServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
@@ -159,6 +160,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			
 			Start-Sleep -s 5;
 			
+			# Check result
 			$svc = Enter-AppclusiveServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
@@ -182,16 +184,16 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$svc.Core.DeleteObject($approvalJob);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
-			
+
 			$svc.Core.DeleteObject($approval);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
-			
+
 			$orderJob = $svc.Core.Jobs |? Id -eq $orderJob.Id;
 			$svc.Core.DeleteObject($orderJob);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
-			
+
 			$svc.Core.DeleteObject($createdOrder);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;

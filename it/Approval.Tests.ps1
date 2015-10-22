@@ -14,6 +14,9 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 	Mock Export-ModuleMember { return $null; }
 
 	. "$here\$sut"
+	. "$here\Catalogue.ps1"
+	. "$here\Cart.ps1"
+	. "$here\Order.ps1"
 	
 	Context "Approval.Tests" {
 		
@@ -24,13 +27,220 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "CreatingApproval-Succeeds" -Test {
-			# Arrange
-			# N/A
+		It "ApproveApproval-ChangesOrderStatusToWaitingToRun" -Test {
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
 			
-			# Act
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
 
-			# Assert
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+
+			# Create order
+			$order = CreateOrder;
+			$svc.Core.AddToOrders($order);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
+			
+			Start-Sleep -s 5;
+			
+			# Check result
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Requester | Should Be $null;
+			$createdOrder.Status | Should Be 'Approval';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'Approval';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Created';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Created';
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+
+			# Approve approval
+			$approval.Status = 'Approved';
+			$svc.Core.UpdateObject($approval);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
+			
+			Start-Sleep -s 5;
+			
+			# Check result
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Status | Should Be 'WaitingToRun';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'WaitingToRun';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Approved';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Approved';
+			
+			# Cleanup
+			$svc.Core.DeleteObject($approvalJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($approval);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$orderJob = $svc.Core.Jobs |? Id -eq $orderJob.Id;
+			$svc.Core.DeleteObject($orderJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($createdOrder);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+		
+		It "DeclineApproval-ChangesOrderStatusToCancelled" -Test {
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+
+			# Create order
+			$order = CreateOrder;
+			$svc.Core.AddToOrders($order);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
+			
+			Start-Sleep -s 5;
+			
+			# Check result
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Requester | Should Be $null;
+			$createdOrder.Status | Should Be 'Approval';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'Approval';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Created';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Created';
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+
+			# Approve approval
+			$approval.Status = 'Declined';
+			$svc.Core.UpdateObject($approval);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
+			
+			Start-Sleep -s 5;
+			
+			# Check result
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Status | Should Be 'Cancelled';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'Cancelled';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Declined';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Declined';
+			
+			# Cleanup
+			$svc.Core.DeleteObject($approvalJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($approval);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$orderJob = $svc.Core.Jobs |? Id -eq $orderJob.Id;
+			$svc.Core.DeleteObject($orderJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($createdOrder);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
 		}
 	}
 }
