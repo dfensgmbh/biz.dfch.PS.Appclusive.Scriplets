@@ -193,7 +193,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$cart = GetCartOfUser -svc $svc;
 			$cart | Should Be $null;
 
-			# Approve approval
+			# Decline approval
 			$approval.Status = 'Declined';
 			$svc.Core.UpdateObject($approval);
 			try
