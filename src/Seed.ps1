@@ -13,18 +13,6 @@ function Aces($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$aces = $svc.Core.Aces | Select;
-	foreach($item in $aces)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
 
 	if(!$Recreate)
 	{
@@ -39,18 +27,7 @@ function Acls($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$acls = $svc.Core.Acls | Select;
-	foreach($item in $acls)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $acls;
 
 	if(!$Recreate)
 	{
@@ -65,18 +42,7 @@ function Approvals($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$approvals = $svc.Core.Approvals | Select;
-	foreach($item in $approvals)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $approvals;
 
 	if(!$Recreate)
 	{
@@ -91,18 +57,7 @@ function AuditTrails($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$auditTrails = $svc.Core.AuditTrails | Select;
-	foreach($item in $auditTrails)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $auditTrails;
 
 	if(!$Recreate)
 	{
@@ -117,18 +72,7 @@ function Carts($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$carts = $svc.Core.Carts | Select;
-	foreach($item in $carts)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $carts;
 
 	if(!$Recreate)
 	{
@@ -143,18 +87,7 @@ function Catalogues($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$catalogues = $svc.Core.Catalogues | Select;
-	foreach($item in $catalogues)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $catalogues;
 
 	if(!$Recreate)
 	{
@@ -181,7 +114,8 @@ function Catalogues($Recreate)
 	$svc.Core.SaveChanges();
 }
 
-function CatalogueItems($Recreate) {
+function CatalogueItems($Recreate) 
+{
 	$svc = Enter-AppclusiveServer;
 
 	$cat = $svc.Core.Catalogues |? Name -eq $catName;
@@ -256,18 +190,7 @@ function EntityTypes($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 	$entityTypes = $svc.Core.EntityTypes | Select;
-	foreach($item in $entityTypes)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $entityTypes;
 
 	if(!$Recreate)
 	{
@@ -324,18 +247,7 @@ function Gates($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$gates = $svc.Core.Gates | Select;
-	foreach($item in $gates)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $gates;
 
 	if(!$Recreate)
 	{
@@ -349,35 +261,13 @@ function Jobs($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 
-	$jobs = $svc.Core.Jobs |? ParentId -ne $null;
-	foreach($item in $jobs)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	$jobsWithParent = $svc.Core.Jobs |? ParentId -ne $null;
+	DeleteItems -svc $svc -items $jobsWithParent;
 	
 	$svc = Enter-AppclusiveServer;
 	
-	$jobs = $svc.Core.Jobs | Select;
-	foreach($item in $jobs)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	$jobsWithoutParent = $svc.Core.Jobs | Select;
+	DeleteItems -svc $svc -items $jobsWithoutParent;
 
 	if(!$Recreate)
 	{
@@ -392,18 +282,7 @@ function KeyNameValues($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$knvs = $svc.Core.KeyNameValues | Select;
-	foreach($item in $knvs)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $knvs;
 
 	if(!$Recreate)
 	{
@@ -425,18 +304,7 @@ function Links($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$links = $svc.Core.Links | Select;
-	foreach($item in $links)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $links;
 
 	if(!$Recreate)
 	{
@@ -451,32 +319,10 @@ function ManagementCredentials($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$mgmtUris = $svc.Core.ManagementUris | Select;
-	foreach($item in $mgmtUris)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $mgmtUris;
 	
 	$mgmtCreds = $svc.Core.ManagementCredentials | Select;
-	foreach($item in $mgmtCreds)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $mgmtCreds;
 
 	if(!$Recreate)
 	{
@@ -507,18 +353,7 @@ function ManagementUris($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$mgmtUris = $svc.Core.ManagementUris | Select;
-	foreach($item in $mgmtUris)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $mgmtUris;
 
 	if(!$Recreate)
 	{
@@ -550,19 +385,17 @@ function Nodes($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 	
-	$nodes = $svc.Core.Nodes | Select;
-	foreach($item in $nodes)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
+	# Delete children nodes from botton to top
+	$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
+	$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
+	while ($nodes.count > 0) {
+		DeleteItems -svc $svc -items $nodes;
+		$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
 	}
+	
+	# Delete root nodes
+	$nodes = $svc.Core.Nodes |? { ($_.ParentId -eq $null) -And ($_.Children.count -eq 0) }	
+	DeleteItems -svc $svc -items $nodes;
 
 	if(!$Recreate)
 	{
@@ -611,18 +444,7 @@ function Orders($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$orders = $svc.Core.Orders | Select;
-	foreach($item in $orders)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($item);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
-		}
-	}
+	DeleteItems -svc $svc -items $orders;
 
 	if(!$Recreate)
 	{
@@ -632,7 +454,8 @@ function Orders($Recreate)
 	# create new entries as applicable
 }
 
-function SCCMImport($Recreate) {
+function SCCMImport($Recreate) 
+{
 	# SCCM
 	# http://thedesktopteam.com/blog/heinrich/sccm-2012-r2-powershell-basics-part-1/
 	CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
@@ -685,18 +508,7 @@ function SCCMImport($Recreate) {
 	Log-Debug $fn ("Found '{0}' matching packages ...'" -f $al.Count);
 
 	$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Type eq 'SCCM'") | Select;
-	foreach($catItem in $catItems)
-	{
-		try
-		{
-			$svc.Core.DeleteObject($catItem);
-			$svc.Core.SaveChanges();
-		}
-		catch
-		{
-			Write-Host ("removing catItem '{0}' FAILED." -f $catItem.Name);
-		}
-	}
+	DeleteItems -svc $svc -items $catItems;
 
 	if($null -eq $catItem)
 	{
@@ -729,7 +541,23 @@ function SCCMImport($Recreate) {
 		$svc.Core.UpdateObject($catItem);
 		$svc.Core.SaveChanges();
 	}
-} 
+}
+
+function DeleteItems($svc, $items) 
+{
+	foreach($item in $items)
+	{
+		try
+		{
+			$svc.Core.DeleteObject($item);
+			$svc.Core.SaveChanges();
+		}
+		catch
+		{
+			Write-Host ("Removing item '{0}' [{1}] FAILED.{2}{3}" -f $item.Name, $item.Id, [Environment]::NewLine, ($item | Out-String));
+		}
+	}
+}
 
 Aces($Recreate);
 Acls($Recreate);
