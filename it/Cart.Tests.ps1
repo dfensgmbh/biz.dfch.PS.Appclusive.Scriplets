@@ -79,7 +79,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc.Core.AddToCartItems($cartItem);
 			$result = $svc.Core.SaveChanges();
 
-			# check result
+			# Check result
 			$result.StatusCode | Should Be 201;
 			$cartItem.Id | Should Not Be 0;
 			
@@ -133,7 +133,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc.Core.AddToCartItems($cartItem2);
 			$result = $svc.Core.SaveChanges();
 			
-			# check result
+			# Check result
 			$result.StatusCode | Should Be 201;
 			$cartItem.Id | Should Not Be 0;
 
@@ -167,7 +167,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc.Core.AddToCartItems($cartItem);
 			$result = $svc.Core.SaveChanges();
 
-			# check result
+			# Check result
 			$result.StatusCode | Should Be 201;
 			$cartItem.Id | Should Not Be 0;
 			

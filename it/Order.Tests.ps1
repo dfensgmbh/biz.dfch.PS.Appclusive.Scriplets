@@ -14,6 +14,8 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 	Mock Export-ModuleMember { return $null; }
 
 	. "$here\$sut"
+	. "$here\Catalogue.ps1"
+	. "$here\Cart.ps1"
 	
 	Context "Order.Tests" {
 		
@@ -39,34 +41,79 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			}
 		}
 		
-		It "CheckoutCart-CreatesOrder" -Test {
-			# Arrange
-			
-			# Act
+		It "CheckoutCart-CreatesOrderAndDeletesCart" -Test {
 			# Get catItem
-			# $catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			# $catItem | Should Not Be $null;
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
 			
-			# # Create new cartItem
-			# $cartItem = CreateCartItem -catItem $catItem;
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
 
-			# # Add cartItem
-			# $svc.Core.AddToCartItems($cartItem);
-			# $result = $svc.Core.SaveChanges();
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
 
-			# # check result
-			# $result.StatusCode | Should Be 201;
-			# $cartItem.Id | Should Not Be 0;
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
 			
-			# $cart = GetCartOfUser -svc $svc;
-			# $cart | Should Not Be $null;
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
 			
-			# $order = createOrder
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+
+			# Create order
+			$order = CreateOrder;
+			$svc.Core.AddToOrders($order);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
 			
-			# Assert
+			Start-Sleep -s 5;
 			
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Status | Should Be 'Approval';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'Approval';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Created';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Created';
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+
 			# Cleanup
-			# DFTODO delete Order, Jobs and Approvals
+			$svc.Core.DeleteObject($approvalJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($approval);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$orderJob = $svc.Core.Jobs |? Id -eq $orderJob.Id;
+			$svc.Core.DeleteObject($orderJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($createdOrder);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
 		}
 	}
 }
