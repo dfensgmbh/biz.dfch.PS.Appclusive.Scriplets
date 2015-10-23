@@ -118,6 +118,7 @@ function CatalogueItems($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 
+	$catName = 'Default DaaS'
 	$cat = $svc.Core.Catalogues |? Name -eq $catName;
 
 	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
