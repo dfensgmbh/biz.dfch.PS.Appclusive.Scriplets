@@ -391,10 +391,14 @@ function Nodes($Recreate)
 	$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
 	while ($nodes.count > 0) {
 		DeleteItems -svc $svc -items $nodes;
+		$svc = Enter-AppclusiveServer;
+		$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
 		$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
 	}
 	
 	# Delete root nodes
+	$svc = Enter-AppclusiveServer;
+	$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
 	$nodes = $svc.Core.Nodes |? { ($_.ParentId -eq $null) -And ($_.Children.count -eq 0) }	
 	DeleteItems -svc $svc -items $nodes;
 
