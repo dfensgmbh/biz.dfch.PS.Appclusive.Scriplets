@@ -13,6 +13,7 @@ function Aces($Recreate)
 	$svc = Enter-AppclusiveServer;
 	
 	$aces = $svc.Core.Aces | Select;
+	DeleteItems -svc $svc -items $aces;
 
 	if(!$Recreate)
 	{
