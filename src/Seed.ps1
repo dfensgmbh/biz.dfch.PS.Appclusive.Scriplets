@@ -117,6 +117,11 @@ function Catalogues($Recreate)
 
 function CatalogueItems($Recreate) 
 {
+	if(!$Recreate)
+	{
+		return;
+	}
+
 	$svc = Enter-AppclusiveServer;
 
 	$catName = 'Default DaaS'
