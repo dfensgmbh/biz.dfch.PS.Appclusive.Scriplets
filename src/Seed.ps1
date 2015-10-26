@@ -126,14 +126,16 @@ function CatalogueItems($Recreate)
 
 	$catName = 'Default DaaS'
 	$cat = $svc.Core.Catalogues |? Name -eq $catName;
+	
+	$productName = 'VDI Personal';
+	$product = $svc.Core.Products |? Name -eq $productName;
 
 	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 	$svc.Core.AddToCatalogueItems($catItem);
 	$svc.Core.SetLink($catItem, "Catalogue", $cat);
 	$catItem.CatalogueId = $cat.Id;
-	$catItem.Type = 'VDI';
-	$catItem.Version = 1;
-	$catItem.Name = 'VDI Personal';
+	$catItem.ProductId = $product.Id;
+	$catItem.Name = $productName;
 	$catItem.Description = 'VDI (Virtual Desktop Infrastructure) for personal use';
 	$catItem.Created = [System.DateTimeOffset]::Now;
 	$catItem.Modified = $catItem.Created;
@@ -148,14 +150,16 @@ function CatalogueItems($Recreate)
 	$svc.Core.UpdateObject($catItem);
 	$svc.Core.SaveChanges();
 
+	$productName = 'VDI Technical';
+	$product = $svc.Core.Products |? Name -eq $productName;
+	
 	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 	$catItem;
 	$svc.Core.AddToCatalogueItems($catItem);
 	$svc.Core.SetLink($catItem, "Catalogue", $cat);
 	$catItem.CatalogueId = $cat.Id;
-	$catItem.Type = 'VDI';
-	$catItem.Version = 1;
-	$catItem.Name = 'VDI Technical';
+	$catItem.ProductId = $product.Id;
+	$catItem.Name = $productName;
 	$catItem.Description = 'VDI (Virtual Desktop Infrastructure) for someone else';
 	$catItem.Created = [System.DateTimeOffset]::Now;
 	$catItem.Modified = $catItem.Created;
@@ -170,14 +174,16 @@ function CatalogueItems($Recreate)
 	$svc.Core.UpdateObject($catItem);
 	$svc.Core.SaveChanges();
 	
+	$productName = 'DSWR Autocad 12 Production';
+	$product = $svc.Core.Products |? Name -eq $productName;
+	
 	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 	$catItem;
 	$svc.Core.AddToCatalogueItems($catItem);
 	$svc.Core.SetLink($catItem, "Catalogue", $cat);
 	$catItem.CatalogueId = $cat.Id;
-	$catItem.Type = 'SW Package';
-	$catItem.Version = 1;
-	$catItem.Name = 'DSWR Autocad 12 Production';
+	$catItem.ProductId = $product.Id;
+	$catItem.Name = $productName;
 	$catItem.Description = 'DSWR Autocad 12 Production';
 	$catItem.Created = [System.DateTimeOffset]::Now;
 	$catItem.Modified = $catItem.Created;
@@ -468,6 +474,76 @@ function Orders($Recreate)
 	# create new entries as applicable
 }
 
+function Products($Recreate) 
+{
+	$svc = Enter-AppclusiveServer;
+
+	$products = $svc.Core.Products | Select;
+	DeleteItems -svc $svc -items $products;
+	
+	if(!$Recreate)
+	{
+		return;
+	}
+
+	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+	$svc.Core.AddToProducts($product);
+	$product.Type = 'VDI';
+	$product.Version = 1;
+	$product.Name = 'VDI Personal';
+	$product.Description = 'VDI (Virtual Desktop Infrastructure) for personal use';
+	$product.Created = [System.DateTimeOffset]::Now;
+	$product.Modified = $product.Created;
+	$product.ValidFrom = [System.DateTimeOffset]::MinValue;
+	$product.ValidUntil = [System.DateTimeOffset]::MaxValue;
+	$product.EndOfSale = [System.DateTimeOffset]::MaxValue;
+	$product.EndOfLife = [System.DateTimeOffset]::MaxValue;
+	$product.CreatedBy = "SYSTEM";
+	$product.ModifiedBy = $product.CreatedBy;
+	$product.Tid = "1";
+	$product.Id = 0;
+	$svc.Core.UpdateObject($product);
+	$svc.Core.SaveChanges();
+
+	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+	$svc.Core.AddToProducts($product);
+	$product.Type = 'VDI';
+	$product.Version = 1;
+	$product.Name = 'VDI Technical';
+	$product.Description = 'VDI (Virtual Desktop Infrastructure) for someone else';
+	$product.Created = [System.DateTimeOffset]::Now;
+	$product.Modified = $product.Created;
+	$product.ValidFrom = [System.DateTimeOffset]::MinValue;
+	$product.ValidUntil = [System.DateTimeOffset]::MaxValue;
+	$product.EndOfSale = [System.DateTimeOffset]::MaxValue;
+	$product.EndOfLife = [System.DateTimeOffset]::MaxValue;
+	$product.CreatedBy = "SYSTEM";
+	$product.ModifiedBy = $product.CreatedBy;
+	$product.Tid = "1";
+	$product.Id = 0;
+	$svc.Core.UpdateObject($product);
+	$svc.Core.SaveChanges();
+	
+	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+	$svc.Core.AddToProducts($product);
+	$product.Type = 'SW Package';
+	$product.Version = 1;
+	$product.Name = 'DSWR Autocad 12 Production';
+	$product.Description = 'DSWR Autocad 12 Production';
+	$product.Created = [System.DateTimeOffset]::Now;
+	$product.Modified = $product.Created;
+	$product.ValidFrom = [System.DateTimeOffset]::MinValue;
+	$product.ValidUntil = [System.DateTimeOffset]::MaxValue;
+	$product.EndOfSale = [System.DateTimeOffset]::MaxValue;
+	$product.EndOfLife = [System.DateTimeOffset]::MaxValue;
+	$product.CreatedBy = "SYSTEM";
+	$product.ModifiedBy = $product.CreatedBy;
+	$product.Tid = "1";
+	$product.Id = 0;
+	$svc.Core.UpdateObject($product);
+	$svc.Core.SaveChanges();
+}
+
 function SCCMImport($Recreate) 
 {
 	# SCCM
@@ -579,6 +655,7 @@ Approvals($Recreate);
 AuditTrails($Recreate);
 Carts($Recreate);
 Catalogues($Recreate);
+Products($Recreate);
 CatalogueItems($Recreate);
 EntityTypes($Recreate);
 Gates($Recreate);
