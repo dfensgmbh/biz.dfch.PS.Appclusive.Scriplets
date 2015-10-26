@@ -14,6 +14,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 	Mock Export-ModuleMember { return $null; }
 
 	. "$here\$sut"
+	. "$here\Product.ps1"
 	
 	Context "Catalogue.Tests" {
 	
@@ -51,8 +52,17 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$cat = GetCatalogueByName -svc $svc -catName $catName;
 			$cat | Should Not Be $null;
 			
+			# Add product
+			$product = CreateProduct;
+			$svc.Core.AddToProducts($product);
+			$result = $svc.Core.SaveChanges();
+			
+			# Assert
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
 			# Add catalogueItem
-			$catalogueItem = CreateCatalogueItem -cat $cat;
+			$catalogueItem = CreateCatalogueItem -cat $cat -product $product;
 			$svc.Core.AddToCatalogueItems($catalogueItem);
 			$result = $svc.Core.SaveChanges();
 			
@@ -62,6 +72,10 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			
 			# Cleanup
 			$svc.Core.DeleteObject($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($product);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
 		}		
