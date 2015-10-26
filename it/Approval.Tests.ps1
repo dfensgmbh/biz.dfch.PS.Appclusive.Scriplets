@@ -27,13 +27,14 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "ApproveApproval-ChangesOrderStatusToWaitingToRun" -Test {
+		It "Approval-ApproveChangesOrderStatusToWaitingToRun" -Test {
 			# Get catItem
 			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
 			$catItem | Should Not Be $null;
 			
 			# Create new cartItem
 			$cartItem = CreateCartItem -catItem $catItem;
+			$cartItem | Should Not Be $null;
 
 			# Add cartItem
 			$svc.Core.AddToCartItems($cartItem);
@@ -51,7 +52,9 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$cartItems[0].Id | Should Be $cartItem.Id;
 
 			# Create order
-			$order = CreateOrder;
+			$orderName = 'Arbitrary Name';
+			$order = CreateOrder -OrderName $orderName;
+			$order | Should Not Be $null;
 			$svc.Core.AddToOrders($order);
 			try
 			{
@@ -68,10 +71,13 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			# Check result
 			$svc = Enter-AppclusiveServer;
 			
-			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Requester | Should Be $null;
 			$createdOrder.Status | Should Be 'Approval';
 			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+
 			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'Approval';
@@ -82,9 +88,6 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
 			$approval.Status | Should Be 'Created';
 			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-
 			# Approve approval
 			$approval.Status = 'Approved';
 			$svc.Core.UpdateObject($approval);
@@ -103,7 +106,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			# Check result
 			$svc = Enter-AppclusiveServer;
 			
-			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'WaitingToRun';
 			
 			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
@@ -135,13 +138,14 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$result.StatusCode | Should Be 204;
 		}
 		
-		It "DeclineApproval-ChangesOrderStatusToCancelled" -Test {
+		It "Approval-DeclineChangesOrderStatusToCancelled" -Test {
 			# Get catItem
 			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
 			$catItem | Should Not Be $null;
 			
 			# Create new cartItem
 			$cartItem = CreateCartItem -catItem $catItem;
+			$cartItem | Should Not Be $null;
 
 			# Add cartItem
 			$svc.Core.AddToCartItems($cartItem);
@@ -159,7 +163,9 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$cartItems[0].Id | Should Be $cartItem.Id;
 
 			# Create order
-			$order = CreateOrder;
+			$orderName = 'Arbitrary Name';
+			$order = CreateOrder -OrderName $orderName;
+			$order | Should Not Be $null;
 			$svc.Core.AddToOrders($order);
 			try
 			{
@@ -176,7 +182,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			# Check result
 			$svc = Enter-AppclusiveServer;
 			
-			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Requester | Should Be $null;
 			$createdOrder.Status | Should Be 'Approval';
 			
@@ -211,7 +217,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			# Check result
 			$svc = Enter-AppclusiveServer;
 			
-			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'Cancelled';
 			
 			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
