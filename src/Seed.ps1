@@ -206,6 +206,7 @@ function EntityTypes($Recreate)
 	$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order';
 	$et.Description = 'Order entity definition';
 	$et.Parameters = '{"Created-Continue":"Approval","Created-Cancel":"Cancelled","Approval-Continue":"WaitingToRun","Approval-Cancel":"Cancelled","WaitingToRun-Continue":"Completed","WaitingToRun-Cancel":"Cancelled"}';
+	$et.Version = '1';
 	$et.Created = [System.DateTimeOffset]::Now;
 	$et.Modified = $et.Created;
 	$et.CreatedBy = "SYSTEM";
@@ -220,6 +221,7 @@ function EntityTypes($Recreate)
 	$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval';
 	$et.Description = 'Approval entity definition';
 	$et.Parameters = '{"Created-Continue":"Approved","Created-Cancel":"Declined"}';
+	$et.Version = '1';
 	$et.Created = [System.DateTimeOffset]::Now;
 	$et.Modified = $et.Created;
 	$et.CreatedBy = "SYSTEM";
@@ -234,6 +236,7 @@ function EntityTypes($Recreate)
 	$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default';
 	$et.Description = 'This is the definition for the default entity type';
 	$et.Parameters = '{"Created-Continue":"Running","Created-Cancel":"InternalErrorState","Running-Continue":"Completed"}';
+	$et.Version = '1';
 	$et.Created = [System.DateTimeOffset]::Now;
 	$et.Modified = $et.Created;
 	$et.CreatedBy = "SYSTEM";
