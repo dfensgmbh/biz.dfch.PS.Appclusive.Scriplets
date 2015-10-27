@@ -89,7 +89,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$approval.Status | Should Be 'Created';
 			
 			# Approve approval
-			$approval.Status = 'Approved';
+			$approval.Status = 'Continue';
 			$svc.Core.UpdateObject($approval);
 			try
 			{
@@ -200,7 +200,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$cart | Should Be $null;
 
 			# Decline approval
-			$approval.Status = 'Declined';
+			$approval.Status = 'Cancel';
 			$svc.Core.UpdateObject($approval);
 			try
 			{
