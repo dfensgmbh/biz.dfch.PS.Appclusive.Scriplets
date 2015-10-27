@@ -7,7 +7,7 @@ function CreateProduct() {
 	$product.Modified = $product.Created;
 	$product.Name = 'Arbitrary Item';
 	$product.Type = 'Arbitrary Type';
-	$product.Version = '1.0';
+	$product.Version = '1';
 	$product.ValidFrom = [DateTimeOffset]::Now;
 	$product.ValidUntil = [DateTimeOffset]::Now;
 	$product.EndOfSale = [DateTimeOffset]::Now;
