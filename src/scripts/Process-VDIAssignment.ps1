@@ -1,4 +1,4 @@
-function ProcessVDIAssignment($username) 
+function ProcessVDIEntitlement($username) 
 {
 	$result = $true;
 		
@@ -20,7 +20,7 @@ function ProcessVDIAssignment($username)
 	# DFTODO - Implement fallback to other connection server
 	
 	Add-PSSnapin VMware.View.Broker
-	# DFTODO - Assign VDI
+	# DFTODO - Entitle VDI
 	
 	return $result;
 }

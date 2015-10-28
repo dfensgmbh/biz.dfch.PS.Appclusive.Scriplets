@@ -36,7 +36,7 @@ function ProcessOrder($svc, $orderJob) {
 		# Load product of orderItem
 		$product = $svc.Core.LoadProperty($vdiOrderItem, 'Product') | Select;
 		
-		$result = ProcessVDIAssignment -username $order.Requester;
+		$result = ProcessVDIEntitlement -username $order.Requester;
 		
 		# Create inventory entry for VDI
 		if($result -eq $true)
