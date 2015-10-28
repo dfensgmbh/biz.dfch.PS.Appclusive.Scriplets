@@ -51,6 +51,7 @@ function ProcessOrder($svc, $orderJob) {
 	}
 	
 	# DFTODO - Load non VDI orderItems
+	$orderItems = ;
 	foreach($orderItem in $orderItems)
 	{
 		# DFTODO - Implement handling of SW Package OrderItems
@@ -83,7 +84,6 @@ function CreateInventoryEntry($svc, $parentNode, $product)
 
 function UpdateOrder($svc, $order, $status, $errorMsg = '')
 {
-	# Update order
 	try
 	{
 		$order.Status = $status;
