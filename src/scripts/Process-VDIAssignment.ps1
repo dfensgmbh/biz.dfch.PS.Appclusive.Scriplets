@@ -1,6 +1,5 @@
 function ProcessVDIEntitlement($username) 
 {
-	$success = $true;
 	$username = $username.split('\')[1];
 
 	# DFTODO - Decide stubbing based on KNV entry
@@ -33,7 +32,6 @@ function ProcessVDIEntitlement($username)
 		return $errorMsg;
 	}
 	
-	# DFTODO - Implement fallback to other pools
 	try
 	{
 		$pool = Get-Pool -pool_id $poolId -ErrorAction Stop;
@@ -44,11 +42,15 @@ function ProcessVDIEntitlement($username)
 		return $errorMsg;
 	}
 	
-	# DFTODO - Entitle VDI
-	$user | Add-PoolEntitlement -pool_id $poolId;
+	$result = $user | Add-PoolEntitlement -pool_id $poolId;
 	
+	if ($result.EntitlementsAdded -ne 1) 
+	{
+		$errorMsg = "Entitlement FAILED (PoolId: {0}, Username: {1})" -f $poolId, $username;
+		return $errorMsg;
+	}
 	
-	return $success;
+	return $true;
 }
 
 function GetExistingEntitlement($user) 
