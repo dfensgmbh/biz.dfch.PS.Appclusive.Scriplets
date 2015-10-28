@@ -4,18 +4,22 @@ function ProcessVDIEntitlement($username)
 
 	# DFTODO - Decide stubbing based on KNV entry
 	# DFTODO - Get the following properties from KNV? (add to seed.ps1?) + error handling
+	# these entries will be read from a ManagementUri (and associated ManagementCredential if necessary)
+	# pool names may be read from KNV
 	$connectionServerName = '';
 	$psSessionConfig = '';
 	$poolId = '';
 	
-	# DFTODO - Implement fallback to other connection server
+	# DFTODO - Implement fallback to other connection server (also defined in ManagementUri)
 	Enter-PSSession -ComputerName $connectionServerName -ConfigurationName $psSessionConfig
 	
-	Add-PSSnapin VMware.View.Broker;
+	Add-PSSnapin VMware.View.Broker -ErrorAction:Stop;
 	
 	$user = $null;
 	try 
 	{
+		# DFTODO - here I suggest to use ErrorAction:SilentlyContinue and then just check for $null
+		# smae holds true for all other try/catch statements with ErrorAction:Stop
 		$user = Get-User -name $username -ErrorAction Stop;
 	}
 	catch
