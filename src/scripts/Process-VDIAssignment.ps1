@@ -26,10 +26,10 @@ function ProcessVDIEntitlement($username)
 	}
 	
 	# Check if user already has a VDI
-	$vdi = GetExistingVDI -user $user;
-	if($vdi)
+	$entitlement = GetExistingEntitlement -user $user;
+	if($entitlement)
 	{
-		$errorMsg = "User '{0}' has already a VDI assigned to." -f $username;
+		$errorMsg = "User '{0}' is already entitled." -f $username;
 		return $errorMsg;
 	}
 	
@@ -45,13 +45,13 @@ function ProcessVDIEntitlement($username)
 	}
 	
 	# DFTODO - Entitle VDI
-	
+	$user | Add-PoolEntitlement -pool_id $poolId;
 	
 	
 	return $success;
 }
 
-function GetExistingVDI($user) 
+function GetExistingEntitlement($user) 
 {
-	return Get-DesktopVM |? user_sid -eq $user.sid;
+	return Get-PoolEntitlement |? sid -eq $user.sid;
 }
