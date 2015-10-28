@@ -11,7 +11,6 @@ $waitingJobs = $svc.Core.Jobs.AddQueryOption('$filter', "Status eq 'WaitingToRun
 
 foreach($job in $waitingJobs) 
 {
-
 	# Get job type
 	$separatorPos = $job.Name.LastIndexOf(".");
 	$jobType = $job.Name.Substring($separatorPos + 1);
