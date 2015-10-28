@@ -11,7 +11,7 @@ d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
 
 * Get it on [NuGet](https://www.nuget.org/packages/biz.dfch.PS.Appclusive.Client/)
 
-* See [Releases](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/releases) and [Tags](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/releases) on [GitHub](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client)
+* See [Releases](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/releases) and [Tags](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/tags) on [GitHub](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client)
 
 ## Description
 
