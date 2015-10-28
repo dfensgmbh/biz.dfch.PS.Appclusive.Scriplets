@@ -18,8 +18,8 @@ function ProcessOrder($svc, $orderJob) {
 		return;
 	}
 	
-	# DFTODO - update order status (Processing!?) -> Adjust Order EntityType (seed.ps1)
-	# DFTODO - On error return!
+	# Set order status to 'Running'
+	UpdateOrder -svc $svc -order $order -status 'Continue';
 	
 	# Load order based on job
 	$order = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $orderJob.ReferencedItemId) | Select;
@@ -94,6 +94,7 @@ function UpdateOrder($svc, $order, $status, $errorMsg = '')
 	catch
 	{
 		# DFTODO - Handle exception correctly -> an exception is thrown in any case because of PATCH/PUT Order returns Job!
+		# DFTODO - Handle exception, if status change already in progress (i.e. when trying to change to running status)
 		# Write-Host ("Changing status of order '{0}' [{1}] FAILED.{2}{3}" -f $order.Name, $order.Id, [Environment]::NewLine, ($order | Out-String));
 	}
 }
