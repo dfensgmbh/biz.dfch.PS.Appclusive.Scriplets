@@ -9,15 +9,18 @@ function ProcessVDIEntitlement($username)
 		return $errorMsg;
 	}
 	
+	# DFTODO - Decide stubbing based on KNV entry
 	# DFTODO - Get the following properties from KNV? (add to seed.ps1?) + error handling
 	$computerName = '';
-	$account = '';
 	$psSessionConfig = '';
-	
-	Enter-PSSession -ComputerName H1102 -Credential $account -ConfigurationName $psSessionConfig
-	# DFTODO - Enter Password? HOWTO? -> Get from mgmt credentials!
+	$poolId = ''
 	
 	# DFTODO - Implement fallback to other connection server
+	Enter-PSSession -ComputerName $computerName -ConfigurationName $psSessionConfig
+	
+	$pool = Get-Pool -pool_id $poolId;
+	
+	
 	
 	Add-PSSnapin VMware.View.Broker
 	# DFTODO - Entitle VDI
