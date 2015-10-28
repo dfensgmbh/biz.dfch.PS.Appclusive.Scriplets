@@ -18,9 +18,10 @@ function ProcessOrder($svc, $orderJob) {
 		return;
 	}
 	
-	# DFTODO - update order state (Processing!?) -> Adjust Order EntityType (seed.ps1)
+	# DFTODO - update order status (Processing!?) -> Adjust Order EntityType (seed.ps1)
+	# DFTODO - On error return!
 	
-	# Load order from job
+	# Load order based on job
 	$order = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $orderJob.ReferencedItemId) | Select;
 
 	# Load order VDI order items
@@ -28,13 +29,21 @@ function ProcessOrder($svc, $orderJob) {
 	$orderItems = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
 	
 	# DFTODO - First handle VDI item if exists ($product.Type -eq 'VDI')
-	if()
+	$vdiOrderItem = ;
+	
+	if($vdiOrderItem)
 	{
-		# DFTODO - Check for existing VDI item -> error if already existing (handle requester of Order)
-		
+		# DFTODO - Check if passing requester is ok (In this case requester has to be always set!)
+		$result = CheckForExistingVDI -username $order.Requester;
+		if($true -eq $result)
+		{
+			$errorMsg = "User {0} has already a VDI assigned" -f $order.Requester;
+			UpdateOrder -svc $svc -order $order -status 'Cancel' -errorMsg $errorMsg;
+			return;
+		}
 
 		# Load product of orderItem
-		$product = $svc.Core.LoadProperty($orderItem, 'Product') | Select;
+		$product = $svc.Core.LoadProperty($vdiOrderItem, 'Product') | Select;
 		
 		$result = ProcessVDIAssignment;
 		
@@ -58,6 +67,8 @@ function ProcessOrder($svc, $orderJob) {
 		# DFTODO - Set VDI node item as parent
 		# DFTODO - Handle requester of Order
 	}
+	
+	UpdateOrder -svc $svc -order $order -status 'Continue';
 }
 
 function CreateInventoryEntry($svc, $parentNode, $product) 
@@ -79,7 +90,7 @@ function CreateInventoryEntry($svc, $parentNode, $product)
 	$svc.Core.SaveChanges();
 }
 
-function UpdateOrder($svc, $order, $status, $errorMsg)
+function UpdateOrder($svc, $order, $status, $errorMsg = '')
 {
 	# Update order
 	try
