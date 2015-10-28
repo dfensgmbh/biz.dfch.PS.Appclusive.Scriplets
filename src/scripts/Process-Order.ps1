@@ -2,7 +2,6 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 . "$here\Process-VDIAssignment.ps1"
 
-
 function ProcessOrder($svc, $orderJob) {
 	
 	$tenantNodeName = 'TenantNode';

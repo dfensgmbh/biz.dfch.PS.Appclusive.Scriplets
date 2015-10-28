@@ -1,4 +1,5 @@
-function GetCatalogueByName($svc, $catName) {
+function GetCatalogueByName($svc, $catName) 
+{
 	return $svc.Core.Catalogues |? Name -eq $catName;
 }
 
@@ -6,11 +7,13 @@ function GetCatalogueItemsOfCatalog($svc, $cat) {
 	return $svc.Core.LoadProperty($cat, 'CatalogueItems') | Select;
 }
 
-function GetCatalogueItemByName($svc, $name) {
+function GetCatalogueItemByName($svc, $name) 
+{
 	return $svc.Core.CatalogueItems |? Name -eq $name;
 }
 
-function CreateCatalogueItem($catalogue, $product) {
+function CreateCatalogueItem($catalogue, $product) 
+{
 	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 	$catItem.Tid = "1";
 	$catItem.CreatedBy = $ENV:USERNAME;
