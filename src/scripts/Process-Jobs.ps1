@@ -9,7 +9,8 @@ $svc = Enter-AppclusiveServer;
 # Get jobs with status 'WaitingToRun'
 $waitingJobs = $svc.Core.Jobs.AddQueryOption('$filter', "Status eq 'WaitingToRun'") | Select;
 
-foreach($job in $waitingJobs) {
+foreach($job in $waitingJobs) 
+{
 
 	# Get job type
 	$separatorPos = $job.Name.LastIndexOf(".");
