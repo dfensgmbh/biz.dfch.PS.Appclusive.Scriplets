@@ -33,19 +33,10 @@ function ProcessOrder($svc, $orderJob) {
 	
 	if($vdiOrderItem)
 	{
-		# DFTODO - Check if passing requester is ok (In this case requester has to be always set!)
-		$result = CheckForExistingVDI -username $order.Requester;
-		if($true -eq $result)
-		{
-			$errorMsg = "User {0} has already a VDI assigned" -f $order.Requester;
-			UpdateOrder -svc $svc -order $order -status 'Cancel' -errorMsg $errorMsg;
-			return;
-		}
-
 		# Load product of orderItem
 		$product = $svc.Core.LoadProperty($vdiOrderItem, 'Product') | Select;
 		
-		$result = ProcessVDIAssignment;
+		$result = ProcessVDIAssignment -username $order.Requester;
 		
 		# Create inventory entry for VDI
 		if($result -eq $true)
@@ -65,7 +56,7 @@ function ProcessOrder($svc, $orderJob) {
 		# DFTODO - Implement handling of SW Package OrderItems
 		# DFTODO - Be aware of time offset between deployment of VDI and SW package assignment
 		# DFTODO - Set VDI node item as parent
-		# DFTODO - Handle requester of Order
+		# DFTODO - Handle requester of Order (Impersonate creation?)
 	}
 	
 	UpdateOrder -svc $svc -order $order -status 'Continue';
