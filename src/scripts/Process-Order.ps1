@@ -18,6 +18,8 @@ function ProcessOrder($svc, $orderJob) {
 		return;
 	}
 	
+	# DFTODO - update order state (Processing!?) -> Adjust Order EntityType (seed.ps1)
+	
 	# Load order from job
 	$order = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $orderJob.ReferencedItemId) | Select;
 
@@ -36,7 +38,7 @@ function ProcessOrder($svc, $orderJob) {
 		
 		$result = ProcessVDIAssignment;
 		
-		# Create VDI inventory entry
+		# Create inventory entry for VDI
 		if($result -eq $true)
 		{			
 			CreateInventoryEntry -svc $svc -parentNode $tenantNode -product $product;
@@ -52,6 +54,7 @@ function ProcessOrder($svc, $orderJob) {
 	foreach($orderItem in $orderItems)
 	{
 		# DFTODO - Implement handling of SW Package OrderItems
+		# DFTODO - Be aware of time offset between deployment of VDI and SW package assignment
 		# DFTODO - Set VDI node item as parent
 		# DFTODO - Handle requester of Order
 	}
