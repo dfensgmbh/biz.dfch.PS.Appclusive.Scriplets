@@ -217,7 +217,7 @@ function EntityTypes($Recreate)
 	$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order';
 	$et.Description = 'Order entity definition';
 	$et.Parameters = '{"Created-Continue":"Approval","Created-Cancel":"Cancelled","Approval-Continue":"WaitingToRun","Approval-Cancel":"Cancelled","WaitingToRun-Continue":"Completed","WaitingToRun-Cancel":"Cancelled"}';
-	$et.Version = '1.0';
+	$et.Version = '1';
 	$et.Created = [System.DateTimeOffset]::Now;
 	$et.Modified = $et.Created;
 	$et.CreatedBy = "SYSTEM";
@@ -232,7 +232,7 @@ function EntityTypes($Recreate)
 	$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval';
 	$et.Description = 'Approval entity definition';
 	$et.Parameters = '{"Created-Continue":"Approved","Created-Cancel":"Declined"}';
-	$et.Version = '1.0';
+	$et.Version = '1';
 	$et.Created = [System.DateTimeOffset]::Now;
 	$et.Modified = $et.Created;
 	$et.CreatedBy = "SYSTEM";
@@ -247,7 +247,7 @@ function EntityTypes($Recreate)
 	$et.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default';
 	$et.Description = 'This is the definition for the default entity type';
 	$et.Parameters = '{"Created-Continue":"Running","Created-Cancel":"InternalErrorState","Running-Continue":"Completed"}';
-	$et.Version = '1.0';
+	$et.Version = '1';
 	$et.Created = [System.DateTimeOffset]::Now;
 	$et.Modified = $et.Created;
 	$et.CreatedBy = "SYSTEM";
@@ -489,7 +489,7 @@ function Products($Recreate)
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$svc.Core.AddToProducts($product);
 	$product.Type = 'VDI';
-	$product.Version = '1.0';
+	$product.Version = '1';
 	$product.Name = 'VDI Personal';
 	$product.Description = 'VDI (Virtual Desktop Infrastructure) for personal use';
 	$product.Created = [System.DateTimeOffset]::Now;
@@ -508,7 +508,7 @@ function Products($Recreate)
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$svc.Core.AddToProducts($product);
 	$product.Type = 'VDI';
-	$product.Version = '1.0';
+	$product.Version = '1';
 	$product.Name = 'VDI Technical';
 	$product.Description = 'VDI (Virtual Desktop Infrastructure) for someone else';
 	$product.Created = [System.DateTimeOffset]::Now;
@@ -527,7 +527,7 @@ function Products($Recreate)
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$svc.Core.AddToProducts($product);
 	$product.Type = 'SW Package';
-	$product.Version = '1.0';
+	$product.Version = '1';
 	$product.Name = 'DSWR Autocad 12 Production';
 	$product.Description = 'DSWR Autocad 12 Production';
 	$product.Created = [System.DateTimeOffset]::Now;
@@ -597,25 +597,44 @@ function SCCMImport($Recreate)
 	}
 	Log-Debug $fn ("Found '{0}' matching packages ...'" -f $al.Count);
 
-	$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Type eq 'SCCM'") | Select;
+	$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Product/Type eq 'SCCM'") | Select;
 	DeleteItems -svc $svc -items $catItems;
-
-	if($null -eq $catItem)
-	{
-		$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
-		$svc.Core.AddToCatalogueItems($catItem);
-		$svc.Core.SetLink($catItem, "Catalogue", $cat);
-	}
+	
+	# Delete non referenced products
+	$products = $svc.Core.Products.AddQueryOption('$expand', 'CatalogueItems') | Select;
+	$nonReferencedProducts = $products | where {$_.CatalogueItems.Count -eq 0}
+	DeleteItems -svc $svc -items $nonReferencedProducts;
+	
+	$catName = 'Default DaaS';
+	$cat = $svc.Core.Catalogues |? Name -eq $catName;
 
 	Log-Debug $fn ("Processing '{0}' matching packages ...'" -f $al.Count);
 	foreach($catItemName in $al)
 	{
+		$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+		$svc.Core.AddToProducts($product);
+		$product.Type = 'SCCM';
+		$product.Version = '1';
+		$product.Name = $catItemName;
+		$product.Description = $catItemName;
+		$product.Created = [System.DateTimeOffset]::Now;
+		$product.Modified = $product.Created;
+		$product.ValidFrom = [System.DateTimeOffset]::MinValue;
+		$product.ValidUntil = [System.DateTimeOffset]::MaxValue;
+		$product.EndOfSale = [System.DateTimeOffset]::MaxValue;
+		$product.EndOfLife = [System.DateTimeOffset]::MaxValue;
+		$product.CreatedBy = "SYSTEM";
+		$product.ModifiedBy = $product.CreatedBy;
+		$product.Tid = "1";
+		$product.Id = 0;
+		$svc.Core.UpdateObject($product);
+		$svc.Core.SaveChanges();
+	
 		$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 		$svc.Core.AddToCatalogueItems($catItem);
 		$svc.Core.SetLink($catItem, "Catalogue", $cat);
 		$catItem.CatalogueId = $cat.Id;
-		$catItem.Type = 'SCCM';
-		$catItem.Version = 1;
+		$catItem.ProductId = $product.Id;
 		$catItem.Name = $catItemName;
 		$catItem.Description = $catItemName;
 		$catItem.Created = [System.DateTimeOffset]::Now;
