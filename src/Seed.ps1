@@ -423,6 +423,21 @@ function Nodes($Recreate)
 	}
 	
 	$svc = Enter-AppclusiveServer;
+	
+	$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+	$svc.Core.AddToNodes($node);
+	$node.Name = 'TenantNode 11111111-1111-1111-1111-111111111111';
+	$node.Description = 'This is the root node of tenant 11111111-1111-1111-1111-111111111111';
+	$node.Parameters = '{}';
+	$node.Type = $node.GetType().FullName;
+	$node.Created = [System.DateTimeOffset]::Now;
+	$node.Modified = $node.Created;
+	$node.CreatedBy = "SYSTEM";
+	$node.ModifiedBy = $node.CreatedBy;
+	$node.Tid = "11111111-1111-1111-1111-111111111111";
+	$node.Id = 0;
+	$svc.Core.UpdateObject($node);
+	$svc.Core.SaveChanges();
 
 	$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 	$svc.Core.AddToNodes($node);
