@@ -1,173 +1,108 @@
-function Remove-ManagementCredential {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
-)]
-Param 
-(
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
-)
 
-BEGIN 
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
-# BEGIN
 
-PROCESS 
-{
+Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	Mock Export-ModuleMember { return $null; }
 
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
+	. "$here\$sut"
+	. "$here\Product.ps1"
 	
-	$objectFound = $false;
-	foreach($item in $entity) 
-	{
-		$objectFound = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
-	}
-	if(!$objectFound)
-	{
-		$msg = "Name: No object found that matches your criteria: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
+	Context "Catalogue.Tests" {
+	
+		# Context wide constants
+		$catName = 'Default DaaS';
+		New-Variable -Name cat -Value 'will-be-used-later';
+		New-Variable -Name catItems -Value 'will-be-used-later';
 		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
 		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
+
+		It "GettingCatalogue-Succeeds" -Test {
+			# Arrange
+			
+			# Get catalogue
+			$cat = GetCatalogueByName -svc $svc -catName $catName;
+			$cat | Should Not Be $null;
+			
+			# Get catalogue items
+			$catItems = GetCatalogueItemsOfCatalog -svc $svc -cat $cat;
+			$catItems | Should Not Be $null;
+			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
+			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
+			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
+		
+		It "CreatingCatalogueItem-Succeeds" -Test {
+			# Arrange
+			
+			# Act
+			$cat = GetCatalogueByName -svc $svc -catName $catName;
+			$cat | Should Not Be $null;
+			
+			# Add product
+			$product = CreateProduct;
+			$svc.Core.AddToProducts($product);
+			$result = $svc.Core.SaveChanges();
+			
+			# Assert
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			# Add catalogueItem
+			$catalogueItem = CreateCatalogueItem -cat $cat -product $product;
+			$svc.Core.AddToCatalogueItems($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			
+			# Assert
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($product);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}		
 	}
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
 
-}
-# PROCESS
-
-END 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-}
-# END
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEqUREr76PVZPzItTHpJq00s/
-# izqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVpxhTJAFo8voM+raleIevvxr
+# R8SgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -266,26 +201,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRf+aV/cnBbdNVa
-# LNOTxtkPrdr/YzANBgkqhkiG9w0BAQEFAASCAQCwxnbU8UQytlfeOWMraX81V/rO
-# rUIFohCIB7O5qJp3uPH0vEnXuGRRSXfShNEp+PWDXISu8O6sGMQKGnUgI6M20jZj
-# Y0j7X8qfGnC+47QhVB3gqODPhh+2ZL1YYO0YY92j9H/Z9DvIBZ3CrvqU8uX9H6Pu
-# oWmn6MixDY6SEAmshfVVlB8JCJktjMWIGTJuqbdxjS8cev8gdIEPZQexPTZxnXuK
-# QdyiKxGXsRULYaKQ9kXviLRIuQIOiqqgcbqajS+QQJrNBGiOQ/xA6ZWNhMi5sMyX
-# jWAoKcQ9ebfCK9GLZj+in/HLtzQK++MN9+PqqCDAlPDpoeW/LPp6SRnZ+GXboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSvyZrleE10HLxF
+# j4W0/zK/S706rjANBgkqhkiG9w0BAQEFAASCAQBFkcrldOHC5N1JZurJ7hxxWh/L
+# CjDXOo6osI7gop8FxMzIYyC927oZtZBeuepr7iKWDAss7y8/OykaKv/iYHC8+tL8
+# KofXvUpPS599ZZKKtmh9RTGhWgszyjvAi6RSu0Ig6+EK0vJp9UuCPgsRbY0e2exg
+# rWUPwJ+A4ZwL5ld5OFW4FyNMClOvbXoPyL0bqVHwk28QocbVVOS0/o3YkWPOWi9F
+# 730ht4eqlGtDbBymlv0BVl603p3tZAAHcvLgJfw2/hx+4B0AVqcY4zDxATHSkSCA
+# Y7RB0HrKS7SerPj4eOh3pCJnHMuFPwECMEH2ltCOXBDxhIiH2dRhYOl56TMQoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOVowIwYJKoZIhvcNAQkEMRYEFIdux1Zdcf3psSxrLFHOspNW4e6T
+# MTAyODE0MjA1MFowIwYJKoZIhvcNAQkEMRYEFJxdxNQQluk+LsED1VZUWMHxc2F3
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEbyaR7BpcP44gx/Pl
-# mEEwQ7cKPvoxoeb3HJ68jfyhrMAlLwu4HoGyVEIUiygxWJCIc5O0bdJB6pPDKnJW
-# abtaoX9rts5SXcpcWNTm2dScXi71vJCj6o7QIH0if5AaL1Fkn3zC/Q/QBHCG9b6N
-# k0dEBKlRnRcjx2pt9dChUfGIzeY6WeKTMkmSsHoBTlxO6hX7Nmv90n7+8v1x6jzI
-# htGeLSPZtVu/IW9KS79tLB25fyk2rWIg4d/DNbnLyGsn0yRAMSdKssEBmtInntY8
-# Ih+ShEt4qQs7iFEDjC49pcyKV4lFGUyOIjgFPIBFSQdadBy3bkx/eOYBC+Qo88RY
-# Hf7G
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBkQ5qXXgQE+wPQyuQK
+# niM9E9hZT7apqeCuuUXUHQ5xvzp44lDwrrtWlF/oE79xsQB1m2iF+JAatYP3lKOV
+# RiVRwpFEtKiCiTFRTNUel6s4Y1oI2dxuYzF1bJxmSOykvK7JGK7WFjZ1JG5bU6U9
+# EtuprYB8mkuYZMpWbnXd0vK7z90M5uFc6J7gsAI8ijb7v3HmOsguVviFdLPFx6Pn
+# vS/aS8dWh8cRibHEta5bve2KnebWTRdgXjwzMXAFOAC4GC0k4JYMYjNsO70djBgn
+# flbIz+5G9gLwwNC1FAC7I6ulWCll3mIWSuWWonY7zEW+JNuyQcEPuIGHErPyrb8Y
+# LS5K
 # SIG # End signature block

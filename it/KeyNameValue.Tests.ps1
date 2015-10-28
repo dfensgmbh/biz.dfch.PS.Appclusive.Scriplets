@@ -1,173 +1,184 @@
-function Remove-ManagementCredential {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
-)]
-Param 
-(
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
-)
 
-BEGIN 
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
-# BEGIN
 
-PROCESS 
-{
+Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	Mock Export-ModuleMember { return $null; }
 
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
+	. "$here\$sut"
 	
-	$objectFound = $false;
-	foreach($item in $entity) 
-	{
-		$objectFound = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
-	}
-	if(!$objectFound)
-	{
-		$msg = "Name: No object found that matches your criteria: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
+	Context "KeyNameValue.Tests" {
 		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
 		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
+		
+		It "KeyNameValue-AddingAndRemovingItemSucceeds" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
+			$Value = "Value-{0}" -f [guid]::NewGuid().Guid;
+			
+			# Act
+			$resultNew = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+			$resultGet = Get-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+			$resultRemove = Remove-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value -Confirm:$false;
+			$resultReGet = Get-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+
+			# Assert
+			$resultNew | Should Not Be $null;
+			$resultNew.Key | Should Be $Key;
+			$resultNew.Name | Should Be $Name;
+			$resultNew.Value | Should Be $Value;
+			
+			$resultGet | Should Not Be $null;
+			$resultGet.Key | Should Be $Key;
+			$resultGet.Name | Should Be $Name;
+			$resultGet.Value | Should Be $Value;
+			
+			$resultRemove | Should Not Be $null;
+			$resultRemove.Key | Should Be $Key;
+			$resultRemove.Name | Should Be $Name;
+			$resultRemove.Value | Should Be $Value;
+
+			$resultReGet | Should Be $null;
+		}
+
+		It "KeyNameValue-AddingDuplicateItemThrowsException" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
+			$Value = "Value-{0}" -f [guid]::NewGuid().Guid;
+			
+			# Act
+			$resultNew1 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+			try
 			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
+				$resultNew2 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+				$ExceptionThrown = $false;
 			}
+			catch
+			{
+				$ExceptionThrown = $true;
+			}
+
+			# Assert
+			$resultNew2 | Should Be $null;
+			$ExceptionThrown | Should Be $true;
+
+			$null = Remove-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
+		
+		It "KeyNameValue-RemovingMultipleItemsSucceeds" -Test {
+			# Arrange
+			$Key = "Key-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
+			$Value1 = "Value-{0}" -f [guid]::NewGuid().Guid;
+			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;
+							
+			# Act
+			$resultNew1 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value1;
+			$resultNew2 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value2;
+			$resultGetNew = Get-AppclusiveKeyNameValue -Key $Key;
+
+			$null = Remove-AppclusiveKeyNameValue -Key $Key -Confirm:$false;
+			$resultGetRemove = Get-AppclusiveKeyNameValue -Key $Key;
+			
+			# Assert
+			$resultGetNew.Count | Should Be 2;
+			$resultGetRemove | Should Be $null;
+		}
+		
+		It "KeyNameValue-CreateItemWithSetAndUpdateItemSucceeds" -Test {
+			# Arrange
+			$Key1 = "Key-{0}" -f [guid]::NewGuid().Guid;
+			$Key2 = "Key-{0}" -f [guid]::NewGuid().Guid;
+			$Name1 = "Name-{0}" -f [guid]::NewGuid().Guid;
+			$Name2 = "Name-{0}" -f [guid]::NewGuid().Guid;
+			$Value1 = "Value-{0}" -f [guid]::NewGuid().Guid;		
+			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;
+			
+			# Act
+			$resultNewSet = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 -Value $Value1 -CreateIfNotExist;
+			$resultGetNewSet = Get-AppclusiveKeyNameValue -Key $Key1;
+			
+			$resultSetValue = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 $Value1 -NewValue $Value2;
+			$resultSetName = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 -NewName $Name2 -Value $Value2;
+			$resultSetKey = Set-AppclusiveKeyNameValue $Key1 -NewKey $Key2 -Name $Name2 -Value $Value2;
+			
+			$resultGetSetAll = Get-AppclusiveKeyNameValue -Key $Key2;
+
+			$null = Remove-AppclusiveKeyNameValue -Key $Key2 -Confirm:$false;
+						
+			# Assert
+			$resultGetNewSet | Should Not Be $null;
+			$resultGetSetAll | Should Not Be $null;
+			
+			$resultGetNewSet.Value | Should Not Be $resultGetSetAll.Value;
+			$resultGetNewSet.Name | Should Not Be $resultGetSetAll.Name;
+			$resultGetNewSet.Key | Should Not Be $resultGetSetAll.Key;
+		}
+		
+		
+		It "KeyNameValue-SetNonExcsitingItemThrowsException" -Test {
+			# Arrange
+			$Key1 = "Key-{0}" -f [guid]::NewGuid().Guid;
+			$Name1 = "Name-{0}" -f [guid]::NewGuid().Guid;
+			$Value1 = "Value-{0}" -f [guid]::NewGuid().Guid;
+			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;			
+			$resultNewSet = $null; 
+				
+			# Act
+			try
+			{
+				$resultNewSet = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 $Value1 -NewValue $Value2;
+				$ExceptionThrown = $false;
+			}
+			catch
+			{
+				$ExceptionThrown = $true;
+			}
+
+			# Assert
+			$resultNewSet | Should Be $null;
+			$ExceptionThrown | Should Be $true;
+		}
+		
 	}
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
 
-}
-# PROCESS
-
-END 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-}
-# END
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEqUREr76PVZPzItTHpJq00s/
-# izqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUlXeBflkWoCv2aHyUJg6px9p0
+# +e+gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -266,26 +277,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRf+aV/cnBbdNVa
-# LNOTxtkPrdr/YzANBgkqhkiG9w0BAQEFAASCAQCwxnbU8UQytlfeOWMraX81V/rO
-# rUIFohCIB7O5qJp3uPH0vEnXuGRRSXfShNEp+PWDXISu8O6sGMQKGnUgI6M20jZj
-# Y0j7X8qfGnC+47QhVB3gqODPhh+2ZL1YYO0YY92j9H/Z9DvIBZ3CrvqU8uX9H6Pu
-# oWmn6MixDY6SEAmshfVVlB8JCJktjMWIGTJuqbdxjS8cev8gdIEPZQexPTZxnXuK
-# QdyiKxGXsRULYaKQ9kXviLRIuQIOiqqgcbqajS+QQJrNBGiOQ/xA6ZWNhMi5sMyX
-# jWAoKcQ9ebfCK9GLZj+in/HLtzQK++MN9+PqqCDAlPDpoeW/LPp6SRnZ+GXboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ1mEgAGDdpFa9K
+# ut6+mB4mDUNVNzANBgkqhkiG9w0BAQEFAASCAQB8NwcwkPHwlfaBDW/lq0y1ppt9
+# sJMg0MjfhyYJyFMQvmatddkfYxPXDqp27IEwu6AS0+XA7HRlmrvim+Asd96eYe+n
+# 2AKSuoiNRlB3/hSZi0NHUyf3wAd97UWfjBfWncRYurNbphfj3diepozE+3sje6Vr
+# LHiQca66ivolQAHMMezn/enp7iKKn4r1wgavxTHteEXGC7vrt+wN+78f1jLQNP0P
+# +Z3E6mfon71BB71wqxs636IMFvthKWgTHbu/HdVLdJ2roY+wmbANSarWWpKHpdC7
+# 9LTWXKY587C+lboZlxrimfABdbzR6S85lBS6IGjoD4i4ZIdY/v4ein1aA+iQoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOVowIwYJKoZIhvcNAQkEMRYEFIdux1Zdcf3psSxrLFHOspNW4e6T
+# MTAyODE0MjA1MVowIwYJKoZIhvcNAQkEMRYEFIrMrBQYjSXoaM4ipD8Tff+zQXJo
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEbyaR7BpcP44gx/Pl
-# mEEwQ7cKPvoxoeb3HJ68jfyhrMAlLwu4HoGyVEIUiygxWJCIc5O0bdJB6pPDKnJW
-# abtaoX9rts5SXcpcWNTm2dScXi71vJCj6o7QIH0if5AaL1Fkn3zC/Q/QBHCG9b6N
-# k0dEBKlRnRcjx2pt9dChUfGIzeY6WeKTMkmSsHoBTlxO6hX7Nmv90n7+8v1x6jzI
-# htGeLSPZtVu/IW9KS79tLB25fyk2rWIg4d/DNbnLyGsn0yRAMSdKssEBmtInntY8
-# Ih+ShEt4qQs7iFEDjC49pcyKV4lFGUyOIjgFPIBFSQdadBy3bkx/eOYBC+Qo88RY
-# Hf7G
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA7RQXd5WMBsJlOW4ov
+# LqMO08ATShF77f+tmnEdd5FbqsdHl0ERtNnn80p7bv71jq4303ED8MgtFFtktka+
+# Ncy6BS0VDhob3xUWoSufUOF/LBJGCwrOrOJi3GVzmoAVanis92R9mE6YkyDkY1BE
+# WizMn9158pj9ZgOdWwPQB6Y214qmpRsdn5lynK5BvRCq4zKUslLzaqx5FRbYt4Ag
+# tsNIXnIWOeyuBCz0nbQU1TKQHvOW1IIhQPW5Qq/VN4EicPmuf3GAIyPUfCfiQp7P
+# ocwOr80LTDS4VnKP3nMfANK31lDj32VwyXA4lMPGaW3jVjHp1u540DYbqkCVJFBH
+# BlLg
 # SIG # End signature block

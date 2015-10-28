@@ -1,173 +1,38 @@
-function Remove-ManagementCredential {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
-)]
-Param 
-(
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
-)
-
-BEGIN 
-{
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
+function GetCatalogueByName($svc, $catName) {
+	return $svc.Core.Catalogues |? Name -eq $catName;
 }
-# BEGIN
 
-PROCESS 
-{
+function GetCatalogueItemsOfCatalog($svc, $cat) {
+	return $svc.Core.LoadProperty($cat, 'CatalogueItems') | Select;
+}
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+function GetCatalogueItemByName($svc, $name) {
+	return $svc.Core.CatalogueItems |? Name -eq $name;
+}
 
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
+function CreateCatalogueItem($catalogue, $product) {
+	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+	$catItem.Tid = "1";
+	$catItem.CreatedBy = $ENV:USERNAME;
+	$catItem.ModifiedBy = $catItem.CreatedBy;
+	$catItem.Created = [DateTimeOffset]::Now;
+	$catItem.Modified = $catItem.Created;
+	$catItem.Name = 'Arbitrary Item';
+	$catItem.CatalogueId = $catalogue.Id;
+	$catItem.ProductId = $product.Id;
+	$catItem.ValidFrom = [DateTimeOffset]::Now;
+	$catItem.ValidUntil = [DateTimeOffset]::Now;
+	$catItem.EndOfSale = [DateTimeOffset]::Now;
+	$catItem.EndOfLife = [DateTimeOffset]::Now;
+	$catItem.Parameters = '{}';
 	
-	$objectFound = $false;
-	foreach($item in $entity) 
-	{
-		$objectFound = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
-	}
-	if(!$objectFound)
-	{
-		$msg = "Name: No object found that matches your criteria: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
+	return $catItem;
 }
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-
-}
-# PROCESS
-
-END 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-}
-# END
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-# http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# 
-
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEqUREr76PVZPzItTHpJq00s/
-# izqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtnFUHgonLxD4bduc0wgZtIk1
+# jQ+gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -266,26 +131,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRf+aV/cnBbdNVa
-# LNOTxtkPrdr/YzANBgkqhkiG9w0BAQEFAASCAQCwxnbU8UQytlfeOWMraX81V/rO
-# rUIFohCIB7O5qJp3uPH0vEnXuGRRSXfShNEp+PWDXISu8O6sGMQKGnUgI6M20jZj
-# Y0j7X8qfGnC+47QhVB3gqODPhh+2ZL1YYO0YY92j9H/Z9DvIBZ3CrvqU8uX9H6Pu
-# oWmn6MixDY6SEAmshfVVlB8JCJktjMWIGTJuqbdxjS8cev8gdIEPZQexPTZxnXuK
-# QdyiKxGXsRULYaKQ9kXviLRIuQIOiqqgcbqajS+QQJrNBGiOQ/xA6ZWNhMi5sMyX
-# jWAoKcQ9ebfCK9GLZj+in/HLtzQK++MN9+PqqCDAlPDpoeW/LPp6SRnZ+GXboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQESVqEZ3Vi85sJ
+# XNev64Th5hTabDANBgkqhkiG9w0BAQEFAASCAQAOUAL3pVh2j+a0fDtb1YjVi7cY
+# oTGaJQYXx8anSZH+bQJX6XAJr2wyjxo/bOIjMUWLVh8EwXaoTKTScZJm0A6+eYCf
+# VDyQDDX1upVCBcd+LZWBZFcUSnHxoFSz7KD20kpiVzQ95CjyjLjZ+2kE+/ZO6X0+
+# IhSwfv9FgKO2aWT1olpeBbrP5s4Fv/eQOf307HxAM+qVZS8gzHuIBtx6RrXJRpav
+# mdMYSOj0LidE/1QN573OKdyDeFDBQbjmoFuYdGJghNPJmNXd+iAo/TB0WFJV1yo/
+# DvXIoO7rr+PDekh9dRRV99FX9Mi29oGQk0C0few6CB1Vy0hEioKsW0XMnWK7oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOVowIwYJKoZIhvcNAQkEMRYEFIdux1Zdcf3psSxrLFHOspNW4e6T
+# MTAyODE0MjA0OVowIwYJKoZIhvcNAQkEMRYEFAE/bexGS3Yjlyh1AZMUmK+cz7jV
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEbyaR7BpcP44gx/Pl
-# mEEwQ7cKPvoxoeb3HJ68jfyhrMAlLwu4HoGyVEIUiygxWJCIc5O0bdJB6pPDKnJW
-# abtaoX9rts5SXcpcWNTm2dScXi71vJCj6o7QIH0if5AaL1Fkn3zC/Q/QBHCG9b6N
-# k0dEBKlRnRcjx2pt9dChUfGIzeY6WeKTMkmSsHoBTlxO6hX7Nmv90n7+8v1x6jzI
-# htGeLSPZtVu/IW9KS79tLB25fyk2rWIg4d/DNbnLyGsn0yRAMSdKssEBmtInntY8
-# Ih+ShEt4qQs7iFEDjC49pcyKV4lFGUyOIjgFPIBFSQdadBy3bkx/eOYBC+Qo88RY
-# Hf7G
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQChoaAoYRllx4Bhsk98
+# nJaXre9rzlxuGQCRtv144nte8gUITuYjRFaLOjfFUsJzl/5ms0hda4oUNH9+tmoh
+# 1F0in0LLPshZGdbKfsb6yY3ZIeqjgVCLqc7ytgcJpOkqQYp845SPpTlBAOMuRAjm
+# gjjdZ7tGcM6hYjw3zDJ6fEvryV0n2jxvi/4T+hd/JHol+OI4fs4fZDqeszzN0KEO
+# bXcdc+sm5v3sknL7rRuisCy7CAYYgMUTTbnBPW8TyE3LT47BzAcXsi0uR36wS4xv
+# TP9cWkDpTVmQaJdoEmq2dS9RoF1P0jOUaOTrT4NCIrqxXgacRXLUNPbG5eMzvpCO
+# pBcD
 # SIG # End signature block

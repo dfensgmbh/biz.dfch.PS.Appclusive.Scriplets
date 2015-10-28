@@ -1,173 +1,30 @@
-function Remove-ManagementCredential {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
-)]
-Param 
-(
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
-)
-
-BEGIN 
-{
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
-}
-# BEGIN
-
-PROCESS 
-{
-
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
-
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
-	
-	$objectFound = $false;
-	foreach($item in $entity) 
-	{
-		$objectFound = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
-	}
-	if(!$objectFound)
-	{
-		$msg = "Name: No object found that matches your criteria: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
+function CreateCartItem($catItem) {
+	$cartItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CartItem;
+	$cartItem.Tid = "1";
+	$cartItem.Quantity = 1;
+	$cartItem.CreatedBy = $ENV:USERNAME;
+	$cartItem.ModifiedBy = $catItem.CreatedBy;
+	$cartItem.Created = [DateTimeOffset]::Now;
+	$cartItem.Modified = $catItem.Created;
+	$cartItem.Name = $catItem.Name;
+	$cartItem.CatalogueItemId = $catItem.Id;
+	$cartItem.Parameters = '{}';
+	return $cartItem;
 }
 
+function GetCartOfUser($svc) {
+	$user = "{0}\{1}" -f $ENV:USERDOMAIN, $ENV:USERNAME;
+	return $svc.Core.Carts |? CreatedBy -eq $user;
 }
-# PROCESS
 
-END 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
+function GetCartItemsOfCart($svc, $cart) {
+	return $svc.Core.LoadProperty($cart, 'CartItems') | Select;
 }
-# END
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-# http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# 
-
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEqUREr76PVZPzItTHpJq00s/
-# izqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU/yzLqWFMLigF6MT5p7/r3gm1
+# CNSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -266,26 +123,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRf+aV/cnBbdNVa
-# LNOTxtkPrdr/YzANBgkqhkiG9w0BAQEFAASCAQCwxnbU8UQytlfeOWMraX81V/rO
-# rUIFohCIB7O5qJp3uPH0vEnXuGRRSXfShNEp+PWDXISu8O6sGMQKGnUgI6M20jZj
-# Y0j7X8qfGnC+47QhVB3gqODPhh+2ZL1YYO0YY92j9H/Z9DvIBZ3CrvqU8uX9H6Pu
-# oWmn6MixDY6SEAmshfVVlB8JCJktjMWIGTJuqbdxjS8cev8gdIEPZQexPTZxnXuK
-# QdyiKxGXsRULYaKQ9kXviLRIuQIOiqqgcbqajS+QQJrNBGiOQ/xA6ZWNhMi5sMyX
-# jWAoKcQ9ebfCK9GLZj+in/HLtzQK++MN9+PqqCDAlPDpoeW/LPp6SRnZ+GXboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSJpmiyWnrPghhm
+# f4kK+kKRZPiYDDANBgkqhkiG9w0BAQEFAASCAQCKPSxSecvKHuif49gK7V4G5OtR
+# m8QciTVYEx4KizxDrAA34nJUVvCrB/PwunMebHJlVxu+TzjZoqeZ96u3lwHT69eQ
+# nHAwdLJUppjHjlSWJvl6nBG0QebnYEgzK/k9AkeUyGKUiXM0QcchhEc5HtELntmn
+# quuMe2U1f9uQTcs9s7y5/JLzr/H+q8/w50TCZeV3yyrZ0D6Y0/32skIaqTmvZ0QO
+# tD3Ra3Lm3q4uRjjxCmOCr+54SPaUqj8BrF8dk03QqFz0y8W1WSuhOeuPq6unrV2m
+# DRJFsUKd1lqMWU67FFdNkno7Co5D+f/wb5jMDAU6NEbwpK9n8QoMOT9qCg6woYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOVowIwYJKoZIhvcNAQkEMRYEFIdux1Zdcf3psSxrLFHOspNW4e6T
+# MTAyODE0MjA0OFowIwYJKoZIhvcNAQkEMRYEFHQgdue+LoAtqCoYJ4cUkRwHa62C
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEbyaR7BpcP44gx/Pl
-# mEEwQ7cKPvoxoeb3HJ68jfyhrMAlLwu4HoGyVEIUiygxWJCIc5O0bdJB6pPDKnJW
-# abtaoX9rts5SXcpcWNTm2dScXi71vJCj6o7QIH0if5AaL1Fkn3zC/Q/QBHCG9b6N
-# k0dEBKlRnRcjx2pt9dChUfGIzeY6WeKTMkmSsHoBTlxO6hX7Nmv90n7+8v1x6jzI
-# htGeLSPZtVu/IW9KS79tLB25fyk2rWIg4d/DNbnLyGsn0yRAMSdKssEBmtInntY8
-# Ih+ShEt4qQs7iFEDjC49pcyKV4lFGUyOIjgFPIBFSQdadBy3bkx/eOYBC+Qo88RY
-# Hf7G
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBwDSPCtHsarxaqFrQj
+# ih6igQA8VCFnrqy7JJJbHM8JrCP60UDK2svtz0Pcdg9WRIw5aXoQ5HnWvZNAzZkh
+# TsVpICGe1ywp315ui916ZkUAEgepelWYqUQ11u961uK4H/CZcIeoCqAZImy3+e13
+# S4TAF4p1/8ULz8sECtYnpYTEeneloOOxhUt6qcaIMpoN5JD4wejDYqrKgZKGeYYs
+# JKRT6xa2VdSkEVr9r6qQCm7mbOvUJrdzuHjyyBSiSVgi3gxAAHk0gNrrVJvao+mW
+# BXJueGHX2XAipoPDOqAfcbM7UnDwy3FwJF752y+AFUu1oE5hnP7ZRDG68zatk911
+# Tldd
 # SIG # End signature block

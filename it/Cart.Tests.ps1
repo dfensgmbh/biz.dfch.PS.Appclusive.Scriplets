@@ -1,173 +1,232 @@
-function Remove-ManagementCredential {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
-)]
-Param 
-(
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
-)
 
-BEGIN 
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
-# BEGIN
 
-PROCESS 
-{
+Describe -Tags "Cart.Tests" "Cart.Tests" {
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	Mock Export-ModuleMember { return $null; }
 
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
+	. "$here\$sut"
+	. "$here\Catalogue.ps1"
 	
-	$objectFound = $false;
-	foreach($item in $entity) 
-	{
-		$objectFound = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
-	}
-	if(!$objectFound)
-	{
-		$msg = "Name: No object found that matches your criteria: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
+	Context "Catalogue.Tests" {
+	
+		# Context wide constants
+		$catName = 'Default DaaS';
+		New-Variable -Name cat -Value 'will-be-used-later';
+		New-Variable -Name catItems -Value 'will-be-used-later';
 		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
 		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
+		
+		It "GettingCarts-ReturnsZeroEntities" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$entitySet = $svc.Core.Carts;
+
+			# Assert
+			$entitySet | Should Be $null;
+		}
+
+		It "GettingCatalogue-Succeeds" -Test {
+			# Arrange
+			
+			# Get catalogue
+			$cat = GetCatalogueByName -svc $svc -catName $catName;
+			$cat | Should Not Be $null;
+			
+			# Get catalogue items
+			$catItems = GetCatalogueItemsOfCatalog -svc $svc -cat $cat;
+			$catItems | Should Not Be $null;
+			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
+			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
+			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
+		}
+	}
+
+	Context "Cart.Tests" {
+	
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
+		}
+	
+		It "AddingCartItem-CreatesCart" -Test {
+
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+
+		It "AddingNonVdiCartItemTwice-IncreasesCount" -Test {
+			
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			$cartItems[0].Quantity | Should Be 1;
+			
+			$svc = Enter-AppclusiveServer;
+			
+			# Create second cartItem
+			$cartItem2 = CreateCartItem -catItem $catItem;
+			
+			# Add second VDI cartItem
+			$svc.Core.AddToCartItems($cartItem2);
+			$result = $svc.Core.SaveChanges();
+			
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			$cartItems[0].Quantity | Should Be 2;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+		
+		It "AddingVdiCartItemTwice-Fails" -Test {
+			
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new VDI cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add VDI cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			# Create second VDI cartItem
+			$cartItem2 = CreateCartItem -catItem $catItem;
+
+			# Add second VDI cartItem
+			$svc.Core.AddToCartItems($cartItem2);
+			try 
 			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
+				$svc.Core.SaveChanges();
+			} catch 
 			{
-				# N/A
+				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
 			}
+
+			$svc = Enter-AppclusiveServer;
+			$cart = GetCartOfUser -svc $svc;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
 	}
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
 
-}
-# PROCESS
-
-END 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-}
-# END
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEqUREr76PVZPzItTHpJq00s/
-# izqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU3SsRnSv0ZiD8fn6g2SSNpGLP
+# 61agghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -266,26 +325,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRf+aV/cnBbdNVa
-# LNOTxtkPrdr/YzANBgkqhkiG9w0BAQEFAASCAQCwxnbU8UQytlfeOWMraX81V/rO
-# rUIFohCIB7O5qJp3uPH0vEnXuGRRSXfShNEp+PWDXISu8O6sGMQKGnUgI6M20jZj
-# Y0j7X8qfGnC+47QhVB3gqODPhh+2ZL1YYO0YY92j9H/Z9DvIBZ3CrvqU8uX9H6Pu
-# oWmn6MixDY6SEAmshfVVlB8JCJktjMWIGTJuqbdxjS8cev8gdIEPZQexPTZxnXuK
-# QdyiKxGXsRULYaKQ9kXviLRIuQIOiqqgcbqajS+QQJrNBGiOQ/xA6ZWNhMi5sMyX
-# jWAoKcQ9ebfCK9GLZj+in/HLtzQK++MN9+PqqCDAlPDpoeW/LPp6SRnZ+GXboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRa1pPYPLq38F/6
+# JehYJajkgkyGgTANBgkqhkiG9w0BAQEFAASCAQB23rvBMfBaqOwpgfWu2YLe+zhe
+# 6PX7hfdQ7mfxDrMQPFmnuiVwyRrK1ag3s+nKl0Sy1f/cgsS9o0DfUMVwt40yqSlD
+# uPdFqhpI6s1DbSlUmHCBi5QLThO/avMSebHilhfakvpM25Q3qHrQV5CrFTf4PXLf
+# mPaOe5WrmsrtieoQm7HnAXcmuM9Voe8kypOh8I19gVqCPbPDTZADtgZphDYRa1sv
+# qDPaqw2ztXmtFWE3KzveBqEBcHBrivyDnQawj9DIRxo/WcDEjnaSpAfPfP7UcIpb
+# sZk70fOyMAcczFGa61wWOuAb2e85JH3+dqe3GjQGcAcE+BsWf5hQf/lkegu2oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOVowIwYJKoZIhvcNAQkEMRYEFIdux1Zdcf3psSxrLFHOspNW4e6T
+# MTAyODE0MjA0OVowIwYJKoZIhvcNAQkEMRYEFNVaQnofNp8kSBVzI/BjJXLaEB8i
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEbyaR7BpcP44gx/Pl
-# mEEwQ7cKPvoxoeb3HJ68jfyhrMAlLwu4HoGyVEIUiygxWJCIc5O0bdJB6pPDKnJW
-# abtaoX9rts5SXcpcWNTm2dScXi71vJCj6o7QIH0if5AaL1Fkn3zC/Q/QBHCG9b6N
-# k0dEBKlRnRcjx2pt9dChUfGIzeY6WeKTMkmSsHoBTlxO6hX7Nmv90n7+8v1x6jzI
-# htGeLSPZtVu/IW9KS79tLB25fyk2rWIg4d/DNbnLyGsn0yRAMSdKssEBmtInntY8
-# Ih+ShEt4qQs7iFEDjC49pcyKV4lFGUyOIjgFPIBFSQdadBy3bkx/eOYBC+Qo88RY
-# Hf7G
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBSZ7IA0XxwgMK4+ySn
+# /g+SZzUkMqnvow9yjYgPUMadTkYDXOewPT0IbZkXaEJGYliPM+mUH/BAaso0D2ZP
+# 3U3xiugGVsnQA1m4D61foksrKWRl9P2eW/q4OG/MHMIDOsMIkojLWBQtmLvEkePU
+# ljJ5KAAR+fXDaeXhLq3eB78NUmsa44oT/FBUNH8nShvkx5hn0s3m6ey+ZY4TRWCp
+# iHDeqIWooT5V3OCOgmZ8jNdJuwttC0gQyr96NfmvNVWgEgzW333qTiP+ey21wv74
+# JezyaVbv3biYAsFYXijMCT88hV7HlpjAf2z8FyoHWDaYtCoNwQSVr6IRSbA1fDdM
+# 5gnH
 # SIG # End signature block

@@ -1,173 +1,227 @@
-function Remove-ManagementCredential {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
-)]
-Param 
-(
-	# The key name portion of the KNV to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
-	[string] $As = 'default'
-)
 
-BEGIN 
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
-
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
-# BEGIN
 
-PROCESS 
-{
+Describe -Tags "Order.Tests" "Order.Tests" {
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	Mock Export-ModuleMember { return $null; }
 
-try 
-{
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
+	. "$here\$sut"
+	. "$here\Catalogue.ps1"
+	. "$here\Cart.ps1"
 	
-	$objectFound = $false;
-	foreach($item in $entity) 
-	{
-		$objectFound = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
-	}
-	if(!$objectFound)
-	{
-		$msg = "Name: No object found that matches your criteria: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
-
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
-	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
+	Context "Order.Tests" {
 		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
 		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
+		
+		It "PlaceOrderWithoutCart-Fails" -Test {
+			$order = CreateOrder;
+			
+			$svc.Core.AddToOrders($order);
+			
+			try {
+				$result = $svc.Core.SaveChanges();
+			}
+			catch
 			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
+				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+				$exception.'odata.error'.message.value | Should Be 'No cart found.';
 			}
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
+		
+		It "CheckoutCart-CreatesOrderAndDeletesCart" -Test {
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+
+			# Create order
+			$order = CreateOrder;
+			$svc.Core.AddToOrders($order);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
+			
+			Start-Sleep -s 5;
+			
+			# Check result
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Requester | Should Be $null;
+			$createdOrder.Status | Should Be 'Approval';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'Approval';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Created';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Created';
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+
+			# Cleanup
+			$svc.Core.DeleteObject($approvalJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($approval);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$orderJob = $svc.Core.Jobs |? Id -eq $orderJob.Id;
+			$svc.Core.DeleteObject($orderJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($createdOrder);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+		
+		It "CheckoutCartWithRequester-CreatesOrderAndDeletesCart" -Test {
+			$requester = 'Arbitrary User';
+		
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Technical';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+			$params = @{Requester = $requester};
+			$cartItem.Parameters = $params | ConvertTo-Json;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+
+			# Create order
+			$order = CreateOrder;
+			$svc.Core.AddToOrders($order);
+			try
+			{
+				$svc.Core.SaveChanges();
+			}
+			catch
+			{
+				# Intentionally left empty
+				# The metadata URI 'http://localhost:53422/api/Core/$metadata#Edm.String' is not valid for the expected payload kind 'Entry'
+			}
+			
+			Start-Sleep -s 5;
+			
+			# Check result
+			$svc = Enter-AppclusiveServer;
+			
+			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
+			$createdOrder.Requester | Should Be $requester;
+			$createdOrder.Status | Should Be 'Approval';
+			
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
+			$orderJob.Status | Should Be 'Approval';
+			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approvalJob.Status | Should Be 'Created';
+			
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval.Status | Should Be 'Created';
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+
+			# Cleanup
+			$svc.Core.DeleteObject($approvalJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$svc.Core.DeleteObject($approval);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$orderJob = $svc.Core.Jobs |? Id -eq $orderJob.Id;
+			$svc.Core.DeleteObject($orderJob);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$svc.Core.DeleteObject($createdOrder);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
 	}
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
 
-}
-# PROCESS
-
-END 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-}
-# END
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEqUREr76PVZPzItTHpJq00s/
-# izqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhQIiqAxEUKtnY+pESt07V7E0
+# ExWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -266,26 +320,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRf+aV/cnBbdNVa
-# LNOTxtkPrdr/YzANBgkqhkiG9w0BAQEFAASCAQCwxnbU8UQytlfeOWMraX81V/rO
-# rUIFohCIB7O5qJp3uPH0vEnXuGRRSXfShNEp+PWDXISu8O6sGMQKGnUgI6M20jZj
-# Y0j7X8qfGnC+47QhVB3gqODPhh+2ZL1YYO0YY92j9H/Z9DvIBZ3CrvqU8uX9H6Pu
-# oWmn6MixDY6SEAmshfVVlB8JCJktjMWIGTJuqbdxjS8cev8gdIEPZQexPTZxnXuK
-# QdyiKxGXsRULYaKQ9kXviLRIuQIOiqqgcbqajS+QQJrNBGiOQ/xA6ZWNhMi5sMyX
-# jWAoKcQ9ebfCK9GLZj+in/HLtzQK++MN9+PqqCDAlPDpoeW/LPp6SRnZ+GXboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQTVfpeuk44KV8B
+# evTMh8uzMHX6PTANBgkqhkiG9w0BAQEFAASCAQA5YQChcglQJLA6voAhEUk5FD8s
+# WWG6UTAMUFvoJOcVxYTnquL/F7AAUqeE++ao6sHzAI6qKRyCH4LPaG/4q9QdeRTM
+# 5b5ilDOGKSQXhU/9d55MfQ04gUT9JO0TZoGbWGP489LKhpCwYaHb4UKjy8ZdzXiw
+# seWSw8Aiup/s8wjHBJuMui75F/RFFUFZ7N7xfgaxUByr8RsBfEH9dlb4NGQ0mhhV
+# qu34UsTddilNNZNED8XcBsJk7RJ8f6bxIQHlQnCOcTSJb0hNXtgGsgzcdjx1aC2t
+# +xEz7IDzKTnOaNAGBpH1DeePtYWzfkeVozsAXdzZUQ0c43m01StneIRyjMEDoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOVowIwYJKoZIhvcNAQkEMRYEFIdux1Zdcf3psSxrLFHOspNW4e6T
+# MTAyODE0MjA1MlowIwYJKoZIhvcNAQkEMRYEFM+gbEUpDyxI7vI+IK5Baq7kmPff
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEbyaR7BpcP44gx/Pl
-# mEEwQ7cKPvoxoeb3HJ68jfyhrMAlLwu4HoGyVEIUiygxWJCIc5O0bdJB6pPDKnJW
-# abtaoX9rts5SXcpcWNTm2dScXi71vJCj6o7QIH0if5AaL1Fkn3zC/Q/QBHCG9b6N
-# k0dEBKlRnRcjx2pt9dChUfGIzeY6WeKTMkmSsHoBTlxO6hX7Nmv90n7+8v1x6jzI
-# htGeLSPZtVu/IW9KS79tLB25fyk2rWIg4d/DNbnLyGsn0yRAMSdKssEBmtInntY8
-# Ih+ShEt4qQs7iFEDjC49pcyKV4lFGUyOIjgFPIBFSQdadBy3bkx/eOYBC+Qo88RY
-# Hf7G
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCiw7N+0MSNGzl2Asnu
+# Vt2FVrNRUjveznQi9PvlyTqCrJPWAx3foVKmU59fxQCB9pDhFRLQgFZGUlADpZBp
+# Psk3uLhlmBmQrWNR+NMgOxppn3XTEWNfSpe40BZnsGMmO6l78c7yMw3Bc8hCwtqV
+# +zYIU6xLFNLy5R50N4jAxutVhPU6SlsYvi53Y6BGhc3yzctd6hUh03TpWzWXaBVT
+# 3trwqh6sSozODyDOIGj/PDgw8xLage2yJTHYCMwV19FckJ09N9O3TL8jJbz2NRxC
+# DIMMkPzW0BvHuW5kawOVDXJ5isBDEBF+vdA/t2OFIRvQQTmZUFqW6A0ET85wzZZL
+# nfwb
 # SIG # End signature block

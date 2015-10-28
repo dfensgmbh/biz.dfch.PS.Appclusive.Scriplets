@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>biz.dfch.PS.Appclusive.Client</id>
-    <version>0.0.4</version>
+    <version>0.0.6</version>
     <title>biz.dfch.PS.Appclusive.Client</title>
     <authors>d-fens GmbH</authors>
     <owners>Ronald Rink</owners>
@@ -27,10 +27,10 @@ biz.dfch.CS.Appclusive.Api and the other (Microsoft) DLLs are not part of this A
 See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detailed description on how to use the Cmdlets in this module.
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
-    <releaseNotes>20151016
+    <releaseNotes>20151028
 
-* Collection property from CatalogueItem removed
-* various extra deleteLink and createLlink methods removed</releaseNotes>
+* add more integration tests
+* include API version 1.0.6</releaseNotes>
     <copyright>(c) 2015 d-fens GmbH</copyright>
     <language>en-US</language>
     <tags>dfch PowerShell Appclusive Automation OData</tags>
@@ -64,7 +64,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="Microsoft.Data.OData.dll" />
     <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="Microsoft.Data.Services.Client.dll" />
     <file src="..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll" target="System.Spatial.dll" />
-    <file src="..\packages\biz.dfch.CS.Appclusive.Api.1.0.4\lib\biz.dfch.CS.Appclusive.Api.dll" target="biz.dfch.CS.Appclusive.Api.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Api.1.0.6\lib\biz.dfch.CS.Appclusive.Api.dll" target="biz.dfch.CS.Appclusive.Api.dll" />
     <file src="Import-Module.ps1" target="Import-Module.ps1" />
     <file src="Enter-Server.ps1" target="Enter-Server.ps1" />
   </files>
