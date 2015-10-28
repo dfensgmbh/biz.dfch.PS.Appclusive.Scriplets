@@ -89,6 +89,7 @@ function UpdateOrder($svc, $order, $status, $errorMsg = '')
 		$order.Status = $status;
 		$order.Parameters = $errorMsg;
 		$svc.Core.UpdateObject($order);
+		$svc.Core.SaveChanges();
 	}
 	catch
 	{
