@@ -1,41 +1,189 @@
-function GetCatalogueByName($svc, $catName) 
+<#
+.SYNOPSIS
+Installs the module into a path inside $ENV:PSModulePath.
+
+
+.DESCRIPTION
+Installs the module into a path inside $ENV:PSModulePath. 
+Any existing module customisations are overwritten by the 
+installation routine (such as <module>.xml).
+
+.EXAMPLE
+Installs the module into the default directory.
+
+PS > .\Install.ps1
+
+.EXAMPLE
+Installs the module into the C:\PSModules directory.
+
+PS > .\Install.ps1 -ModulePath C:\PSModules
+#>
+[CmdletBinding()]
+PARAM
+( 
+	# Specifies the module name. Leave as is.
+	[string] $ModuleName = 'biz.dfch.PS.Appclusive.Client'
+	,
+	# Specifies the target base directory into which to install the module.
+    [string] $ModulePath = (Join-Path $env:ProgramFiles WindowsPowerShell\Modules)
+)
+
+end
 {
-	return $svc.Core.Catalogues |? Name -eq $catName;
+    $targetDirectory = Join-Path $ModulePath $ModuleName
+    $scriptRoot      = Split-Path $MyInvocation.MyCommand.Path -Parent
+    $sourceDirectory = Join-Path $scriptRoot Tools
+
+    if ($PSVersionTable.PSVersion.Major -ge 5)
+    {
+        $manifestFile    = Join-Path $sourceDirectory ('{0}.psd1' -f $ModuleName)
+        $manifest        = Test-ModuleManifest -Path $manifestFile -WarningAction Ignore -ErrorAction Stop
+        $targetDirectory = Join-Path $targetDirectory $manifest.Version.ToString()
+    }
+
+    Update-Directory -Source $sourceDirectory -Destination $targetDirectory
+
+    if ($PSVersionTable.PSVersion.Major -lt 4)
+    {
+        $ModulePaths = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine') -split ';'
+        if ($ModulePaths -notcontains $ModulePath)
+        {
+            Write-Verbose "Adding '$ModulePath' to PSModulePath."
+
+            $ModulePaths = @(
+                $ModulePath
+                $ModulePaths
+            )
+
+            $newModulePath = $ModulePaths -join ';'
+
+            [Environment]::SetEnvironmentVariable('PSModulePath', $newModulePath, 'Machine')
+            $env:PSModulePath += ";$ModulePath"
+        }
+    }
 }
 
-function GetCatalogueItemsOfCatalog($svc, $cat) {
-	return $svc.Core.LoadProperty($cat, 'CatalogueItems') | Select;
+begin
+{
+    function Update-Directory
+    {
+        [CmdletBinding()]
+        param (
+            [Parameter(Mandatory = $true)]
+            [string] $Source,
+
+            [Parameter(Mandatory = $true)]
+            [string] $Destination
+        )
+
+        $Source = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Source)
+        $Destination = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Destination)
+
+        if (-not (Test-Path -LiteralPath $Destination))
+        {
+            $null = New-Item -Path $Destination -ItemType Directory -ErrorAction Stop
+        }
+
+        try
+        {
+            $sourceItem = Get-Item -LiteralPath $Source -ErrorAction Stop
+            $destItem = Get-Item -LiteralPath $Destination -ErrorAction Stop
+
+            if ($sourceItem -isnot [System.IO.DirectoryInfo] -or $destItem -isnot [System.IO.DirectoryInfo])
+            {
+                throw 'Not Directory Info'
+            }
+        }
+        catch
+        {
+            throw 'Both Source and Destination must be directory paths.'
+        }
+
+        $sourceFiles = Get-ChildItem -Path $Source -Recurse |
+                       Where-Object { -not $_.PSIsContainer }
+
+        foreach ($sourceFile in $sourceFiles)
+        {
+            $relativePath = Get-RelativePath $sourceFile.FullName -RelativeTo $Source
+            $targetPath = Join-Path $Destination $relativePath
+
+            $sourceHash = Get-FileHash -Path $sourceFile.FullName
+            $destHash = Get-FileHash -Path $targetPath
+
+            if ($sourceHash -ne $destHash)
+            {
+                $targetParent = Split-Path $targetPath -Parent
+
+                if (-not (Test-Path -Path $targetParent -PathType Container))
+                {
+                    $null = New-Item -Path $targetParent -ItemType Directory -ErrorAction Stop
+                }
+
+                Write-Verbose "Updating file $relativePath to new version."
+                Copy-Item $sourceFile.FullName -Destination $targetPath -Force -ErrorAction Stop
+            }
+        }
+
+        $targetFiles = Get-ChildItem -Path $Destination -Recurse |
+                       Where-Object { -not $_.PSIsContainer }
+
+        foreach ($targetFile in $targetFiles)
+        {
+            $relativePath = Get-RelativePath $targetFile.FullName -RelativeTo $Destination
+            $sourcePath = Join-Path $Source $relativePath
+
+            if (-not (Test-Path $sourcePath -PathType Leaf))
+            {
+                Write-Verbose "Removing unknown file $relativePath from module folder."
+                Remove-Item -LiteralPath $targetFile.FullName -Force -ErrorAction Stop
+            }
+        }
+
+    }
+
+    function Get-RelativePath
+    {
+        param ( [string] $Path, [string] $RelativeTo )
+        return $Path -replace "^$([regex]::Escape($RelativeTo))\\?"
+    }
+
+    function Get-FileHash
+    {
+        param ([string] $Path)
+
+        if (-not (Test-Path -LiteralPath $Path -PathType Leaf))
+        {
+            return $null
+        }
+
+        $item = Get-Item -LiteralPath $Path
+        if ($item -isnot [System.IO.FileSystemInfo])
+        {
+            return $null
+        }
+
+        $stream = $null
+
+        try
+        {
+            $sha = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
+            $stream = $item.OpenRead()
+            $bytes = $sha.ComputeHash($stream)
+            return [convert]::ToBase64String($bytes)
+        }
+        finally
+        {
+            if ($null -ne $stream) { $stream.Close() }
+            if ($null -ne $sha)    { $sha.Clear() }
+        }
+    }
 }
 
-function GetCatalogueItemByName($svc, $name) 
-{
-	return $svc.Core.CatalogueItems |? Name -eq $name;
-}
-
-function CreateCatalogueItem($catalogue, $product) 
-{
-	$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
-	$catItem.Tid = "1";
-	$catItem.CreatedBy = $ENV:USERNAME;
-	$catItem.ModifiedBy = $catItem.CreatedBy;
-	$catItem.Created = [DateTimeOffset]::Now;
-	$catItem.Modified = $catItem.Created;
-	$catItem.Name = 'Arbitrary Item';
-	$catItem.CatalogueId = $catalogue.Id;
-	$catItem.ProductId = $product.Id;
-	$catItem.ValidFrom = [DateTimeOffset]::Now;
-	$catItem.ValidUntil = [DateTimeOffset]::Now;
-	$catItem.EndOfSale = [DateTimeOffset]::Now;
-	$catItem.EndOfLife = [DateTimeOffset]::Now;
-	$catItem.Parameters = '{}';
-	
-	return $catItem;
-}
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtnFUHgonLxD4bduc0wgZtIk1
-# jQ+gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNI1DIfXPTyN0kb2A39fif2Gq
+# 5RWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -134,26 +282,26 @@ function CreateCatalogueItem($catalogue, $product)
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQESVqEZ3Vi85sJ
-# XNev64Th5hTabDANBgkqhkiG9w0BAQEFAASCAQAOUAL3pVh2j+a0fDtb1YjVi7cY
-# oTGaJQYXx8anSZH+bQJX6XAJr2wyjxo/bOIjMUWLVh8EwXaoTKTScZJm0A6+eYCf
-# VDyQDDX1upVCBcd+LZWBZFcUSnHxoFSz7KD20kpiVzQ95CjyjLjZ+2kE+/ZO6X0+
-# IhSwfv9FgKO2aWT1olpeBbrP5s4Fv/eQOf307HxAM+qVZS8gzHuIBtx6RrXJRpav
-# mdMYSOj0LidE/1QN573OKdyDeFDBQbjmoFuYdGJghNPJmNXd+iAo/TB0WFJV1yo/
-# DvXIoO7rr+PDekh9dRRV99FX9Mi29oGQk0C0few6CB1Vy0hEioKsW0XMnWK7oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSf9Hjjh0Q4Dwid
+# fky1wbVTmpKZxTANBgkqhkiG9w0BAQEFAASCAQDFe8NPqqjRZPcBcdoYtAqiNbJ2
+# xB0tkzBtTABDIkeUIXYJ5Vxs3busRdXw22/3flx/U5jBz9gC3GrHUt9SmkSGdZi6
+# GlqbOMG2C2ChQq2z+WS8GI0tMDc5Yr/wveJQ0PViNO5MAyS2D5jUC3WtnZrj2R6m
+# iARKpVMbpNg4Ykfrxl6t9Yv00Cv1oUPbh7PTvjzVMmr/nPQLY5Z2jCE2RHLPG3Bp
+# d+/emXgyupeq1raK/xQ5JTarbEXOq5+tR3GePpmdj/Z/RC+7JqyfSEjC/BN9ZYAD
+# MzNDq845tkoeOgihILB6y8WpAUNrSZG+1LFJ1WML3DBiOUmm2C8+5vkUe7aKoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA0OVowIwYJKoZIhvcNAQkEMRYEFAE/bexGS3Yjlyh1AZMUmK+cz7jV
+# MTAyOTA0MzQyNlowIwYJKoZIhvcNAQkEMRYEFIhZV6t5gk/F1/ymgTEly9Pi4Uro
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQChoaAoYRllx4Bhsk98
-# nJaXre9rzlxuGQCRtv144nte8gUITuYjRFaLOjfFUsJzl/5ms0hda4oUNH9+tmoh
-# 1F0in0LLPshZGdbKfsb6yY3ZIeqjgVCLqc7ytgcJpOkqQYp845SPpTlBAOMuRAjm
-# gjjdZ7tGcM6hYjw3zDJ6fEvryV0n2jxvi/4T+hd/JHol+OI4fs4fZDqeszzN0KEO
-# bXcdc+sm5v3sknL7rRuisCy7CAYYgMUTTbnBPW8TyE3LT47BzAcXsi0uR36wS4xv
-# TP9cWkDpTVmQaJdoEmq2dS9RoF1P0jOUaOTrT4NCIrqxXgacRXLUNPbG5eMzvpCO
-# pBcD
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAwvmYr/VZ2y8ll+YM9
+# dp/LDaAQVDp4+mTICW+lqRosQteSS43YXMzAXBn7vDxgMG6V14pI2ECE2gvlWRDg
+# kDeHzsl6HbIzHlHoOsJvuWu3aUuoAXdwu9u4tUQRsHbMEdu38/7EovmOdwgXY/R/
+# LVGtjsD85V+TGuiRmRM/eWNiCQPoEk222cRRk2gUYy/jqqadu8XCuFAJauh0jHL/
+# hoO8LV+7IdhjUjlfrB0exQtqxfd7eu6ul41T/IbxjPjb/TFdp2rOpP24d5+hIase
+# uM5SR8NXthTLg4jIDiy7D4cQRMtNcXwvToixv7EpAhamAGv+bs1/EyLCUj7Nrga/
+# 8c8R
 # SIG # End signature block

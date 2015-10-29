@@ -1,39 +1,63 @@
 function ProcessVDIEntitlement($username) 
 {
-	$result = $true;
-		
-	$result = CheckForExistingVDI -username $username;
-	if($true -eq $result)
+	$username = $username.split('\')[1];
+
+	# DFTODO - Decide stubbing based on KNV entry
+	# DFTODO - Get the following properties from KNV? (add to seed.ps1?) + error handling
+	# these entries will be read from a ManagementUri (and associated ManagementCredential if necessary)
+	# pool names may be read from KNV
+	$connectionServerName = '';
+	$psSessionConfig = '';
+	$poolId = '';
+	
+	# DFTODO - Implement fallback to other connection server (also defined in ManagementUri)
+	Enter-PSSession -ComputerName $connectionServerName -ConfigurationName $psSessionConfig
+	
+	Add-PSSnapin VMware.View.Broker -ErrorAction:Stop;
+	
+	$user = $null;
+	try 
 	{
-		$errorMsg = "User {0} has already a VDI assigned" -f $username;
+		# DFTODO - here I suggest to use ErrorAction:SilentlyContinue and then just check for $null
+		# smae holds true for all other try/catch statements with ErrorAction:Stop
+		$user = Get-User -name $username -ErrorAction Stop;
+	}
+	catch
+	{
+		$errorMsg = "User '{0}' not found" -f $username;
 		return $errorMsg;
 	}
 	
-	# DFTODO - Decide stubbing based on KNV entry
-	# DFTODO - Get the following properties from KNV? (add to seed.ps1?) + error handling
-	$computerName = '';
-	$psSessionConfig = '';
-	$poolId = ''
+	# Check if user already has a VDI
+	$entitlement = GetExistingEntitlement -user $user;
+	if($entitlement)
+	{
+		$errorMsg = "User '{0}' is already entitled." -f $username;
+		return $errorMsg;
+	}
 	
-	# DFTODO - Implement fallback to other connection server
-	Enter-PSSession -ComputerName $computerName -ConfigurationName $psSessionConfig
+	try
+	{
+		$pool = Get-Pool -pool_id $poolId -ErrorAction Stop;
+	}
+	catch
+	{
+		$errorMsg = "Pool with Id '{0}' not found" -f $poolId;
+		return $errorMsg;
+	}
 	
-	$pool = Get-Pool -pool_id $poolId;
+	$result = $user | Add-PoolEntitlement -pool_id $poolId;
 	
+	if ($result.EntitlementsAdded -ne 1) 
+	{
+		$errorMsg = "Entitlement FAILED (PoolId: {0}, Username: {1})" -f $poolId, $username;
+		return $errorMsg;
+	}
 	
-	
-	Add-PSSnapin VMware.View.Broker
-	# DFTODO - Entitle VDI
-	
-	return $result;
+	return $true;
 }
 
-function CheckForExistingVDI($username) 
+function GetExistingEntitlement($user) 
 {
-	$result = $true;
-	
-	# DFTODO - Check if a VDI already exists for the given user
-	# DFTODO - Get connection server from MgmtUri or KNV!
-	
-	return $result
+	return Get-PoolEntitlement |? sid -eq $user.sid;
 }

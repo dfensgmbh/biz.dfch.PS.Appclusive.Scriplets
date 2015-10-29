@@ -1,4 +1,5 @@
-function CreateProduct() {
+function CreateProduct() 
+{
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$product.Tid = "1";
 	$product.CreatedBy = $ENV:USERNAME;

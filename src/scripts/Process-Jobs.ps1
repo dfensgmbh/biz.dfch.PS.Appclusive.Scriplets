@@ -2,6 +2,7 @@
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+# DFTODO - I would not dotsource these scripts but write scripts with PARAM block, so they can be called like Cmdlets
 . "$here\Process-Order.ps1"
 
 $svc = Enter-AppclusiveServer;

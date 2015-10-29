@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>biz.dfch.PS.Appclusive.Client</id>
-    <version>0.0.6</version>
+    <version>0.1.7</version>
     <title>biz.dfch.PS.Appclusive.Client</title>
     <authors>d-fens GmbH</authors>
     <owners>Ronald Rink</owners>
@@ -27,10 +27,12 @@ biz.dfch.CS.Appclusive.Api and the other (Microsoft) DLLs are not part of this A
 See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detailed description on how to use the Cmdlets in this module.
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
-    <releaseNotes>20151028
+    <releaseNotes>20151029
 
-* add more integration tests
-* include API version 1.0.6</releaseNotes>
+* add install script
+* you must remove any previous versions of this module before using the Install.ps1 the first time - subsequent updates do not need this
+* any customisations written to biz.dfch.PS.Appclusive.Client.xml will be overwritten by the Install.ps1
+* Destination base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
     <copyright>(c) 2015 d-fens GmbH</copyright>
     <language>en-US</language>
     <tags>dfch PowerShell Appclusive Automation OData</tags>
@@ -44,28 +46,27 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     </frameworkAssemblies>
   </metadata>
   <files xmlns="">
-    <file src="biz.dfch.PS.Appclusive.Client.psm1" target="biz.dfch.PS.Appclusive.Client.psm1" />
-    <file src="biz.dfch.PS.Appclusive.Client.psd1" target="biz.dfch.PS.Appclusive.Client.psd1" />
-    <file src="biz.dfch.PS.Appclusive.Client.xml" target="biz.dfch.PS.Appclusive.Client.xml" />
-    <file src="Import-Module.ps1" target="Import-Module.ps1" />
-    <file src="Enter-Server.ps1" target="Enter-Server.ps1" />
-    <file src="Get-KeyNameValue.ps1" target="Get-KeyNameValue.ps1" />
-    <file src="Get-ManagementCredential.ps1" target="Get-ManagementCredential.ps1" />
-    <file src="New-KeyNameValue.ps1" target="New-KeyNameValue.ps1" />
-    <file src="New-ManagementCredential.ps1" target="New-ManagementCredential.ps1" />
-    <file src="Remove-KeyNameValue.ps1" target="Remove-KeyNameValue.ps1" />
-    <file src="Remove-ManagementCredential.ps1" target="Remove-ManagementCredential.ps1" />
-    <file src="Set-KeyNameValue.ps1" target="Set-KeyNameValue.ps1" />
-    <file src="Set-ManagementCredential.ps1" target="Set-ManagementCredential.ps1" />
-    <file src="..\LICENSE" target="LICENSE" />
-    <file src="..\NOTICE" target="NOTICE" />
-    <file src="..\README.md" target="README.md" />
-    <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="Microsoft.Data.Edm.dll" />
-    <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="Microsoft.Data.OData.dll" />
-    <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="Microsoft.Data.Services.Client.dll" />
-    <file src="..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll" target="System.Spatial.dll" />
-    <file src="..\packages\biz.dfch.CS.Appclusive.Api.1.0.6\lib\biz.dfch.CS.Appclusive.Api.dll" target="biz.dfch.CS.Appclusive.Api.dll" />
-    <file src="Import-Module.ps1" target="Import-Module.ps1" />
-    <file src="Enter-Server.ps1" target="Enter-Server.ps1" />
+    <file src="Install.ps1" target="Install.ps1" />
+    <file src="..\LICENSE" target="tools\LICENSE" />
+    <file src="..\NOTICE" target="tools\NOTICE" />
+    <file src="..\README.md" target="tools\README.md" />
+    <file src="biz.dfch.PS.Appclusive.Client.psm1" target="tools\biz.dfch.PS.Appclusive.Client.psm1" />
+    <file src="biz.dfch.PS.Appclusive.Client.psd1" target="tools\biz.dfch.PS.Appclusive.Client.psd1" />
+    <file src="biz.dfch.PS.Appclusive.Client.xml" target="tools\biz.dfch.PS.Appclusive.Client.xml" />
+    <file src="Enter-Server.ps1" target="tools\Enter-Server.ps1" />
+    <file src="Import-Module.ps1" target="tools\Import-Module.ps1" />
+    <file src="New-KeyNameValue.ps1" target="tools\New-KeyNameValue.ps1" />
+    <file src="Get-KeyNameValue.ps1" target="tools\Get-KeyNameValue.ps1" />
+    <file src="Set-KeyNameValue.ps1" target="tools\Set-KeyNameValue.ps1" />
+    <file src="Remove-KeyNameValue.ps1" target="tools\Remove-KeyNameValue.ps1" />
+    <file src="New-ManagementCredential.ps1" target="tools\New-ManagementCredential.ps1" />
+    <file src="Get-ManagementCredential.ps1" target="tools\Get-ManagementCredential.ps1" />
+    <file src="Set-ManagementCredential.ps1" target="tools\Set-ManagementCredential.ps1" />
+    <file src="Remove-ManagementCredential.ps1" target="tools\Remove-ManagementCredential.ps1" />
+    <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
+    <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
+    <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />
+    <file src="..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll" target="tools\System.Spatial.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Api.1.0.6\lib\biz.dfch.CS.Appclusive.Api.dll" target="tools\biz.dfch.CS.Appclusive.Api.dll" />
   </files>
 </package>

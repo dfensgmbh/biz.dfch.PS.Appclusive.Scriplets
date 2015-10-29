@@ -1,4 +1,5 @@
-function CreateCartItem($catItem) {
+function CreateCartItem($catItem) 
+{
 	$cartItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CartItem;
 	$cartItem.Tid = "1";
 	$cartItem.Quantity = 1;
@@ -12,12 +13,14 @@ function CreateCartItem($catItem) {
 	return $cartItem;
 }
 
-function GetCartOfUser($svc) {
+function GetCartOfUser($svc)
+{
 	$user = "{0}\{1}" -f $ENV:USERDOMAIN, $ENV:USERNAME;
 	return $svc.Core.Carts |? CreatedBy -eq $user;
 }
 
-function GetCartItemsOfCart($svc, $cart) {
+function GetCartItemsOfCart($svc, $cart)
+{
 	return $svc.Core.LoadProperty($cart, 'CartItems') | Select;
 }
 # SIG # Begin signature block

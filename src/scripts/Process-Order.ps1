@@ -1,7 +1,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+# DFTODO - I would not dotsource these scripts but write scripts with PARAM block, so they can be called like Cmdlets
 . "$here\Process-VDIAssignment.ps1"
-
 
 function ProcessOrder($svc, $orderJob) {
 	
@@ -13,7 +13,7 @@ function ProcessOrder($svc, $orderJob) {
 	
 	if($null -eq $tenantNode)
 	{
-		$msg = "TenantNode does not exist for tenant {0}" -f $orderJob.Tid;
+		$msg = "TenantNode does not exist for tenant '{0}'" -f $orderJob.Tid;
 		Write-Host $msg;
 		return;
 	}
@@ -24,12 +24,9 @@ function ProcessOrder($svc, $orderJob) {
 	# Load order based on job
 	$order = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $orderJob.ReferencedItemId) | Select;
 
-	# Load order VDI order items
-	# DFTODO - Adjust query to load orderItems of type VDI
-	$orderItems = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
-	
-	# DFTODO - First handle VDI item if exists ($product.Type -eq 'VDI')
-	$vdiOrderItem = ;
+	# Load VDI order item
+	# DFTODO - Adjust query to load orderItems of type VDI ($product.Type -eq 'VDI')
+	$vdiOrderItem = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
 	
 	if($vdiOrderItem)
 	{
@@ -51,7 +48,7 @@ function ProcessOrder($svc, $orderJob) {
 	}
 	
 	# DFTODO - Load non VDI orderItems
-	$orderItems = ;
+	$orderItems = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
 	foreach($orderItem in $orderItems)
 	{
 		# DFTODO - Implement handling of SW Package OrderItems
