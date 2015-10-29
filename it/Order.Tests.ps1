@@ -309,6 +309,9 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$createdNode | Should Not Be $null;
 			$createdNode.Type | Should Be 'VDI';
 			
+			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			
 			# Cleanup
 			$svc.Core.DeleteObject($createdNode);
 			$result = $svc.Core.SaveChanges();
