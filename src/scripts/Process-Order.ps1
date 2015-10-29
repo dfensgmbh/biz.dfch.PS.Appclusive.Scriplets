@@ -18,20 +18,21 @@ function ProcessOrder($svc, $orderJob) {
 		return;
 	}
 	
-	# Set order status to 'Running'
-	UpdateOrder -svc $svc -order $order -status 'Continue';
-	
 	# Load order based on job
 	$order = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $orderJob.ReferencedItemId) | Select;
+	
+	# Set order status to 'Running'
+	UpdateOrder -order $order -status 'Continue';
 
 	# Load VDI order item
-	# DFTODO - Adjust query to load orderItems of type VDI ($product.Type -eq 'VDI')
-	$vdiOrderItem = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
+	$orderItems = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
+	$vdiOrderItem = $orderItems |? Type -Match 'VDI';
 	
 	if($vdiOrderItem)
 	{
 		# Load product of orderItem
-		$product = $svc.Core.LoadProperty($vdiOrderItem, 'Product') | Select;
+		$catalogueItem = $vdiOrderItem.Parameters -join "`n" | ConvertFrom-Json;
+		$product = $catalogueItem.Product;
 		
 		$result = ProcessVDIEntitlement -username $order.Requester;
 		
@@ -42,14 +43,13 @@ function ProcessOrder($svc, $orderJob) {
 		}
 		else 
 		{
-			UpdateOrder -svc $svc -order $order -status 'Cancel' -errorMsg $result;
+			UpdateOrder -order $order -status 'Cancel' -errorMsg $result;
 			return;
 		}
 	}
 	
-	# DFTODO - Load non VDI orderItems
-	$orderItems = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
-	foreach($orderItem in $orderItems)
+	$nonVDIorderItems = $orderItems |? Type -ne 'VDI';
+	foreach($orderItem in $nonVDIorderItems)
 	{
 		# DFTODO - Implement handling of SW Package OrderItems
 		# DFTODO - Be aware of time offset between deployment of VDI and SW package assignment
@@ -57,7 +57,7 @@ function ProcessOrder($svc, $orderJob) {
 		# DFTODO - Handle requester of Order (Impersonate creation?)
 	}
 	
-	UpdateOrder -svc $svc -order $order -status 'Continue';
+	UpdateOrder -order $order -status 'Continue';
 }
 
 function CreateInventoryEntry($svc, $parentNode, $product) 
@@ -79,19 +79,40 @@ function CreateInventoryEntry($svc, $parentNode, $product)
 	$svc.Core.SaveChanges();
 }
 
-function UpdateOrder($svc, $order, $status, $errorMsg = '')
+function UpdateOrder($order, $status, $errorMsg = '')
 {
+	$svc = Enter-Appclusive;
 	try
 	{
-		$order.Status = $status;
-		$order.Parameters = $errorMsg;
-		$svc.Core.UpdateObject($order);
+		$orderToBeUpdated = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $order.Id) | Select;
+		$orderToBeUpdated.Status = $status;
+		$orderToBeUpdated.Parameters = $errorMsg;
+		$svc.Core.UpdateObject($orderToBeUpdated);
 		$svc.Core.SaveChanges();
 	}
 	catch
 	{
-		# DFTODO - Handle exception correctly -> an exception is thrown in any case because of PATCH/PUT Order returns Job!
-		# DFTODO - Handle exception, if status change already in progress (i.e. when trying to change to running status)
-		# Write-Host ("Changing status of order '{0}' [{1}] FAILED.{2}{3}" -f $order.Name, $order.Id, [Environment]::NewLine, ($order | Out-String));
+		if ($error[0].Exception.InnerException.InnerException.Message.EndsWith("is not valid for the expected payload kind 'Entry'."))
+		{
+			 # Intentionally left empty
+		}
+		
+		Write-Host ("Changing status of order '{0}' [{1}] FAILED.{2}{3}" -f $order.Name, $order.Id, [Environment]::NewLine, ($order | Out-String));
 	}
 }
+
+#
+# Copyright 2015 d-fens GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
