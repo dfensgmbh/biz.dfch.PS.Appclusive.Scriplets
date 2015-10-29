@@ -21,7 +21,7 @@ foreach($job in $waitingJobs)
     { 
         "Order" 
 		{
-			ProcessOrder -svc $svc -job $job;
+			ProcessOrder -svc $svc -orderJob $job;
 		} 
         default 
 		{
