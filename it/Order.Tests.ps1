@@ -293,6 +293,8 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			# Execute script
 			..\src\scripts\Process-Jobs.ps1
 			
+			Start-Sleep -s 5;
+			
 			# Check result
 			$svc = Enter-AppclusiveServer;
 			
@@ -313,7 +315,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			
 			# Cleanup
 			$svc.Core.DeleteObject($createdNode);
-			$result = svc.Core.SaveChanges();
+			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
 			
 			$svc.Core.DeleteObject($approvalJob);
