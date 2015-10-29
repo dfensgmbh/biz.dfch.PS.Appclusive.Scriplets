@@ -82,7 +82,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$svc = Enter-AppclusiveServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
-			$createdOrder.Requester | Should Be $null;
+			$createdOrder.Requester | Should Be $createdOrder.Requester;
 			$createdOrder.Status | Should Be 'Approval';
 			
 			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
