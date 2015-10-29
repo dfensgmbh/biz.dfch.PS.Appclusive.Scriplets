@@ -305,10 +305,6 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'Completed';
 			
-			$tenantNodeName = 'TenantNode';
-			$filterQuery = "startswith(Name, '{0}') eq true" -f $tenantNodeName;
-			$tenantNode = $svc.Core.Nodes.AddQueryOption('$filter', $filterQuery) | Select;
-			
 			$createdNode = $svc.Core.Nodes |? Name -eq 'VDI Personal';
 			$createdNode | Should Not Be $null;
 			$createdNode.Type | Should Be 'VDI';
