@@ -23,6 +23,14 @@ function ProcessOrder($svc, $orderJob) {
 	
 	# Set order status to 'Running'
 	UpdateOrder -order $order -status 'Continue';
+	
+	####
+	# DFTODO - Replace with call to 'RemoveIfNeeded' as soon it's implemented in API
+	$svc = Enter-Appclusive;
+	$tenantNode = $svc.Core.Nodes.AddQueryOption('$filter', $filterQuery) | Select;
+	$order = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $orderJob.ReferencedItemId) | Select;
+	####
+	
 
 	# Load VDI order item
 	$orderItems = $svc.Core.LoadProperty($order, 'OrderItems') | Select;
@@ -81,23 +89,21 @@ function CreateInventoryEntry($svc, $parentNode, $product)
 
 function UpdateOrder($order, $status, $errorMsg = '')
 {
-	$svc = Enter-Appclusive;
+	$svc2 = Enter-Appclusive;
 	try
 	{
-		$orderToBeUpdated = $svc.Core.Orders.AddQueryOption('$filter', "Id eq " + $order.Id) | Select;
+		$orderToBeUpdated = $svc2.Core.Orders.AddQueryOption('$filter', "Id eq " + $order.Id) | Select;
 		$orderToBeUpdated.Status = $status;
 		$orderToBeUpdated.Parameters = $errorMsg;
-		$svc.Core.UpdateObject($orderToBeUpdated);
-		$svc.Core.SaveChanges();
+		$svc2.Core.UpdateObject($orderToBeUpdated);
+		$svc2.Core.SaveChanges();
 	}
 	catch
 	{
-		if ($error[0].Exception.InnerException.InnerException.Message.EndsWith("is not valid for the expected payload kind 'Entry'."))
+		if (!$error[0].Exception.InnerException.InnerException.Message.EndsWith("is not valid for the expected payload kind 'Entry'."))
 		{
-			 # Intentionally left empty
+			Write-Host ("Changing status of order '{0}' [{1}] FAILED.{2}{3}" -f $order.Name, $order.Id, [Environment]::NewLine, ($order | Out-String));
 		}
-		
-		Write-Host ("Changing status of order '{0}' [{1}] FAILED.{2}{3}" -f $order.Name, $order.Id, [Environment]::NewLine, ($order | Out-String));
 	}
 }
 
