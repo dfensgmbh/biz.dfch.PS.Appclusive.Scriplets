@@ -2,13 +2,6 @@ function ProcessVDIEntitlement($username)
 {
 	$username = $username.split('\')[1];
 	$key = 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI';
-	
-	$stubMode = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'StubMode';
-	
-	if($stubMode.Value -eq 'True')
-	{
-		return $true;
-	}
 
 	$connectionServerNameKey = 'ConnectionServerName';
 	$psSessionConfigKey = 'PsSessionConfig';
@@ -18,9 +11,24 @@ function ProcessVDIEntitlement($username)
 	$psSessionConfig = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name $psSessionConfigKey;
 	$poolId = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name $poolIdKey;
 	
-	if($null -eq connectionServerName || $null -eq $psSessionConfig || $null -eq poolId) {
-		$errorMsg = "Missing KeyNameValueEntry for one of the following keys: '{0}', '{1}', '{2}'" -f $connectionServerNameKey, $psSessionConfigKey, $poolIdKey;
+	if($null -eq $connectionServerName) {
+		$errorMsg = "Missing KeyNameValueEntry for '{0}'" -f $connectionServerNameKey;
 		return $errorMsg;
+	}
+	if($null -eq $psSessionConfigKey) {
+		$errorMsg = "Missing KeyNameValueEntry for '{0}'" -f $psSessionConfigKey;
+		return $errorMsg;
+	}
+	if($null -eq $poolIdKey) {
+		$errorMsg = "Missing KeyNameValueEntry for '{0}'" -f $poolIdKey;
+		return $errorMsg;
+	}
+	
+	$stubMode = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'StubMode';
+	
+	if($stubMode.Value -eq 'True')
+	{
+		return $true;
 	}
 	
 	# DFTODO - Implement fallback to other connection server (also defined in ManagementUri)
