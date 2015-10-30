@@ -10,9 +10,18 @@ function ProcessVDIEntitlement($username)
 		return $true;
 	}
 
-	$connectionServerName = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'ConnectionServerName';
-	$psSessionConfig = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PsSessionConfig';
-	$poolId = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId';
+	$connectionServerNameKey = 'ConnectionServerName';
+	$psSessionConfigKey = 'PsSessionConfig';
+	$poolIdKey = 'PoolId';
+	
+	$connectionServerName = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name $connectionServerNameKey;
+	$psSessionConfig = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name $psSessionConfigKey;
+	$poolId = Get-AppclusiveKeyNameValue -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name $poolIdKey;
+	
+	if($null -eq connectionServerName || $null -eq $psSessionConfig || $null -eq poolId) {
+		$errorMsg = "Missing KeyNameValueEntry for one of the following keys: '{0}', '{1}', '{2}'" -f $connectionServerNameKey, $psSessionConfigKey, $poolIdKey;
+		return $errorMsg;
+	}
 	
 	# DFTODO - Implement fallback to other connection server (also defined in ManagementUri)
 	Enter-PSSession -ComputerName $connectionServerName.Value -ConfigurationName $psSessionConfig.Value
