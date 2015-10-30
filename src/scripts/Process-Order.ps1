@@ -92,8 +92,7 @@ function UpdateOrder($order, $status, $errorMsg = '')
 	$svc2 = Enter-Appclusive;
 	try
 	{
-		# DFTODO - Create class of contracts package!
-		$jobError = $errorMsg;
+		$jobError = @{Code = ''; Message = $errorMsg; Category = ''} | ConvertTo-Json;
 		$orderToBeUpdated = $svc2.Core.Orders.AddQueryOption('$filter', "Id eq " + $order.Id) | Select;
 		$orderToBeUpdated.Status = $status;
 		$orderToBeUpdated.Parameters = $jobError;
