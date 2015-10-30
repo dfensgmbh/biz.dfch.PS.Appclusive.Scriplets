@@ -447,13 +447,13 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$svc = Enter-AppclusiveServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
-			$createdOrder.Status | Should Be 'Completed';
+			$createdOrder.Status | Should Be 'Running';
 			$createdOrder.Description | Should Be 'Arbitrary Description';
 			
 			
 			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
-			$orderJob.Status | Should Be 'Completed';
+			$orderJob.Status | Should Be 'Running';
 			
 			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
 			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
