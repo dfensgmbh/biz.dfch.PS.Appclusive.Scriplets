@@ -92,9 +92,10 @@ function UpdateOrder($order, $status, $errorMsg = '')
 	$svc2 = Enter-Appclusive;
 	try
 	{
+		$errorMsgAsJson = @{Paremters = $errorMsg} | ConvertTo-Json;
 		$orderToBeUpdated = $svc2.Core.Orders.AddQueryOption('$filter', "Id eq " + $order.Id) | Select;
 		$orderToBeUpdated.Status = $status;
-		$orderToBeUpdated.Parameters = $errorMsg;
+		$orderToBeUpdated.Parameters = $errorMsgAsJson;
 		$svc2.Core.UpdateObject($orderToBeUpdated);
 		$svc2.Core.SaveChanges();
 	}
