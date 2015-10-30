@@ -93,10 +93,10 @@ function UpdateOrder($order, $status, $errorMsg = '')
 	try
 	{
 		# DFTODO - Create class of contracts package!
-		$error = $errorMsg;
+		$jobError = $errorMsg;
 		$orderToBeUpdated = $svc2.Core.Orders.AddQueryOption('$filter', "Id eq " + $order.Id) | Select;
 		$orderToBeUpdated.Status = $status;
-		$orderToBeUpdated.Parameters = $error;
+		$orderToBeUpdated.Parameters = $jobError;
 		$svc2.Core.UpdateObject($orderToBeUpdated);
 		$svc2.Core.SaveChanges();
 	}
