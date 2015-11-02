@@ -291,7 +291,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$approval.Status | Should Be 'Approved';
 			
 			# Execute script
-			..\src\scripts\Process-Jobs.ps1
+			..\..\..\Bitbucket\net.srse.ps.daas.scripts\src\Process-Jobs.ps1
 			
 			Start-Sleep -s 5;
 			
