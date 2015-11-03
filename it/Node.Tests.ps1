@@ -1,3 +1,4 @@
+
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
@@ -8,19 +9,13 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "Cart.Tests" "Cart.Tests" {
+Describe -Tags "Node.Tests" "Node.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 
 	. "$here\$sut"
-	. "$here\Catalogue.ps1"
 	
-	Context "Catalogue.Tests" {
-	
-		# Context wide constants
-		$catName = 'Default DaaS';
-		New-Variable -Name cat -Value 'will-be-used-later';
-		New-Variable -Name catItems -Value 'will-be-used-later';
+	Context "ManagementCredential.Tests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -29,220 +24,128 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "GettingCarts-ReturnsZeroEntities" -Test {
+		It "Node-AddNewNode" -Test {
 			# Arrange
-			# N/A
-			
-			# Act
-			$entitySet = $svc.Core.Carts;
-
-			# Assert
-			$entitySet | Should Be $null;
-		}
-
-		It "GettingCatalogue-Succeeds" -Test {
-			# Arrange
-			
-			# Get catalogue
-			$cat = GetCatalogueByName -svc $svc -catName $catName;
-			$cat | Should Not Be $null;
-			
-			# Get catalogue items
-			$catItems = GetCatalogueItemsOfCatalog -svc $svc -cat $cat;
-			$catItems | Should Not Be $null;
-			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
-			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
-			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
-		}
-	}
-
-	Context "Cart.Tests" {
-	
-		BeforeEach {
-			$moduleName = 'biz.dfch.PS.Appclusive.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
-		}
-	
-		It "AddingCartItem-CreatesCart" -Test {
-
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
-			
-			# Create new cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
-
-		It "AddingNonVdiCartItemTwice-IncreasesCount" -Test {
-			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
-			$catItem | Should Not Be $null;
-			
-			# Create new cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-
-			# check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			$cartItems[0].Quantity | Should Be 1;
-			
-			$svc = Enter-AppclusiveServer;
-			
-			# Create second cartItem
-			$cartItem2 = CreateCartItem -catItem $catItem;
-			
-			# Add second VDI cartItem
-			$svc.Core.AddToCartItems($cartItem2);
-			$result = $svc.Core.SaveChanges();
-			
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			$cartItems[0].Quantity | Should Be 2;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
-		
-		It "AddingVdiCartItemTwice-Fails" -Test {
-			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
-			
-			# Create new VDI cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add VDI cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			
-			# Create second VDI cartItem
-			$cartItem2 = CreateCartItem -catItem $catItem;
-
-			# Add second VDI cartItem
-			$svc.Core.AddToCartItems($cartItem2);
-			try 
-			{
-				$svc.Core.SaveChanges();
-			} catch 
-			{
-				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
-				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
-			}
-
-			$svc = Enter-AppclusiveServer;
-			$cart = GetCartOfUser -svc $svc;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
-		
-		It "AddAndRemoveItemToCart" -Test {
-			# Get catItem
-			$catItem1 = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem2 = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
-			$catItem1 | Should Not Be $null;
-			$catItem2 | Should Not Be $null;
-			
-			# Create new VDI cartItem
-			$cartItem1 = CreateCartItem -catItem $catItem1;
-			$cartItem2 = CreateCartItem -catItem $catItem2;
-
-			# Add two cartItem
-			$svc.Core.AddToCartItems($cartItem1);
-			$svc.Core.AddToCartItems($cartItem2);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
+			$nodeName = "TestNode Parent"
+			$nodeDescription = "TestNode used in Test"		
 						
-			# Get Cart of User and Items
-			$cart = GetCartOfUser -svc $svc;
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.count | Should be 2;
+			# Act
+			# $svc.Core.UpdateObject($node);
+			$node = CreateNode -nodeName $nodeName -nodeDescription $nodeDescription;
+			$svc.Core.AddToNodes($node);
+			$result = $svc.Core.SaveChanges();
+						
+			#Assert	
+			$result.StatusCode | Should Be 201;
+			$node.Id | Should Not Be 0;
 			
-			# Remove CartItem VDI
-			$svc.core.DeleteObject($cartItem1)
-			$result2 = $svc.Core.SaveChanges();
-			$result2.StatusCode | Should Be 204;
-			
-			$cartItem1 = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItem1.count | Should be 1;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
+			#Cleanup
+			$svc.Core.DeleteObject($node);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
 		}
+		
+		It "Node-AddNewParentAndChildNode" -Test {
+			# Arrange
+			$nodeParentName = "TestNode Parent"
+			$nodeParentDescription = "TestNode used in test"
+			$nodeChildName = "TestNode Child"
+			$nodeChildDescription = "TestNode used in test"
+						
+			# Create parent node
+			$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+			$svc.Core.AddToNodes($nodeParent);
+			$result = $svc.Core.SaveChanges();
+			
+			#Assert	
+			$result.StatusCode | Should Be 201;
+			$nodeParent.Id | Should Not Be 0;
+			
+			# Create child node
+			$result = $null;
+			$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
+			$svc.Core.AddToNodes($nodeChild);
+			$result = $svc.Core.SaveChanges();
+			
+			#Assert	
+			$result.StatusCode | Should Be 201;
+			$nodeChild.Id | Should Not Be 0;
+			$nodeChild.ParentId | Should be $nodeParent.Id
+			
+			#Cleanup
+			$svc.Core.DeleteObject($nodeChild);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($nodeParent);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+		
+		# It "Node-DeleteParentNodeWithExistingChildThrowException" -Test {
+			# $nodeChild = $null;
+			# $nodeParent = $null;
+			
+			# #Arrange
+			# $nodeParentName = "TestNode Parent"
+			# $nodeParentDescription = "TestNode used in test"
+			# $nodeChildName = "TestNode Child"
+			# $nodeChildDescription = "TestNode used in test"
+						
+			# #Create parent node
+			# $nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+			# $svc.Core.AddToNodes($nodeParent);
+			# $result = $svc.Core.SaveChanges();
+			
+			# #Assert	
+			# $result.StatusCode | Should Be 201;
+			# $nodeParent.Id | Should Not Be 0;
+			
+			# #Create child node
+			# $result = $null;
+			# $nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
+			# $svc.Core.AddToNodes($nodeChild);
+			# $result = $svc.Core.SaveChanges();
+			
+			# #Assert	
+			# $result.StatusCode | Should Be 201;
+			# $nodeChild.Id | Should Not Be 0;
+			# $nodeChild.ParentId | Should be $nodeParent.Id
+					
+			# #Arrange/Assert delete parent node
+			# $svc.Core.DeleteObject($nodeParent);
+			# try 
+			# {
+				# $svc.Core.SaveChanges();
+				# 1 | Should be 2;
+			# } catch 
+			# {
+				# $exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+				# $exception.'odata.error'.message.value | Should Be "An error has occurred.";
+			# }
+			
+			# #Cleanup
+			# $svc.Core.DeleteObject($nodeChild);
+			# $result = $svc.Core.SaveChanges();
+			# $result.StatusCode | Should Be 204;
+			
+			# $svc.Core.DeleteObject($nodeParent);
+			# $result = $svc.Core.SaveChanges();
+			# $result.StatusCode | Should Be 204;
+		# }
+		
+		# It "Cleanup" -Test {
+		
+			$testnodes = $svc.Core.Nodes |? Description -eq "TestNode used in test" | Sort ParentId -Descending;
+			
+			foreach ($node in $testnodes) {
+				$svc.Core.DeleteObject($node);
+				$result = $svc.Core.SaveChanges();
+				#$result.StatusCode | Should Be 204;
+				#1 | Should be 2;
+			}
+		
+		# }
 	}
 }
 
@@ -265,8 +168,8 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU3SsRnSv0ZiD8fn6g2SSNpGLP
-# 61agghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVEVs6JNCekhctBzTx5XA74VI
+# nK2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -365,26 +268,26 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRa1pPYPLq38F/6
-# JehYJajkgkyGgTANBgkqhkiG9w0BAQEFAASCAQB23rvBMfBaqOwpgfWu2YLe+zhe
-# 6PX7hfdQ7mfxDrMQPFmnuiVwyRrK1ag3s+nKl0Sy1f/cgsS9o0DfUMVwt40yqSlD
-# uPdFqhpI6s1DbSlUmHCBi5QLThO/avMSebHilhfakvpM25Q3qHrQV5CrFTf4PXLf
-# mPaOe5WrmsrtieoQm7HnAXcmuM9Voe8kypOh8I19gVqCPbPDTZADtgZphDYRa1sv
-# qDPaqw2ztXmtFWE3KzveBqEBcHBrivyDnQawj9DIRxo/WcDEjnaSpAfPfP7UcIpb
-# sZk70fOyMAcczFGa61wWOuAb2e85JH3+dqe3GjQGcAcE+BsWf5hQf/lkegu2oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTgk4V9pbZ5SpeT
+# JN2iEXN1ATwXijANBgkqhkiG9w0BAQEFAASCAQBBf8m3S+UD67sZF08Bt+R5w3xw
+# GihNx2MCNdmCG45pMVb9T74cnORMzKEUYYmQmG+mRAgluPuUmqy/zTzku5TbaVjF
+# NezED/NM2viySTtT5CYgIRAihCHeLeShYvfEwmoDroKPLTMUTchG/Ar0qMjciGnl
+# OOSZT1MDSobvFxCA4ySFda7E3fV9AicZEDUFOoTUVfZg4uLub3LyL4RBFk2lIj2T
+# WyBCe5MDFnfSIV5H0hhtUV83JiWhSu4JiQbp1lyyZ9FAo8cwiWNQ3nWDT6tLmZqB
+# WuYPfGkdAocT4KbiBYbCwIZunUi9sedvdKvSaYafKRLIxf7PZnIKKAcjkW80oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA0OVowIwYJKoZIhvcNAQkEMRYEFNVaQnofNp8kSBVzI/BjJXLaEB8i
+# MTAxNjA5MzIzN1owIwYJKoZIhvcNAQkEMRYEFK/uh4Jb18a7sJqk1xzcsKFRoqwz
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBSZ7IA0XxwgMK4+ySn
-# /g+SZzUkMqnvow9yjYgPUMadTkYDXOewPT0IbZkXaEJGYliPM+mUH/BAaso0D2ZP
-# 3U3xiugGVsnQA1m4D61foksrKWRl9P2eW/q4OG/MHMIDOsMIkojLWBQtmLvEkePU
-# ljJ5KAAR+fXDaeXhLq3eB78NUmsa44oT/FBUNH8nShvkx5hn0s3m6ey+ZY4TRWCp
-# iHDeqIWooT5V3OCOgmZ8jNdJuwttC0gQyr96NfmvNVWgEgzW333qTiP+ey21wv74
-# JezyaVbv3biYAsFYXijMCT88hV7HlpjAf2z8FyoHWDaYtCoNwQSVr6IRSbA1fDdM
-# 5gnH
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB+JX+YJZ9V0HOysq3Z
+# CGV6dwHIxuSQEu/pJG47utxZJ4DEj34MG+K+aivmVv1Bj1vQi6QDMeaWtci1Vb/r
+# Oy5JJhVs1A1UFnkYftynbV6Vi+jLAx7emALfQ+FW37Fsj2V1b8+otYdkMlYfus2p
+# u8zl+lhjlF5SVGCYoDD8qEZEiVwD6/yRq5oFdIwn5c4zhDVa+zWQ3NL2mAqG+uxn
+# bJJl7ViZWtXbKGCqtF0akeOoaYmgFssXeaVxRzGUr8H7O3zK+01KLINAlLmKGpKW
+# hfBPPKhhFK7/ce9JEpsFd5ZnSTcOEiWbqCMtK4I+mwUb5aHpH+PHM0sm+wjMGM35
+# dxD8
 # SIG # End signature block
