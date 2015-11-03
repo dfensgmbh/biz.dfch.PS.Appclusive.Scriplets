@@ -7,11 +7,19 @@ Assembly: biz.dfch.PS.Appclusive.Client
 
 d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
 
+
 ## Download
 
 * Get it on [NuGet](https://www.nuget.org/packages/biz.dfch.PS.Appclusive.Client/)
 
 * See [Releases](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/releases) and [Tags](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/tags) on [GitHub](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client)
+
+
+## Installation
+
+1. Exeucte `nuget.exe install biz.dfch.PS.Appclusive.Client -Version 0.1.7`
+2. Execute `.\Install.ps1` in downloaded package folder
+
 
 ## Description
 
