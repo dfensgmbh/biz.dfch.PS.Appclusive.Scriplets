@@ -1,4 +1,5 @@
 #requires -Modules 'biz.dfch.PS.Appclusive.Client'
+
 PARAM
 (
 	[Parameter(Mandatory = $false)]
@@ -355,8 +356,8 @@ function ManagementCredentials($Recreate)
 	$svc.Core.AddToManagementCredentials($mc);
 	$mc.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController';
 	$mc.Description = 'ManagementCredential for Active Directory access';
-	$mc.Username = 'SWI\sDaaSPa';
-	$mc.Password = "tralala";
+	$mc.Username = 'DFCH\adservice';
+	$mc.Password = "P@ssw0rd";
 	$mc.EncryptedPassword = $mc.Password;
 	$mc.Created = [System.DateTimeOffset]::Now;
 	$mc.Modified = $mc.Created;
