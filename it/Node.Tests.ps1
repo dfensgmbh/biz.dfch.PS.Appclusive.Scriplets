@@ -82,70 +82,59 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$result.StatusCode | Should Be 204;
 		}
 		
-		# It "Node-DeleteParentNodeWithExistingChildThrowException" -Test {
-			# $nodeChild = $null;
-			# $nodeParent = $null;
+		It "Node-DeleteParentNodeWithExistingChildThrowException" -Test {
+			$nodeChild = $null;
+			$nodeParent = $null;
 			
-			# #Arrange
-			# $nodeParentName = "TestNode Parent"
-			# $nodeParentDescription = "TestNode used in test"
-			# $nodeChildName = "TestNode Child"
-			# $nodeChildDescription = "TestNode used in test"
+			#Arrange
+			$nodeParentName = "TestNode Parent"
+			$nodeParentDescription = "TestNode used in test"
+			$nodeChildName = "TestNode Child"
+			$nodeChildDescription = "TestNode used in test"
 						
-			# #Create parent node
-			# $nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
-			# $svc.Core.AddToNodes($nodeParent);
-			# $result = $svc.Core.SaveChanges();
+			#Create parent node
+			$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+			$svc.Core.AddToNodes($nodeParent);
+			$result = $svc.Core.SaveChanges();
 			
-			# #Assert	
-			# $result.StatusCode | Should Be 201;
-			# $nodeParent.Id | Should Not Be 0;
+			#Assert	
+			$result.StatusCode | Should Be 201;
+			$nodeParent.Id | Should Not Be 0;
 			
-			# #Create child node
-			# $result = $null;
-			# $nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
-			# $svc.Core.AddToNodes($nodeChild);
-			# $result = $svc.Core.SaveChanges();
+			#Create child node
+			$result = $null;
+			$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
+			$svc.Core.AddToNodes($nodeChild);
+			$result = $svc.Core.SaveChanges();
 			
-			# #Assert	
-			# $result.StatusCode | Should Be 201;
-			# $nodeChild.Id | Should Not Be 0;
-			# $nodeChild.ParentId | Should be $nodeParent.Id
+			#Assert	
+			$result.StatusCode | Should Be 201;
+			$nodeChild.Id | Should Not Be 0;
+			$nodeChild.ParentId | Should be $nodeParent.Id
 					
-			# #Arrange/Assert delete parent node
-			# $svc.Core.DeleteObject($nodeParent);
-			# try 
-			# {
-				# $svc.Core.SaveChanges();
-				# 1 | Should be 2;
-			# } catch 
-			# {
-				# $exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
-				# $exception.'odata.error'.message.value | Should Be "An error has occurred.";
-			# }
+			#Arrange/Assert delete parent node
+			$svc.Core.DeleteObject($nodeParent);
 			
-			# #Cleanup
-			# $svc.Core.DeleteObject($nodeChild);
-			# $result = $svc.Core.SaveChanges();
-			# $result.StatusCode | Should Be 204;
-			
-			# $svc.Core.DeleteObject($nodeParent);
-			# $result = $svc.Core.SaveChanges();
-			# $result.StatusCode | Should Be 204;
-		# }
-		
-		# It "Cleanup" -Test {
-		
-			$testnodes = $svc.Core.Nodes |? Description -eq "TestNode used in test" | Sort ParentId -Descending;
-			
-			foreach ($node in $testnodes) {
-				$svc.Core.DeleteObject($node);
-				$result = $svc.Core.SaveChanges();
-				#$result.StatusCode | Should Be 204;
-				#1 | Should be 2;
+			try 
+			{
+				$svc.Core.SaveChanges();
+			} catch 
+			{
+				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+				$exception.'odata.error'.message.value | Should Be "An error has occurred.";
+				$detach = $svc.Core.Detach($nodeParent)
+				$detach | Should Be $true;
 			}
-		
-		# }
+						
+			#Cleanup
+			$svc.Core.DeleteObject($nodeChild);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($nodeParent);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
 	}
 }
 
