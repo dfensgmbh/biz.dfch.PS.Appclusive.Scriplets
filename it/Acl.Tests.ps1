@@ -1,4 +1,3 @@
-
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
@@ -9,13 +8,13 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "Node.Tests" "Node.Tests" {
+Describe -Tags "Acl.Tests" "Acl.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
-
+	
 	. "$here\$sut"
 	
-	Context "ManagementCredential.Tests" {
+	Context "Acl.Tests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -24,136 +23,137 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "Node-AddAndDeleteNewNode" -Test {
+		It "Acl-CreateAndDeleteAcl" -Test {
 			try {
 				# Arrange
-				$nodeName = "TestNode Parent"
-				$nodeDescription = "TestNode used in Test"		
-							
+				$aclName = "Test Acl";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				
 				# Act
-				# $svc.Core.UpdateObject($node);
-				$node = CreateNode -nodeName $nodeName -nodeDescription $nodeDescription;
-				$svc.Core.AddToNodes($node);
-				$result = $svc.Core.SaveChanges();
-							
-				#Assert	
-				$result.StatusCode | Should Be 201;
-				$node.Id | Should Not Be 0;
-			} finally {
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert	
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should not be 0;
+			} 
+			finally {
 				#Cleanup
-				$svc.Core.DeleteObject($node);
+				$svc.Core.DeleteObject($acl);
 				$result = $svc.Core.SaveChanges();
 				$result.StatusCode | Should Be 204;
 			}
 		}
 		
-		It "Node-AddNewParentAndChildNode" -Test {
+		It "Acl-UpdateNameDescripton" -Test {
+			try {
+				# Create Acl
+				$aclName = "Test Acl";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should not be 0;
+				
+				# Arrange
+				$aclSetName	= "Updated";
+				$aclSetDescription = "Updated";
+				$acl.Name = $aclSetName;
+				$acl.Description = $aclSetDescription;
+								
+				# Act
+				$svc.Core.UpdateObject($acl)
+				$result = $svc.core.SaveChanges();	
+				
+				# Assert
+				$result.StatusCode | Should Be 204;
+				$aclCheck = $svc.Core.Acls.AddQueryOption('$filter', ("Id eq {0}" -f $acl.Id));
+				$aclCheck.Name | Should Be $aclSetName;
+			} 
+			finally {
+				#Cleanup
+				$svc.Core.DeleteObject($acl);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+	}
+	
+	Context "Ace.Tests" {
 		
-			# DFTODO - consider try/finally for cleanup
-			<#
-			try
-			{
-				# all my tests as before
-			}
-			finally
-			{
-				# Cleanup code goes here
-			}
-			#>
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
 			
-			# Arrange
-			$nodeParentName = "TestNode Parent"
-			$nodeParentDescription = "TestNode used in test"
-			$nodeChildName = "TestNode Child"
-			$nodeChildDescription = "TestNode used in test"
-						
-			# Create parent node
-			$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
-			$svc.Core.AddToNodes($nodeParent);
-			$result = $svc.Core.SaveChanges();
+			# Create Acl for Ace tests
+			$aclName = "Test Acl for Ace tests";
+			$aclDescription = "TestNode used in Test";		
+			$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+			$svc.Core.AddToAcls($acl);
+			$result = $svc.core.SaveChanges();
+			$result.StatusCode | Should be 201;
+			$acl.Id | Should not be 0;
 			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeParent.Id | Should Not Be 0;
-			
-			# Create child node
 			$result = $null;
-			$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
-			$svc.Core.AddToNodes($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeChild.Id | Should Not Be 0;
-			$nodeChild.ParentId | Should be $nodeParent.Id
-			
-			#Cleanup
-			$svc.Core.DeleteObject($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-			
-			$svc.Core.DeleteObject($nodeParent);
+		}
+		
+		AfterEach {
+			# Cleanup Acl
+			$svc = Enter-AppclusiveServer;
+			$svc.Core.AttachTo('Acls', $acl);
+			$svc.Core.DeleteObject($acl);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
 		}
-		
-		It "Node-DeleteParentNodeWithExistingChildThrowException" -Test {
-			$nodeChild = $null;
-			$nodeParent = $null;
-			
-			#Arrange
-			$nodeParentName = "TestNode Parent"
-			$nodeParentDescription = "TestNode used in test"
-			$nodeChildName = "TestNode Child"
-			$nodeChildDescription = "TestNode used in test"
-						
-			#Create parent node
-			$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
-			$svc.Core.AddToNodes($nodeParent);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeParent.Id | Should Not Be 0;
-			
-			#Create child node
-			$result = $null;
-			$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
-			$svc.Core.AddToNodes($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeChild.Id | Should Not Be 0;
-			$nodeChild.ParentId | Should be $nodeParent.Id
-					
-			#Arrange/Assert delete parent node
-			$svc.Core.DeleteObject($nodeParent);
-			
-			try 
-			{
-				$svc.Core.SaveChanges();
-			} catch 
-			{
-				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
-				$exception.'odata.error'.message.value | Should Be "An error has occurred.";
-				$detach = $svc.Core.Detach($nodeParent)
-				$detach | Should Be $true;
+
+		It "Ace-CreateAndDeleteAce" -Test {
+			try {
+				# Arrange
+				$aceName = "Test Ace"
+				$aceDescription = "Ace used in tests"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act
+				$svc.Core.AddToAces($ace);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert
+				$result.StatusCode | Should be 201;
+				$ace.Id | Should not be 0;
+				
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
 			}
-						
-			#Cleanup
-			#Reconnect
-			$svc = Enter-AppclusiveServer;
-			$svc.Core.AttachTo('Nodes', $nodeChild);
-			$svc.Core.AttachTo('Nodes', $nodeParent);
+		}
+		
+		It "Ace-CreateAceWithoutAclReferenz-ThrowException" -Test {
+			# Arrange
+			$aceName = "Test Ace"
+			$aceDescription = "Ace used in tests"
+			$aceAction = "ALLOW";
 			
-			$svc.Core.DeleteObject($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
+			$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAction $aceAction;
+			$svc.Core.AddToAces($ace);
 			
-			$svc.Core.DeleteObject($nodeParent);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
+			try {
+				$result = $svc.core.SaveChanges();
+			} catch {
+				$threwException = $true;
+			}
+			
+			# Assert
+			$threwException | Should Be $true;		
 		}
 	}
 }
@@ -177,8 +177,8 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVEVs6JNCekhctBzTx5XA74VI
-# nK2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZX5w8Xw+udMvWl6nNjqlG7YQ
+# 2tugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -277,26 +277,26 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTgk4V9pbZ5SpeT
-# JN2iEXN1ATwXijANBgkqhkiG9w0BAQEFAASCAQBBf8m3S+UD67sZF08Bt+R5w3xw
-# GihNx2MCNdmCG45pMVb9T74cnORMzKEUYYmQmG+mRAgluPuUmqy/zTzku5TbaVjF
-# NezED/NM2viySTtT5CYgIRAihCHeLeShYvfEwmoDroKPLTMUTchG/Ar0qMjciGnl
-# OOSZT1MDSobvFxCA4ySFda7E3fV9AicZEDUFOoTUVfZg4uLub3LyL4RBFk2lIj2T
-# WyBCe5MDFnfSIV5H0hhtUV83JiWhSu4JiQbp1lyyZ9FAo8cwiWNQ3nWDT6tLmZqB
-# WuYPfGkdAocT4KbiBYbCwIZunUi9sedvdKvSaYafKRLIxf7PZnIKKAcjkW80oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTw3JlKeHQiw2lA
+# 2iJee4jfe1ok0zANBgkqhkiG9w0BAQEFAASCAQDBSK+A2XFr+NaI3FLcxOBVbQU/
+# aMfGJGwzAABNVWoanByc8XE6MuZ+5yXdvdeXZITHAFxrwRe7R2N6+5EcjQGWAzJi
+# HyKTZ2T5tFXBi9qJPTTKytbdYtMOJeWClr9v15iHJcOjaba4IWFxcX7n3k7fspI2
+# +ePobEIdGl7kSNMNEd8e3GgIN2EUUu6xkOPycP0Alw4oMsd+E+RV2qJyGn6ukIoW
+# +WoPCtFySmIH9vI7xP5F7T0nl1csaJtj00eSu7qREwUdefszhqDyadKmDCLus1bS
+# dSnSktG5UuVndbfFJXlssxRC4cPsvtedToZteJ08p/FWbvOZ9tQMESSZkklmoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAxNjA5MzIzN1owIwYJKoZIhvcNAQkEMRYEFK/uh4Jb18a7sJqk1xzcsKFRoqwz
+# MTAyODE0MjA0NlowIwYJKoZIhvcNAQkEMRYEFPKGbdv4mF14VLiWolIKpcIGtFoF
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB+JX+YJZ9V0HOysq3Z
-# CGV6dwHIxuSQEu/pJG47utxZJ4DEj34MG+K+aivmVv1Bj1vQi6QDMeaWtci1Vb/r
-# Oy5JJhVs1A1UFnkYftynbV6Vi+jLAx7emALfQ+FW37Fsj2V1b8+otYdkMlYfus2p
-# u8zl+lhjlF5SVGCYoDD8qEZEiVwD6/yRq5oFdIwn5c4zhDVa+zWQ3NL2mAqG+uxn
-# bJJl7ViZWtXbKGCqtF0akeOoaYmgFssXeaVxRzGUr8H7O3zK+01KLINAlLmKGpKW
-# hfBPPKhhFK7/ce9JEpsFd5ZnSTcOEiWbqCMtK4I+mwUb5aHpH+PHM0sm+wjMGM35
-# dxD8
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy7ufxDEu0kJPJ9whi
+# dhkVPCQP+gc13hOgcjAx+K8Nc+S6jofZa7dfZTI5eABZ7aDpULGQYMW8WnK8gCSL
+# HDOxHmuPOww5c7K/VBaF5Ttrt3ZO+WH8BWp1H3F7GSBJLOrzFF66AF7IhKKvmFoo
+# GegWpNuLJYAVfIy8DfkRIB9ttulWSuA7tT/4rgL5S+2rUHOi3H+GWPsBpUt+b1v/
+# koBcdbApcW/r8n6OtKqHP+PfZL9w/KYyYafr5UrlgRxSjKN+5v+viUfD3UsOrUxV
+# LetMozQxlYdZmyr3xU+exTAcaIyfvdukC/pDLMUsyJLii4ZaR5Zt9tJOzjJyxsFM
+# 034o
 # SIG # End signature block
