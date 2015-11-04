@@ -46,6 +46,19 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 		}
 		
 		It "Node-AddNewParentAndChildNode" -Test {
+		
+			# DFTODO - consider try/finally for cleanup
+			<#
+			try
+			{
+				# all my tests as before
+			}
+			finally
+			{
+				# Cleanup code goes here
+			}
+			#>
+			
 			# Arrange
 			$nodeParentName = "TestNode Parent"
 			$nodeParentDescription = "TestNode used in test"
