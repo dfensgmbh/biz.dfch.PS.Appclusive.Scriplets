@@ -36,7 +36,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				
 				# Assert	
 				$result.StatusCode | Should be 201;
-				$acl.Id | Should not be 0;
+				$acl.Id | Should Not Be 0;
 			} 
 			finally {
 				#Cleanup
@@ -55,7 +55,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$svc.Core.AddToAcls($acl);
 				$result = $svc.core.SaveChanges();
 				$result.StatusCode | Should be 201;
-				$acl.Id | Should not be 0;
+				$acl.Id | Should Not Be 0;
 				
 				# Arrange
 				$aclSetName	= "Updated";
@@ -96,7 +96,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			$svc.Core.AddToAcls($acl);
 			$result = $svc.core.SaveChanges();
 			$result.StatusCode | Should be 201;
-			$acl.Id | Should not be 0;
+			$acl.Id | Should Not Be 0;
 			
 			$result = $null;
 		}
@@ -126,7 +126,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				
 				# Assert
 				$result.StatusCode | Should be 201;
-				$ace.Id | Should not be 0;
+				$ace.Id | Should Not Be 0;
 				
 			} 			
 			Finally {
@@ -154,6 +154,120 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			
 			# Assert
 			$threwException | Should Be $true;		
+		}
+		
+		It "Ace-CreateTwoAcesToOneAcl" {
+			try {
+				# Arrange
+				$aceName1 = "Test Ace One"
+				$aceDescription1 = "Ace used in tests (one)"
+				$aceName2 = "Test Ace Two"
+				$aceDescription1 = "Ace used in tests (two)"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace1 = CreateAce -aceName $aceName1 -aceDescription $aceDescription1 -aceAclId $aceAclId -aceAction $aceAction;	
+				$ace2 = CreateAce -aceName $aceName2 -aceDescription $aceDescription2 -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act
+				$svc.Core.AddToAces($ace1);
+				$result1 = $svc.core.SaveChanges();
+				$svc.Core.AddToAces($ace2);
+				$result2 = $svc.core.SaveChanges();
+				
+				# Assert
+				$result1.StatusCode | Should be 201;
+				$ace1.Id | Should Not Be 0;
+				$result2.StatusCode | Should be 201;
+				$ace2.Id | Should Not Be 0;
+				$ace1.Id | Should Not Be $ace2.Id;
+				
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($ace2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "Ace-GetAcesOfAcl" {
+			try {
+				# Arrange Create Ace
+				$aceName1 = "Test Ace One"
+				$aceDescription1 = "Ace used in tests (one)"
+				$aceName2 = "Test Ace Two"
+				$aceDescription1 = "Ace used in tests (two)"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace1 = CreateAce -aceName $aceName1 -aceDescription $aceDescription1 -aceAclId $aceAclId -aceAction $aceAction;	
+				$ace2 = CreateAce -aceName $aceName2 -aceDescription $aceDescription2 -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create Ace
+				$svc.Core.AddToAces($ace1);
+				$result1 = $svc.core.SaveChanges();
+				$svc.Core.AddToAces($ace2);
+				$result2 = $svc.core.SaveChanges();
+				
+				# Assert Create Ace
+				$result1.StatusCode | Should be 201;
+				$ace1.Id | Should Not Be 0;
+				$result2.StatusCode | Should be 201;
+				$ace2.Id | Should Not Be 0;
+				$ace1.Id | Should Not Be $ace2.Id;
+				
+				#Act Select Ace of Acl
+				$acesOfAcl = $svc.Core.LoadProperty($acl, 'Aces') | Select
+				$acesOfAcl.Id -contains $ace1.Id | Should be $True;
+				$acesOfAcl.Id -contains $ace2.Id | Should be $True;
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($ace2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "Ace-GetAclOfAce" -Test {
+			try {
+				# Arrange Create Ace
+				$aceName = "Test Ace"
+				$aceDescription = "Ace used in tests"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create Ace
+				$svc.Core.AddToAces($ace);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert Create Ace
+				$result.StatusCode | Should be 201;
+				$ace.Id | Should Not Be 0;
+				
+				# Act Load Acl of Ace
+				$aclOfAce = $svc.Core.LoadProperty($ace, 'Acl') | Select;
+				
+				#Assert Acl of Ace
+				$aclOfAce.Id | Should Be $acl.Id;
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
 		}
 	}
 }
