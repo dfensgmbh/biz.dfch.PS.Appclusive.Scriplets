@@ -29,7 +29,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "GettingCarts-ReturnsZeroEntities" -Test {
+		It "Cart-GettingCarts-ReturnsZeroEntities" -Test {
 			# Arrange
 			# N/A
 			
@@ -40,7 +40,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$entitySet | Should Be $null;
 		}
 
-		It "GettingCatalogue-Succeeds" -Test {
+		It "Cart-GettingCatalogue-Succeeds" -Test {
 			# Arrange
 			
 			# Get catalogue
@@ -65,7 +65,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 	
-		It "AddingCartItem-CreatesCart" -Test {
+		It "Cart-AddingCartItem-CreatesCart" -Test {
 
 			# Get catItem
 			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
@@ -98,6 +98,46 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$cart | Should Be $null;
 		}
 
+		It "DeleteCartDeletesReferdCartItem" -Test {
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			#Check CartItems bevor Cleanup
+			$cartItems = GetCartOfUser -svc $svc;
+			$cartItems | Should Not Be $null;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+			
+			$cartItems = GetCartOfUser -svc $svc;
+			$cartItems | Should Be $null;
+			
+		}
+		
 		It "AddingNonVdiCartItemTwice-IncreasesCount" -Test {
 			
 			# Get catItem
