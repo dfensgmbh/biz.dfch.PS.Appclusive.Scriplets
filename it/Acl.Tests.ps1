@@ -71,6 +71,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$result.StatusCode | Should Be 204;
 				$aclCheck = $svc.Core.Acls.AddQueryOption('$filter', ("Id eq {0}" -f $acl.Id));
 				$aclCheck.Name | Should Be $aclSetName;
+				$aclCheck.Description | Should Be $aclSetDescription;
 			} 
 			finally {
 				#Cleanup
@@ -96,6 +97,70 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$acl.Id | Should Not Be 0;
 			} 
 			finally {
+				#Cleanup
+				$svc.Core.DeleteObject($acl);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "Acl-DeleteWithoutAttachedAce-ThrewException" -Test {
+			try {
+				# Arrange Create Acl
+				$aclName = "Test Acl";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				
+				# Act Create Acl
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert Create Acl
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should Not Be 0;
+				
+				# Arrange Create Ace
+				$aceName = "Test Ace"
+				$aceDescription = "Ace used in tests"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create Ace
+				$svc.Core.AddToAces($ace);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert Create Ace
+				$result.StatusCode | Should be 201;
+				$ace.Id | Should Not Be 0;
+				
+				# Arrange Delete
+				$svc.Core.DeleteObject($acl);
+				
+				# Delete threw exception
+				try {
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+				catch {
+					$threwException = $true;
+				}
+				
+				# Assert
+				$threwException | Should Be $true;
+			} 
+			finally {
+				# Relogin and bind objects
+				$svc = Enter-AppclusiveServer;
+				$svc.Core.AttachTo('Acls', $acl);
+				$svc.Core.AttachTo('Aces', $ace);
+
+				#Cleanup	
+				$svc.Core.DeleteObject($ace);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
 				#Cleanup
 				$svc.Core.DeleteObject($acl);
 				$result = $svc.Core.SaveChanges();
@@ -151,6 +216,48 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$result.StatusCode | Should be 201;
 				$ace.Id | Should Not Be 0;
 				
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "Ace-UpdateNameDescription" -Test {
+			try {
+				# Arrange Create
+				$aceName = "Test Ace"
+				$aceDescription = "Ace used in tests"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create
+				$svc.Core.AddToAces($ace);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert Create
+				$result.StatusCode | Should be 201;
+				$ace.Id | Should Not Be 0;
+				
+				# Arrange Update
+				$aceSetName = "Updated"
+				$aceSetDescription = "Ace used in tests (updated)"
+				$ace.Name = $aceSetName;
+				$ace.Description = $aceSetDescription;
+								
+				# Act
+				$svc.Core.UpdateObject($ace)
+				$result = $svc.core.SaveChanges();	
+				
+				# Assert
+				$result.StatusCode | Should Be 204;
+				$aceCheck = $svc.Core.Aces.AddQueryOption('$filter', ("Id eq {0}" -f $ace.Id));
+				$aceCheck.Name | Should Be $aceSetName;
+				$aceCheck.Description | Should Be $aceSetDescription;
 			} 			
 			Finally {
 				#Cleanup	
