@@ -137,7 +137,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			}
 		}
 		
-		It "Ace-CreateAceWithoutAclReferenz-ThrowException" -Test {
+		It "Ace-CreateAceWithoutAclReferenz-ThrewException" -Test {
 			# Arrange
 			$aceName = "Test Ace"
 			$aceDescription = "Ace used in tests"
