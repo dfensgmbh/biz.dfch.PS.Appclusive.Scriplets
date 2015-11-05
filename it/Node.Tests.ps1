@@ -15,6 +15,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 
 	. "$here\$sut"
 	
+	# DFTODO - naming
 	Context "ManagementCredential.Tests" {
 		
 		BeforeEach {
@@ -97,7 +98,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$result.StatusCode | Should Be 204;
 		}
 		
-		It "Node-DeleteParentNodeWithExistingChildThrowException" -Test {
+		It "Node-DeleteParentNodeWithExistingChildThrowsException" -Test {
 			$nodeChild = $null;
 			$nodeParent = $null;
 			
