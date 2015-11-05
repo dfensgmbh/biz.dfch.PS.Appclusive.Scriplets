@@ -79,6 +79,29 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$result.StatusCode | Should Be 204;
 			}
 		}
+		
+		It "Acl-CreateAndDeleteAcl" -Test {
+			try {
+				# Arrange
+				$aclName = "Test Acl";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				
+				# Act
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert	
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should Not Be 0;
+			} 
+			finally {
+				#Cleanup
+				$svc.Core.DeleteObject($acl);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
 	}
 	
 	Context "Ace.Tests" {
