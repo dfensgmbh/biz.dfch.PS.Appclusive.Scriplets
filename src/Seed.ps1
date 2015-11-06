@@ -317,6 +317,7 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'ConnectionServerName' -Value '{}';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PsSessionConfig' -Value '{}';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId' -Value '{}';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
 
@@ -546,7 +547,7 @@ function Products($Recreate)
 	
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$svc.Core.AddToProducts($product);
-	$product.Type = 'SW Package';
+	$product.Type = 'SCCM';
 	$product.Version = '1';
 	$product.Name = 'DSWR Autocad 12 Production';
 	$product.Description = 'DSWR Autocad 12 Production';
