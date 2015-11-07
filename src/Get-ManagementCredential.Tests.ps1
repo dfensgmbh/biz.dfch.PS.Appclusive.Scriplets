@@ -76,7 +76,8 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 
 			# Assert
 			$result | Should Be $null;
-		}	}
+		}
+	}
 }
 
 #
