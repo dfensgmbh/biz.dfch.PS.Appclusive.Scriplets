@@ -54,6 +54,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="biz.dfch.PS.Appclusive.Client.psd1" target="tools\biz.dfch.PS.Appclusive.Client.psd1" />
     <file src="biz.dfch.PS.Appclusive.Client.xml" target="tools\biz.dfch.PS.Appclusive.Client.xml" />
     <file src="Enter-Server.ps1" target="tools\Enter-Server.ps1" />
+    <file src="Get-ModuleVariable.ps1" target="tools\Get-ModuleVariable.ps1" />
     <file src="Import-Module.ps1" target="tools\Import-Module.ps1" />
     <file src="Remove-Entity.ps1" target="tools\Remove-Entity.ps1" />
     <file src="New-KeyNameValue.ps1" target="tools\New-KeyNameValue.ps1" />
