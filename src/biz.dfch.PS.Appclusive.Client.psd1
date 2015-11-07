@@ -95,6 +95,8 @@ NestedModules = @(
 	'Set-ManagementCredential.ps1'
 	,
 	'Remove-ManagementCredential.ps1'
+	,
+	'Remove-Entity.ps1'
 )
 
 # Functions to export from this module
