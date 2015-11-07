@@ -320,7 +320,7 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
 	
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'Namespace' -Value 'ServiceBusDefaultNamespace-WFE';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'Namespace' -Value 'ServiceBusDefaultNamespace';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'ServerName' -Value 'win-8a036g6jvpj';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'RuntimePort' -Value '9354';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'SharedAccessKeyName' -Value 'RootManageSharedAccessKey';
