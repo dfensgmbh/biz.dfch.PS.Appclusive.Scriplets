@@ -320,12 +320,8 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
 	
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'Namespace' -Value 'ServiceBusDefaultNamespace';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'ServerName' -Value 'win-8a036g6jvpj';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'RuntimePort' -Value '9354';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'SharedAccessKeyName' -Value 'RootManageSharedAccessKey';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'SharedAccessKey' -Value 'ngolZ2sQlq2ifQqUQyaOQ4msZ53uSOEhBhxzLp85KfI=';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.ServiceBus' -Name 'NotifyWfeQueue' -Value 'NOTIFY-WFE';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'ConnectionString' -Value 'Endpoint=sb://win-8a036g6jvpj/ServiceBusDefaultNamespace;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ngolZ2sQlq2ifQqUQyaOQ4msZ53uSOEhBhxzLp85KfI=;TransportType=Amqp';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'NotifyWfeQueue' -Value 'NOTIFY-WFE';
 	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
