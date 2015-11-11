@@ -319,10 +319,8 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId' -Value '{}';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
-	
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'ConnectionString' -Value 'Endpoint=sb://win-8a036g6jvpj/ServiceBusDefaultNamespace;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ngolZ2sQlq2ifQqUQyaOQ4msZ53uSOEhBhxzLp85KfI=;TransportType=Amqp';
+
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'NotifyWfe' -Value 'NOTIFY-WFE';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'AuditLog' -Value 'AUDIT-LOG';
 	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
