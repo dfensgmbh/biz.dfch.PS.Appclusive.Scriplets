@@ -34,14 +34,9 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			
 			# Get catalogue
 			$cat = GetCatalogueByName -svc $svc -catName $catName;
-			$cat | Should Not Be $null;
 			
-			# Get catalogue items
-			$catItems = GetCatalogueItemsOfCatalog -svc $svc -cat $cat;
-			$catItems | Should Not Be $null;
-			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
-			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
-			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
+			#Assert
+			$cat | Should Not Be $null;
 		}
 		
 		It "CreatingProductAndCatalogueItem-Succeeds" -Test {
@@ -116,66 +111,10 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$result.StatusCode | Should Be 204;
 		}		
 		
-		# It "CreatingSameCatalogueItemTwice-Failed" -Test {
-			# # Arrange
-			
-			# # Act
-			# $cat = GetCatalogueByName -svc $svc -catName $catName;
-			# $cat | Should Not Be $null;
-			
-			# # Add product
-			# $product = CreateProduct;
-			# $svc.Core.AddToProducts($product);
-			# $result = $svc.Core.SaveChanges();
-			
-			# # Assert
-			# $result.StatusCode | Should Be 201;
-			# $cartItem.Id | Should Not Be 0;
-			
-			# # Add catalogueItem
-			# $catalogueItem = CreateCatalogueItem -cat $cat -product $product;
-			# $svc.Core.AddToCatalogueItems($catalogueItem);
-			# $result = $svc.Core.SaveChanges();
-			
-			# # # Add catalogueItem second time.
-			# $catalogueItem = CreateCatalogueItem -cat $cat -product $product;
-			# $svc.Core.AddToCatalogueItems($catalogueItem);
-			
-			# try {
-				# $result = $svc.Core.SaveChanges();
-				# $ExceptionThrown = $false;
-			# } catch {
-				# $ExceptionThrown = $true;
-			# }
-			
-			# #Assert
-			# $ExceptionThrown | Should be $true
-									
-			# # # Cleanup
-			# $catalogueItem = $svc.Core.DeleteObject($catalogueItem);
-			# $result = $svc.Core.SaveChanges();
-			# $result.StatusCode | Should Be 204;
-			# $catalogueItem.Id | Should be $null;
-			
-			# $svc.Core.DeleteObject($product);
-			# $result = $svc.Core.SaveChanges();
-			# $result.StatusCode | Should Be 204;
-		# }
-
 		It "CreatingCataloqueWithOneItemAndRemoveCatalogueSucced" -Test {
 			# Arrange catalogue
 			$catName = 'NewCatalogueInTest'
-			$cat = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
-			$cat.Status = "Published";
-			$cat.Version = 1;
-			$cat.Name = $catName;
-			$cat.Description = "Default catalogue for the test run";
-			$cat.Created = [System.DateTimeOffset]::Now;
-			$cat.Modified = $cat.Created;
-			$cat.CreatedBy = $ENV:USERNAME;;
-			$cat.ModifiedBy = $ENV:USERNAME;;
-			$cat.Tid = "1";
-			$cat.Id = 0;
+			$cat = CreateCatalogue -catName $catName
 			
 			# Act create catalogue
 			$svc.Core.AddToCatalogues($cat);
@@ -219,17 +158,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$catDescription1 = "Default catalogue for the test run";
 			$updatedCatDescription = "Updated";
 			
-			$cat = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
-			$cat.Status = "Published";
-			$cat.Version = 1;
-			$cat.Name = $catName;
-			$cat.Description = $catDescription1;
-			$cat.Created = [System.DateTimeOffset]::Now;
-			$cat.Modified = $cat.Created;
-			$cat.CreatedBy = $ENV:USERNAME;;
-			$cat.ModifiedBy = $ENV:USERNAME;;
-			$cat.Tid = "1";
-			$cat.Id = 0;
+			$cat = CreateCatalogue -catName $catName;
 			
 			# Act create catalogue
 			$svc.Core.AddToCatalogues($cat);
@@ -253,6 +182,161 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			
 			# Cleanup
 			$cat = $svc.Core.DeleteObject($cat);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+	}
+	
+	Context "CatalogueItems.Tests" {
+	
+		# Context wide constants
+		$catName = 'Default DaaS';
+		New-Variable -Name cat -Value 'will-be-used-later';
+		New-Variable -Name catItems -Value 'will-be-used-later';
+		
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
+		}
+		
+		It "GettingCatalogueItems-Succeeds" -Test {
+			#Arrange
+			
+			#Act
+			$CatalogueItems = $svc.Core.CatalogueItems;
+			
+			#Assert
+			$CatalogueItems | Should Not Be $null;
+		}
+		
+		It "GetCatalogueOfCatalogueItem-Succeeds" -Test {
+			#Arrange
+			$catName = 'NewCatalogueInTest-GetCatalogue';
+			
+			# Add Product
+			$cat = CreateCatalogue -catName $catName;
+			$svc.Core.AddToCatalogues($cat);
+			$result = $svc.Core.SaveChanges();
+			
+			# Add product
+			$product = CreateProduct;
+			$svc.Core.AddToProducts($product);
+			$result = $svc.Core.SaveChanges();
+			
+			# Add catalogueItem
+			$catalogueItem = CreateCatalogueItem -cat $cat -product $product;
+			$svc.Core.AddToCatalogueItems($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			
+			#Act
+			$catLoadProp = $svc.Core.LoadProperty($catalogueItem, 'Catalogue') | Select;
+			
+			#Assert
+			$catLoadProp | Should Not Be $null;
+			$catLoadProp.Id | Should Be $cat.Id;
+			$catLoadProp.Description | Should Be  "Default catalogue for the test run";
+
+			#Cleanup
+			$svc.Core.DeleteObject($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($cat);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($product);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+		
+		It "GetCatalogueItemOfCatalogue-Succeeds" -Test {
+			#Arrange
+			$catName = 'NewCatalogueInTest-GetCatalogue';
+			
+			# Add Product
+			$cat = CreateCatalogue -catName $catName;
+			$svc.Core.AddToCatalogues($cat);
+			$result = $svc.Core.SaveChanges();
+			
+			# Add product
+			$product = CreateProduct;
+			$svc.Core.AddToProducts($product);
+			$result = $svc.Core.SaveChanges();
+			
+			# Add catalogueItem
+			$catalogueItem = CreateCatalogueItem -cat $cat -product $product;
+			$svc.Core.AddToCatalogueItems($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			
+			#Act
+			$catItemsLoadProp = GetCatalogueItemsOfCatalog -svc $svc -cat $cat;
+			
+			#Assert
+			$catItemsLoadProp | Should Not Be $null;
+			$catItemsLoadProp.Id | Should Be $catalogueItem.Id;
+			$catItemsLoadProp.Name | Should Be "Arbitrary Item";
+			
+			#Cleanup
+			$svc.Core.DeleteObject($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($cat);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($product);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+		
+		It "SetNameAndDescriptionCatalogueItems-Succeeds" -Test {
+			#Arrange
+			$catName = 'NewCatalogueInTest-GetCatalogue';
+			$catItemNameUpdate = 'NameUpdated';
+			$catItemDescUpdate = 'DescriptionUpdated';
+			
+			# Add Product
+			$cat = CreateCatalogue -catName $catName;
+			$svc.Core.AddToCatalogues($cat);
+			$result = $svc.Core.SaveChanges();
+			
+			# Add product
+			$product = CreateProduct;
+			$svc.Core.AddToProducts($product);
+			$result = $svc.Core.SaveChanges();
+			
+			# Add catalogueItem
+			$catalogueItem = CreateCatalogueItem -cat $cat -product $product;
+			$svc.Core.AddToCatalogueItems($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			
+			#Act
+			$catalogueItem.Name = $catItemNameUpdate;
+			$catalogueItem.Description = $catItemDescUpdate;
+			$svc.Core.UpdateObject($catalogueItem);
+			$resultUpdate = $svc.Core.SaveChanges();
+			
+			$catalogueItemUpdate = GetCatalogueItemByName -svc $svc -name $catItemNameUpdate;
+
+			#Assert
+			$resultUpdate.StatusCode | Should Be 204;
+			$catalogueItemUpdate | Should Not Be $Null;
+			$catalogueItemUpdate.Description | Should Be $catItemDescUpdate;
+						
+			#Cleanup
+			$svc.Core.DeleteObject($catalogueItem);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($cat);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($product);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
 		}
