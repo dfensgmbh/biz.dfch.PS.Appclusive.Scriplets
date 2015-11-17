@@ -8,11 +8,13 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "NameTest.Tests" "NameTest.Tests" {
+Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
-	Context "NameContext.Tests" {
+	. "$here\$sut"
+	
+	Context "EntityType.Tests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -21,16 +23,149 @@ Describe -Tags "NameTest.Tests" "NameTest.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "TestName" -Test {
+		It "GetEntityTypesCreatedBySeed" -Test {
 			# Arrange
 			
-			
 			# Act
-			
+			$entityTypes = $svc.Core.EntityTypes;
 			
 			# Assert	
-			
-			
+			$entityTypes | Should Not Be $null;
+			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order" | Should be $true;
+			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval" | Should be $true;
+			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default" | Should be $true;
+		}
+		
+		It "CreateAndDeleteEntityType-Succeeds" -Test {
+			try
+			{
+				# Arrange
+				$entityTypeName = "TestForPesterRun"
+				$entityTypeDescription = "Test Description For Pester Run"
+				
+				# Act
+				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription
+				$svc.Core.AddToEntityTypes($entityType)
+				$result = $svc.Core.SaveChanges();
+				
+				$entityTypeCreated = $svc.Core.EntityTypes.AddQueryOption('$filter', "Id eq "+$entityType.Id+"")
+				
+				# Assert	
+				$result.StatusCode | Should Be 201;			
+				$entityTypeCreated | Should Not Be $null;
+				$entityTypeCreated.Name | Should Be $entityTypeName
+				$entityTypeCreated.Description | Should Be $entityTypeDescription
+			}
+			finally
+			{
+				if (!$entityType -eq $false)
+				{
+					#Cleanup
+					$svc.Core.DeleteObject($entityType);
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+			}
+		}
+		
+		It "CreateEntityTypeTwiceWithSameNameAndVersion-Fail" -Test {
+			try
+			{
+				# Arrange
+				$entityTypeName = "TestForPesterRun"
+				$entityTypeDescription = "Test Description For Pester Run"
+				$entityTypeDescription2 = "Second Entity With same Name same Version"
+				
+				# Act
+				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription;
+				$svc.Core.AddToEntityTypes($entityType);
+				$result = $svc.Core.SaveChanges();
+				
+				$entityType2 = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription2;
+				$svc.Core.AddToEntityTypes($entityType2);
+				
+				try 
+				{
+					$result2 = $svc.Core.SaveChanges();
+				}
+				catch
+				{
+					$exception = $error[0];
+					write-host "error " + $error[0];
+				}
+				
+				write-host $exception;
+				# Assert
+				$exception | Should Not Be $null;
+				$result.StatusCode | Should Be 201;			
+				$entityTypeCreated | Should Not Be $null;
+				$entityTypeCreated.Name | Should Be $entityTypeName
+				$entityTypeCreated.Description | Should Be $entityTypeDescription
+			}
+			finally
+			{
+				if (!$entityType -eq $false)
+				{
+					#Cleanup
+					$svc.Core.DeleteObject($entityType);
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+				
+				if (!$exception)
+				{
+					#Cleanup
+					$svc.Core.DeleteObject($entityType2);
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+			}
+		}
+		
+		It "SetEntityTypeNameDescriptionVersionParameter-Succeeds" -Test {
+			try
+			{
+				# Arrange
+				$entityTypeName = "TestForPesterRun"
+				$entityTypeDescription = "Test Description For Pester Run"
+				
+				$entityTypeUpdateName = "NameUpdated";
+				$entityTypeUpdateDescription = "DescriptionUpdated";
+				$entityTypeUpdateParameter = "ParameterUpdated";
+				$entityTypeUpdateVersion = 2;
+				
+				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription
+				$svc.Core.AddToEntityTypes($entityType)
+				$result = $svc.Core.SaveChanges();
+
+				#Act
+				$entityType.Name = $entityTypeUpdateName;
+				$entityType.Description = $entityTypeUpdateDescription;
+				$entityType.Parameters = $entityTypeUpdateParameter;
+				$entityType.Version = $entityTypeUpdateVersion;
+
+				$svc.Core.UpdateObject($entityType);
+				$result = $svc.Core.SaveChanges();
+				
+				$entityTypeUpdated = $svc.Core.EntityTypes.AddQueryOption('$filter', "Id eq "+$entityType.Id+"")
+				
+				# Assert	
+				$result.StatusCode | Should Be 204;			
+				$entityTypeUpdated.Name | Should Be $entityTypeUpdateName;
+				$entityTypeUpdated.Description | Should Be $entityTypeUpdateDescription;
+				$entityTypeUpdated.Parameters | Should Be $entityTypeUpdateParameter;
+				$entityTypeUpdated.Version | Should Be $entityTypeUpdateVersion;
+			}
+			finally
+			{
+				if (!$entityType -eq $false)
+				{
+					#Cleanup
+					$svc.Core.DeleteObject($entityType);
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+			}
 		}
 	}
 }
