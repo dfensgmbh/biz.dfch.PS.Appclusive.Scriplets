@@ -325,12 +325,12 @@ function KeyNameValues($Recreate)
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
 
-function Links($Recreate)
+function Assocs($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 	
-	$links = $svc.Core.Links | Select;
-	DeleteItems -svc $svc -items $links;
+	$assocs = $svc.Core.Assocs | Select;
+	DeleteItems -svc $svc -items $assocs;
 
 	if(!$Recreate)
 	{
@@ -597,7 +597,7 @@ EntityTypes($Recreate);
 Gates($Recreate);
 Jobs($Recreate);
 KeyNameValues($Recreate);
-Links($Recreate);
+Assocs($Recreate);
 ManagementCredentials($Recreate);
 ManagementUris($Recreate);
 Nodes($Recreate);
