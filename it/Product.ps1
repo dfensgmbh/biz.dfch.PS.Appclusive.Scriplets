@@ -1,19 +1,21 @@
-function CreateProduct() 
+function CreateProduct($productName, $productDescription) 
 {
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
-	$product.Tid = "1";
+	$product.Tid = "11111111-1111-1111-1111-111111111111";
 	$product.CreatedBy = $ENV:USERNAME;
 	$product.ModifiedBy = $product.CreatedBy;
 	$product.Created = [DateTimeOffset]::Now;
 	$product.Modified = $product.Created;
-	$product.Name = 'Arbitrary Item';
-	$product.Type = 'Arbitrary Type';
+	$product.Name = $productName;
+	$product.Description = $productDescription
+	$product.Type = 'Test Product';
 	$product.Version = '1';
 	$product.ValidFrom = [DateTimeOffset]::Now;
 	$product.ValidUntil = [DateTimeOffset]::Now;
 	$product.EndOfSale = [DateTimeOffset]::Now;
 	$product.EndOfLife = [DateTimeOffset]::Now;
 	$product.Parameters = '{}';
+	$product.Id = 0;
 	
 	return $product;
 }

@@ -41,13 +41,15 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 		
 		It "CreatingProductAndCatalogueItem-Succeeds" -Test {
 			# Arrange
+			$productName = 'Arbitrary Item';
+			$productDescription = 'Arbitrary Type';
 			
 			# Act
 			$cat = GetCatalogueByName -svc $svc -catName $catName;
 			$cat | Should Not Be $null;
 			
 			# Create and product
-			$product = CreateProduct;
+			$product = CreateProduct -productName $productName -productDescription $productDescription;
 			$svc.Core.AddToProducts($product);
 			$result = $svc.Core.SaveChanges();
 			
@@ -76,11 +78,13 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 		
 		It "CreatingCatalogueItemAndRemove-Succeeds" -Test {
 			# Act
+			$productName = 'Arbitrary Item';
+			$productDescription = 'Arbitrary Type';
 			$cat = GetCatalogueByName -svc $svc -catName $catName;
 			$cat | Should Not Be $null;
 			
 			# Add product
-			$product = CreateProduct;
+			$product = CreateProduct -productName $productName -productDescription $productDescription;
 			$svc.Core.AddToProducts($product);
 			$result = $svc.Core.SaveChanges();
 			
@@ -112,6 +116,10 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 		}		
 		
 		It "CreatingCataloqueWithOneItemAndRemoveCatalogueSucced" -Test {
+			# Arrange product
+			$productName = 'Arbitrary Item';
+			$productDescription = 'Arbitrary Type';
+			
 			# Arrange catalogue
 			$catName = 'NewCatalogueInTest'
 			$cat = CreateCatalogue -catName $catName
@@ -125,7 +133,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$cat.Id	| Should not be $null;
 			
 			# Add product
-			$product = CreateProduct;
+			$product = CreateProduct -productName $productName -productDescription $productDescription;
 			$svc.Core.AddToProducts($product);
 			$result = $svc.Core.SaveChanges();
 			
@@ -146,8 +154,12 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$catalogueItem = $svc.Core.DeleteObject($catalogueItem);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
-			$catalogueItem.Id | Should be $null;
+			
 			$cat = $svc.Core.DeleteObject($cat);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+			
+			$svc.Core.DeleteObject($product);
 			$result = $svc.Core.SaveChanges();
 			$result.StatusCode | Should Be 204;
 		}
@@ -214,6 +226,8 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 		It "GetCatalogueOfCatalogueItem-Succeeds" -Test {
 			#Arrange
 			$catName = 'NewCatalogueInTest-GetCatalogue';
+			$productName = 'Arbitrary Item';
+			$productDescription = 'Arbitrary Type';
 			
 			# Add Product
 			$cat = CreateCatalogue -catName $catName;
@@ -221,7 +235,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$result = $svc.Core.SaveChanges();
 			
 			# Add product
-			$product = CreateProduct;
+			$product = CreateProduct -productName $productName -productDescription $productDescription;
 			$svc.Core.AddToProducts($product);
 			$result = $svc.Core.SaveChanges();
 			
@@ -255,6 +269,8 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 		It "GetCatalogueItemOfCatalogue-Succeeds" -Test {
 			#Arrange
 			$catName = 'NewCatalogueInTest-GetCatalogue';
+			$productName = 'Arbitrary Item';
+			$productDescription = 'Arbitrary Type';
 			
 			# Add Product
 			$cat = CreateCatalogue -catName $catName;
@@ -262,7 +278,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$result = $svc.Core.SaveChanges();
 			
 			# Add product
-			$product = CreateProduct;
+			$product = CreateProduct -productName $productName -productDescription $productDescription;
 			$svc.Core.AddToProducts($product);
 			$result = $svc.Core.SaveChanges();
 			
@@ -298,6 +314,8 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$catName = 'NewCatalogueInTest-GetCatalogue';
 			$catItemNameUpdate = 'NameUpdated';
 			$catItemDescUpdate = 'DescriptionUpdated';
+			$productName = 'Arbitrary Item';
+			$productDescription = 'Arbitrary Type';
 			
 			# Add Product
 			$cat = CreateCatalogue -catName $catName;
@@ -305,7 +323,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$result = $svc.Core.SaveChanges();
 			
 			# Add product
-			$product = CreateProduct;
+			$product = CreateProduct -productName $productName -productDescription $productDescription;
 			$svc.Core.AddToProducts($product);
 			$result = $svc.Core.SaveChanges();
 			
