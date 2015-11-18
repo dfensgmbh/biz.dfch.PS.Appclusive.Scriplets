@@ -16,7 +16,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 	. "$here\$sut"
 	
 	# DFTODO - naming
-	Context "ManagementCredential.Tests" {
+	Context "Node.Tests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -25,14 +25,23 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "Node-AddAndDeleteNewNode" -Test {
+		It "GetNotesCreatedBySeed" -Test {
+			# Arrange
+						
+			# Act
+			$nodes = $svc.Core.Nodes;
+						
+			#Assert	
+			$nodes | Should Not Be $null;
+		}
+		
+		It "AddAndDeleteNewNode" -Test {
 			try {
 				# Arrange
 				$nodeName = "TestNode Parent"
 				$nodeDescription = "TestNode used in Test"		
 							
 				# Act
-				# $svc.Core.UpdateObject($node);
 				$node = CreateNode -nodeName $nodeName -nodeDescription $nodeDescription;
 				$svc.Core.AddToNodes($node);
 				$result = $svc.Core.SaveChanges();
@@ -48,114 +57,398 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 		}
 		
-		It "Node-AddNewParentAndChildNode" -Test {
-		
-			# DFTODO - consider try/finally for cleanup
-			<#
+		It "AddNewParentAndChildNode" -Test {
 			try
 			{
-				# all my tests as before
+				# Arrange
+				$nodeParentName = "TestNode Parent"
+				$nodeParentDescription = "TestNode used in test"
+				$nodeChildName = "TestNode Child"
+				$nodeChildDescription = "TestNode used in test"
+							
+				# Create parent node
+				$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+				$svc.Core.AddToNodes($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				
+				#Assert	
+				$result.StatusCode | Should Be 201;
+				$nodeParent.Id | Should Not Be 0;
+				
+				# Create child node
+				$result = $null;
+				$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
+				$svc.Core.AddToNodes($nodeChild);
+				$result = $svc.Core.SaveChanges();
+				
+				#Assert	
+				$result.StatusCode | Should Be 201;
+				$nodeChild.Id | Should Not Be 0;
+				$nodeChild.ParentId | Should be $nodeParent.Id
 			}
 			finally
 			{
-				# Cleanup code goes here
+				#Cleanup
+				$svc.Core.DeleteObject($nodeChild);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
 			}
-			#>
-			
-			# Arrange
-			$nodeParentName = "TestNode Parent"
-			$nodeParentDescription = "TestNode used in test"
-			$nodeChildName = "TestNode Child"
-			$nodeChildDescription = "TestNode used in test"
-						
-			# Create parent node
-			$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
-			$svc.Core.AddToNodes($nodeParent);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeParent.Id | Should Not Be 0;
-			
-			# Create child node
-			$result = $null;
-			$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
-			$svc.Core.AddToNodes($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeChild.Id | Should Not Be 0;
-			$nodeChild.ParentId | Should be $nodeParent.Id
-			
-			#Cleanup
-			$svc.Core.DeleteObject($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-			
-			$svc.Core.DeleteObject($nodeParent);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
 		}
 		
-		It "Node-DeleteParentNodeWithExistingChildThrowsException" -Test {
-			$nodeChild = $null;
-			$nodeParent = $null;
-			
-			#Arrange
-			$nodeParentName = "TestNode Parent"
-			$nodeParentDescription = "TestNode used in test"
-			$nodeChildName = "TestNode Child"
-			$nodeChildDescription = "TestNode used in test"
-						
-			#Create parent node
-			$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
-			$svc.Core.AddToNodes($nodeParent);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeParent.Id | Should Not Be 0;
-			
-			#Create child node
-			$result = $null;
-			$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
-			$svc.Core.AddToNodes($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			
-			#Assert	
-			$result.StatusCode | Should Be 201;
-			$nodeChild.Id | Should Not Be 0;
-			$nodeChild.ParentId | Should be $nodeParent.Id
-					
-			#Arrange/Assert delete parent node
-			$svc.Core.DeleteObject($nodeParent);
-			
+		It "DeleteParentNodeWithExistingChildThrowsException" -Test {
 			try 
 			{
-				$svc.Core.SaveChanges();
-			} catch 
-			{
-				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
-				$exception.'odata.error'.message.value | Should Be "An error has occurred.";
-				$detach = $svc.Core.Detach($nodeParent)
-				$detach | Should Be $true;
-			}
+				$nodeChild = $null;
+				$nodeParent = $null;
+				
+				#Arrange
+				$nodeParentName = "TestNode Parent"
+				$nodeParentDescription = "TestNode used in test"
+				$nodeChildName = "TestNode Child"
+				$nodeChildDescription = "TestNode used in test"
+							
+				#Create parent node
+				$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+				$svc.Core.AddToNodes($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				
+				#Assert	
+				$result.StatusCode | Should Be 201;
+				$nodeParent.Id | Should Not Be 0;
+				
+				#Create child node
+				$result = $null;
+				$nodeChild = CreateNode -nodeName $nodeChildName -nodeDescription $nodeChildDescription -nodeParentId $nodeParent.Id;
+				$svc.Core.AddToNodes($nodeChild);
+				$result = $svc.Core.SaveChanges();
+				
+				#Assert	
+				$result.StatusCode | Should Be 201;
+				$nodeChild.Id | Should Not Be 0;
+				$nodeChild.ParentId | Should be $nodeParent.Id
 						
-			#Cleanup
-			#Reconnect
-			$svc = Enter-AppclusiveServer;
-			$svc.Core.AttachTo('Nodes', $nodeChild);
-			$svc.Core.AttachTo('Nodes', $nodeParent);
-			
-			$svc.Core.DeleteObject($nodeChild);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-			
-			$svc.Core.DeleteObject($nodeParent);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
+				#Arrange/Assert delete parent node
+				$svc.Core.DeleteObject($nodeParent);
+				
+				try 
+				{
+					$svc.Core.SaveChanges();
+				} catch 
+				{
+					$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+					$exception.'odata.error'.message.value | Should Be "An error has occurred.";
+					$detach = $svc.Core.Detach($nodeParent)
+					$detach | Should Be $true;
+				}
+			}
+			catch
+			{
+				#Cleanup
+				#Reconnect
+				$svc = Enter-AppclusiveServer;
+				$svc.Core.AttachTo('Nodes', $nodeChild);
+				$svc.Core.AttachTo('Nodes', $nodeParent);
+				
+				$svc.Core.DeleteObject($nodeChild);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
 		}
+		
+		It "ReadChildNodes" -Test {
+			try
+			{
+				# Arrange
+				$nodeParentName = "TestNode Parent"
+				$nodeParentDescription = "TestNode used in test"
+				$nodeChildName1 = "TestNode Child"
+				$nodeChildDescription1 = "Test Child"
+				$nodeChildName2 = "TestNode Child 2"
+				$nodeChildDescription2 = "TestNode2"
+							
+				# Create parent node
+				$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+				$svc.Core.AddToNodes($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Create child node
+				$nodeChild1 = CreateNode -nodeName $nodeChildName1 -nodeDescription $nodeChildDescription1 -nodeParentId $nodeParent.Id;
+				$svc.Core.AddToNodes($nodeChild1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				$nodeChild2 = CreateNode -nodeName $nodeChildName2 -nodeDescription $nodeChildDescription2 -nodeParentId $nodeParent.Id;
+				$svc.Core.AddToNodes($nodeChild2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Act
+				$childNodesReload = $svc.Core.LoadProperty($nodeParent, 'Children') | Select;
+				
+				#Assert
+				$childNodesReload | Should Not Be $Null;
+				$childNodesReload.Id -contains $nodeChild1.Id | Should be $true;
+				$childNodesReload.Id -contains $nodeChild2.Id | Should be $true;
+			}
+			finally
+			{
+				#Cleanup
+				$svc.Core.DeleteObject($nodeChild1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($nodeChild2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "ReadParentNode" -Test {
+			try
+			{
+				# Arrange
+				$nodeParentName = "TestNode Parent"
+				$nodeParentDescription = "TestNode used in test"
+				$nodeChildName1 = "TestNode Child"
+				$nodeChildDescription1 = "Test Child"
+							
+				# Create parent node
+				$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+				$svc.Core.AddToNodes($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Create child node
+				$nodeChild1 = CreateNode -nodeName $nodeChildName1 -nodeDescription $nodeChildDescription1 -nodeParentId $nodeParent.Id;
+				$svc.Core.AddToNodes($nodeChild1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Act
+				$parentNodeReload = $svc.Core.LoadProperty($nodeChild1, 'Parent') | Select;
+				
+				#Assert
+				$parentNodeReload | Should Not Be $Null;
+				$parentNodeReload.Id | Should be $nodeParent.Id;
+			}
+			finally
+			{
+				#Cleanup
+				$svc.Core.DeleteObject($nodeChild1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "UpdateParameterNameDescription" -Test {
+			try {
+				# Arrange
+				$nodeName = "TestNode Parent";
+				$nodeDescription = "TestNode used in Test";
+				$nodeNameUpdate = "NameUpdated";
+				$nodeDescriptionUpdate = "Description Updated";
+				$nodeParameter = "New Parameter";
+							
+				$node = CreateNode -nodeName $nodeName -nodeDescription $nodeDescription;
+				$svc.Core.AddToNodes($node);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Act
+				$node.Name = $nodeNameUpdate;
+				$node.Description = $nodeDescriptionUpdate;
+				$node.Parameters = $nodeParameter;
+				$svc.Core.UpdateObject($node);
+				$result = $svc.Core.SaveChanges();
+				
+				$nodeReload = $svc.Core.Nodes.AddQueryOption('$filter', "Id eq {0}" -f $node.Id) | Select;
+				
+				#Assert	
+				$result.StatusCode | Should Be 204;
+				$nodeReload | Should Not Be $null;
+				$nodeReload.Name | Should Be $nodeNameUpdate;
+				$nodeReload.Description | Should Be $nodeDescriptionUpdate;
+				$nodeReload.Parameters | Should Be $nodeParameter;
+			} 
+			finally 
+			{
+				#Cleanup
+				$svc.Core.DeleteObject($node);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "DetacheChildNodeFromParentNode" -Test {
+			try
+			{
+				# Arrange
+				$nodeParentName = "TestNode Parent"
+				$nodeParentDescription = "TestNode used in test"
+				$nodeChildName1 = "TestNode Child"
+				$nodeChildDescription1 = "Test Child"
+							
+				# Create parent node
+				$nodeParent = CreateNode -nodeName $nodeParentName -nodeDescription $nodeParentDescription;
+				$svc.Core.AddToNodes($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Create child node
+				$nodeChild1 = CreateNode -nodeName $nodeChildName1 -nodeDescription $nodeChildDescription1 -nodeParentId $nodeParent.Id;
+				$svc.Core.AddToNodes($nodeChild1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				$parentNodeReload = $svc.Core.LoadProperty($nodeChild1, 'Parent') | Select;
+				$parentNodeReload.Id | Should be $nodeParent.Id;
+				
+				# Act
+				$nodeChild1.ParentId = $null;
+				$svc.Core.UpdateObject($nodeChild1);
+				$resultUpdate = $svc.Core.SaveChanges();
+				
+				
+				#Assert
+				$nodeChild1.ParentId | Should Be $null;
+				$resultUpdate.StatusCode | Should Be 204;
+				
+				# Try to load the Parent
+				try
+				{
+					$parentNodeReload2 = $svc.Core.LoadProperty($nodeChild1, 'Parent') | Select;
+				}
+				catch
+				{
+					$exception = $error[0].Exception.InnerException.Message;
+				}
+				$exception | Should Be 'NotFound';
+
+				# Try to load the non existing child
+				$childNodesReload2 = $svc.Core.LoadProperty($nodeParent, 'Children') | Select;
+				$childNodesReload2 | Should Be $null;
+			}
+			finally
+			{
+				#Cleanup
+				$svc.Core.DeleteObject($nodeChild1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($nodeParent);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "AttachNodeAsChildToOtherNode" -Test {
+			try
+			{
+				# Arrange
+				$nodeName1 = "TestNode Parent"
+				$nodeDescription1 = "TestNode used in test"
+				$nodeName2 = "TestNode Child"
+				$nodeDescription2 = "Test Child"
+				
+				# Create node 1
+				$node1 = CreateNode -nodeName $nodeName1 -nodeDescription $nodeDescription1;
+				$svc.Core.AddToNodes($node1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Create node 2
+				$node2 = CreateNode -nodeName $nodeName2 -nodeDescription $nodeDescription2;
+				$svc.Core.AddToNodes($node2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				$node1LoadChild = $svc.Core.LoadProperty($node1, 'Children') | Select;
+				$node2LoadChild = $svc.Core.LoadProperty($node2, 'Children') | Select;
+				$node1LoadChild | Should be $null;
+				$node2LoadChild | Should be $null;
+				
+				# Act
+				$node2.ParentId = $node1.Id;
+				$svc.Core.UpdateObject($node2);
+				$resultUpdate = $svc.Core.SaveChanges();
+				
+				#Assert
+				$parentNodeReload = $svc.Core.LoadProperty($node2, 'Parent') | Select;
+				$childNodeReload = $svc.Core.LoadProperty($node1, 'Children') | Select;
+
+				$resultUpdate.StatusCode | Should Be 204;
+				$parentNodeReload.Id | Should Be $node1.Id
+				$childNodeReload.Id | Should Be $node2.Id
+			}
+			finally
+			{
+				#Cleanup
+				$svc.Core.DeleteObject($node2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($node1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "AttachNodeAsChildToHisOwn-ThrowsError" -Test {
+			try
+			{
+				# Arrange
+				$nodeName1 = "TestNode Parent"
+				$nodeDescription1 = "TestNode used in test"
+				
+				# Create node 1
+				$node = CreateNode -nodeName $nodeName1 -nodeDescription $nodeDescription1;
+				$svc.Core.AddToNodes($node);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 201;
+				
+				# Act
+				$node.ParentId = $node.Id;
+				$svc.Core.UpdateObject($node);
+				
+				try 
+				{
+					$resultUpdate = $svc.Core.SaveChanges();
+					$exception = $false;
+				}
+				catch
+				{
+					$exception = $true;
+				}
+				
+				#Assert
+				$exception | Should Be $true;
+			}
+			finally
+			{
+				#Cleanup
+				$svc.Core.DeleteObject($node);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
 	}
 }
 
