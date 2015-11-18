@@ -25,16 +25,6 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "GetNotesCreatedBySeed" -Test {
-			# Arrange
-						
-			# Act
-			$nodes = $svc.Core.Nodes;
-						
-			#Assert	
-			$nodes | Should Not Be $null;
-		}
-		
 		It "AddAndDeleteNewNode" -Test {
 			try {
 				# Arrange
