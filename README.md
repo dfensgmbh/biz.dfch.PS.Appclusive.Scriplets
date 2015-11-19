@@ -14,6 +14,16 @@ d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
 
 * See [Releases](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/releases) and [Tags](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/tags) on [GitHub](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client)
 
+## Release
+
+1. `Start New Release` in SourceTree
+1. Adjust/Update `src/biz.dfch.PS.Appclusive.Client.nuspec`
+  1. `<version>`
+  2. `<release notes>`
+  3. version of `biz.dfch.CS.Appclusive.Api` (See at the bottom of the nuspec file)
+1. Update version of `biz.dfch.CS.Appclusive.Api` in `packages.config`
+1. `Finish Release` in SourceTree
+1. The nuget package will then be built and published by TeamCity
 
 ## Installation
 
