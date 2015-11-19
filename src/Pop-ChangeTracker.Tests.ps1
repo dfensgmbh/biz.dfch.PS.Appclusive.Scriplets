@@ -2,80 +2,165 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
+Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Push-ChangeTracker.ps1"
 	
-	$svc = Enter-AppclusiveServer;
-
-	Context "Get-ManagementCredential" {
+	Context "Pop-ChangeTracker" {
 	
 		# Context wide constants
-		# N/A
-
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
+		$biz_dfch_PS_Appclusive_Client = @{ };
+		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
+		
+		
+		BeforeEach {
+			$error.Clear();
+			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
+			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
+		}
+		
+		AfterEach {
+			if(0 -ne $error.Count)
+			{
+				Write-Warning ($error | Out-String);
+			}
+		}
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+		
+		It "Pop-ChangeTrackerWithNullStack-ThrowsException" -Test {
+			# Arrange
+			$svc = Enter-Appclusive;
 
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+			try
+			{
+				# Act
+				$result = Pop-ChangeTracker -DataContext $null -svc $svc;
+				'Statement returned without exception' | Should Be 'An exception should have been thrown';
+			}
+			catch
+			{
+				# Assert
+				$error[0].Exception.Message -match "Cannot validate argument on parameter 'DataContext'." | Should Be $true;
+				$error.Clear();
+			}
 		}
 
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+		It "Pop-ChangeTrackerWithEmptyStack-ThrowsException" -Test {
 			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
+			$svc = Enter-Appclusive;
+			$stack = @{};
 
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
+			try
+			{
+				# Act
+				$result = Pop-ChangeTracker -DataContext $stack -svc $svc;
+				'Statement returned without exception' | Should Be 'An exception should have been thrown';
+			}
+			catch
+			{
+				# Assert
+				$error[0].Exception.Message -match "Cannot validate argument on parameter 'DataContext'." | Should Be $true;
+				$error.Clear();
+			}
 		}
 
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
+		It "Pop-ChangeTrackerWithEmptyHashtable-ClearsChangeTracker" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
+			$svc = Enter-Appclusive;
+			$stack = @{};
+			$stack.Entities = New-Object System.Collections.ArrayList;
+			$stack.Links = New-Object System.Collections.ArrayList;
+
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
+			$result = Pop-ChangeTracker -DataContext $stack -svc $svc;
 
 			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
+			Assert-MockCalled Get-ModuleVariable;
+			$result | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
 		}
 
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
+		It "Pop-ChangeTrackerReinitialised-HasNoDataContext" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
+			$svc = Enter-Appclusive;
+
+			# Act and Assert
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+		}
+		
+		It "Pop-ChangeTrackerReinitialised-PushAndPopHasNoDataContext" -Test {
+			# Arrange
+			$svc = Enter-Appclusive;
+			$count = 2;
+			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
+			$result = Push-ChangeTracker -svc $svc;
+			$DataContext = $biz_dfch_PS_Appclusive_Client.DataContext.Pop();
+			$result = Pop-ChangeTracker -DataContext $DataContext -svc $svc;
 
 			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+			
+			$svc.Diagnostics.Entities.Count | Should Be $count;
 		}
 
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
+		It "Pop-ChangeTrackerClear-Succeeds" -Test {
 			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
+			$svc = Enter-Appclusive;
+			$count = 2;
+			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+
+			foreach($e in $svc.Diagnostics.Entities)
+			{
+				$e.State | Should Be 'Unchanged';
+			}
 			
+			foreach($endpoint in $endpoints)
+			{
+				$endpoint.Description = 'arbitrary-contents';
+			}
+
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
+			$result = Push-ChangeTracker -svc $svc;
+			$DataContext = $biz_dfch_PS_Appclusive_Client.DataContext.Pop();
+			$result = Pop-ChangeTracker -DataContext $DataContext -svc $svc -Clear;
 
 			# Assert
-			$result | Should Be $null;
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+			
+			$svc.Diagnostics.Entities.Count | Should Be $count;
+			foreach($e in $svc.Diagnostics.Entities)
+			{
+				$e.State | Should Be 'Unchanged';
+				try
+				{
+					$svc.Diagnostics.UpdateObject($e);
+					'Statement returned without exception' | Should Be 'An exception should have been thrown';
+				}
+				catch
+				{
+					# Assert
+					$error[0].Exception.Message -match "The context is not currently tracking the entity." | Should Be $true;
+				}
+			}
+			$error.Clear();
 		}
 	}
 }
@@ -99,8 +184,8 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjpp/AXRQGHWn4DlexTljdXza
-# PUugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjKZ4oFcrPaM/CONtZtOcQ1XU
+# JgCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +284,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRBWqMWyP2iaTg4
-# XKFGq/x7lXN3JjANBgkqhkiG9w0BAQEFAASCAQCgD4wpK9hKWlRn3lUnSdXhd/3j
-# P9bsxTofJg1yClw1n6GVQLfSLdgp1jHfH/Brkfw/71L/b0cgNgamVsRWkLo3EKXN
-# U9sHef56FvkP37KnjdgXV3SXYscXCDm/PIuxQVxbuiWScIPj1ySnIdDwOcMZYv7v
-# 7/tc/jgcmrj15Ftru9bU47DfI8lRgZxhhrJemfMKyYlM7Y+g4FcN3QcpG2ebRSna
-# 8Cx10vqw57Ltcg/4zEgZiG/obb/08XU6AUy/3hBhEbVCdaaWhAG64RGdVDCPly83
-# bYBRKEVZsfm3TxcfQA5zzmxklRVyb21E7GnLA7eSWigFU65zbFHCe9OMfOgDoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRG/4dGYFLpfvmO
+# +VmGhRWxQbdAiDANBgkqhkiG9w0BAQEFAASCAQBAbAq3hsMWweNqEAojvgtbtX/M
+# eVmNf3dnzbEY9a7id/bTR1j5uw0q96M+GZ3ZKuvLHhxFn+2gsBw5/8wf1E/11gdd
+# 0zItKqAauUgE2eFHz2F43Zwy6l6vEx7f2LiZrzjVX+O9BQfSQ0Q1BBoqp8pIorDm
+# IRZG4JRYGboULvNG8FXTI1a63lea9ZlyQMIlgZ4geaqzKgAuiZ43JlndqTLf9vT1
+# WnfKimERvwh8cOJiIY4uhpokovLFNMyt2URctlGbu+mag0m6e1sOcnDtg0Of4zK/
+# Lx6HYXZKnBhOxDWWjGYWY7/F0XukeYZcTPL0Cczq7KWEax6m6AOyuvTfh/rFoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFJq4WKsuvOerIxRBm/ExxnpYNZro
+# MTEwNzExNTU0MVowIwYJKoZIhvcNAQkEMRYEFLBg3WKt1gCWw3OHuRpbm49X/8pi
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAWcoSO3SPCmHsu2WHm
-# KwIYNzNfJstZKdk8Sha83VHfkIG2r9GAOGPGJxru27puRfQBZpM62oP71J5GZYjN
-# FWTHu1I4Dsxvv3ps8Oe9UAVl1aJX7nbxPzJaM5nXq8hX7M33P10xm7z/bGxSLH6/
-# urf2NFWKFpsKTj6YkqhPm3vJUqOH40CG2F2SBqRCeW1Key3e3VGaPLoYg8XrCjNf
-# JqrRkhLuhs9gawOLWXKlE7scH5Eliv3QxDu0xBX7hTSK1QzUa+s4uIRKBMeZW3AS
-# NVjVeWK4TS1UgMhBsU8PO9HHZdjRGtAjbU0QF3KS4uxHqmNd/QN1zNFWYH30Nykl
-# 0J9z
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBl11X5TCw5a/hRGAvd
+# 1KIIvOMSrthkkbCR3KvLI4VsBz86thgYRyTP0NqK7ir8rsxxcm4y1wUBGbmDpNP2
+# d1RsByLz/ratY+3S3jqRzsyEjwLXlsxGQc2eb5MwD1XWOn9a4xKcsOF9l8VlOZED
+# P5bS5vInClSIOgD5UI7uaFPvaUReN9drTSkOd8kepGRlI8iWrwbowyYEhddrmdKW
+# VCNXrBOaLVMCt5t9FekmTGJS0NSRWecf0Ex8mBJarzKBQg5oC+uhedaCtWerMoRh
+# i/PyNsXhE0yfH2/AdslQR5/nhu3jhwp7ZHmU5W6qX/b1Y8nNFAve2DAphH2ows8c
+# 0La/
 # SIG # End signature block

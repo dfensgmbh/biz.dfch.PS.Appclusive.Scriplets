@@ -1,4 +1,4 @@
-#requires -Modules 'biz.dfch.PS.Appclusive.Client'
+#Requires -Modules biz.dfch.PS.Appclusive.Client
 
 PARAM
 (
@@ -317,15 +317,20 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'ConnectionServerName' -Value '{}';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PsSessionConfig' -Value '{}';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId' -Value '{}';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
+
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'NotifyWfe' -Value 'NOTIFY-WFE';
+	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
 
-function Links($Recreate)
+function Assocs($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 	
-	$links = $svc.Core.Links | Select;
-	DeleteItems -svc $svc -items $links;
+	$assocs = $svc.Core.Assocs | Select;
+	DeleteItems -svc $svc -items $assocs;
 
 	if(!$Recreate)
 	{
@@ -546,7 +551,7 @@ function Products($Recreate)
 	
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$svc.Core.AddToProducts($product);
-	$product.Type = 'SW Package';
+	$product.Type = 'SCCM';
 	$product.Version = '1';
 	$product.Name = 'DSWR Autocad 12 Production';
 	$product.Description = 'DSWR Autocad 12 Production';
@@ -562,114 +567,6 @@ function Products($Recreate)
 	$product.Id = 0;
 	$svc.Core.UpdateObject($product);
 	$svc.Core.SaveChanges();
-}
-
-function SCCMImport($Recreate) 
-{
-	# SCCM
-	# http://thedesktopteam.com/blog/heinrich/sccm-2012-r2-powershell-basics-part-1/
-	CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
-	# Import-Module .\ConfigurationManager.psd1 -verbose;
-	Import-Module .\ConfigurationManager.psd1;
-	CD P02:
-
-	# Load software packages from Sccm
-	$svc = Enter-AppclusiveServer;
-
-	$fn = "SccmImport";
-
-	CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
-	$null = Import-Module .\ConfigurationManager.psd1;
-	CD P02:
-
-	$al = New-Object System.Collections.ArrayList;
-	$packages = (Get-CMCollection).Name;
-	Log-Debug $fn ("SCCM: Processing '{0}' packages ..." -f $packages.Count)
-
-	$whiteListValues = Get-AppclusiveKeyNameValue -svc $svc -Key biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems -Name Whitelist -Select Value;
-	$whiteLists = $whiteListValues.Value;
-	$blackListValues = Get-AppclusiveKeyNameValue -svc $svc -Key biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems -Name Blacklist -Select Value;
-	$blackLists = $blackListValues.Value;
-
-	foreach($package in $packages)
-	{
-		foreach($whiteList in $whiteLists)
-		{
-			if($package -imatch $whiteList)
-			{
-				Log-Debug $fn ("{0}: whiteList matched package '{1}'" -f $whiteList, $package);
-				$null = $al.Add($package);
-				break;
-			}
-		}
-		foreach($blackList in $blackLists)
-		{
-			if($package -imatch $blackList)
-			{
-				Log-Debug $fn ("{0}: blackList matched package '{1}'" -f $blackList, $package);
-				if($al.Contains($package))
-				{
-					$null = $al.Remove($package);
-				}
-				break;
-			}
-		}
-	}
-	Log-Debug $fn ("Found '{0}' matching packages ...'" -f $al.Count);
-
-	$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Product/Type eq 'SCCM'") | Select;
-	DeleteItems -svc $svc -items $catItems;
-	
-	# Delete non referenced products
-	$products = $svc.Core.Products.AddQueryOption('$expand', 'CatalogueItems') | Select;
-	$nonReferencedProducts = $products | where {$_.CatalogueItems.Count -eq 0}
-	DeleteItems -svc $svc -items $nonReferencedProducts;
-	
-	$catName = 'Default DaaS';
-	$cat = $svc.Core.Catalogues |? Name -eq $catName;
-
-	Log-Debug $fn ("Processing '{0}' matching packages ...'" -f $al.Count);
-	foreach($catItemName in $al)
-	{
-		$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
-		$svc.Core.AddToProducts($product);
-		$product.Type = 'SCCM';
-		$product.Version = '1';
-		$product.Name = $catItemName;
-		$product.Description = $catItemName;
-		$product.Created = [System.DateTimeOffset]::Now;
-		$product.Modified = $product.Created;
-		$product.ValidFrom = [System.DateTimeOffset]::MinValue;
-		$product.ValidUntil = [System.DateTimeOffset]::MaxValue;
-		$product.EndOfSale = [System.DateTimeOffset]::MaxValue;
-		$product.EndOfLife = [System.DateTimeOffset]::MaxValue;
-		$product.CreatedBy = "SYSTEM";
-		$product.ModifiedBy = $product.CreatedBy;
-		$product.Tid = "1";
-		$product.Id = 0;
-		$svc.Core.UpdateObject($product);
-		$svc.Core.SaveChanges();
-	
-		$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
-		$svc.Core.AddToCatalogueItems($catItem);
-		$svc.Core.SetLink($catItem, "Catalogue", $cat);
-		$catItem.CatalogueId = $cat.Id;
-		$catItem.ProductId = $product.Id;
-		$catItem.Name = $catItemName;
-		$catItem.Description = $catItemName;
-		$catItem.Created = [System.DateTimeOffset]::Now;
-		$catItem.Modified = $catItem.Created;
-		$catItem.ValidFrom = [System.DateTimeOffset]::MinValue;
-		$catItem.ValidUntil = [System.DateTimeOffset]::MaxValue;
-		$catItem.EndOfSale = [System.DateTimeOffset]::MaxValue;
-		$catItem.EndOfLife = [System.DateTimeOffset]::MaxValue;
-		$catItem.CreatedBy = "SYSTEM";
-		$catItem.ModifiedBy = $catItem.CreatedBy;
-		$catItem.Tid = "1";
-		$catItem.Id = 0;
-		$svc.Core.UpdateObject($catItem);
-		$svc.Core.SaveChanges();
-	}
 }
 
 function DeleteItems($svc, $items) 
@@ -700,12 +597,11 @@ EntityTypes($Recreate);
 Gates($Recreate);
 Jobs($Recreate);
 KeyNameValues($Recreate);
-Links($Recreate);
+Assocs($Recreate);
 ManagementCredentials($Recreate);
 ManagementUris($Recreate);
 Nodes($Recreate);
 Orders($Recreate);
-#SCCMImport($Recreate);
 
 #
 # Copyright 2015 d-fens GmbH

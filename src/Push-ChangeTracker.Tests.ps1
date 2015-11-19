@@ -1,81 +1,128 @@
+# Push-ChangeTracker.ps1
+
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
+Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-ModuleVariable.ps1"
 	
-	$svc = Enter-AppclusiveServer;
-
-	Context "Get-ManagementCredential" {
+	Context "Push-ChangeTracker" {
 	
 		# Context wide constants
-		# N/A
-
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
+		$biz_dfch_PS_Appclusive_Client = @{ };
+		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
+		
+		
+		BeforeEach {
+			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
+			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
+		}
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+		
+		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
+			# Arrange
+			$svc = Enter-Appclusive;
 
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+			try
+			{
+				# Act
+				$result = Push-ChangeTracker -svc $null -ListAvailable;
+				'Test passed' | Should Be 'An expected error did not occur.';
+			}
+			catch
+			{
+				# Assert
+				$error[0].Exception.Message | Should Be 'ScriptHalted';
+			}
 		}
 
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
 			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
+			$svc = Enter-Appclusive;
 
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
+			# Act and Assert
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
 		}
 
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
+		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
+			$svc = Enter-AppclusiveServer;
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
+			$result = Push-ChangeTracker -svc $svc -ListAvailable;
 
 			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
+			$result -is [hashtable] | Should Be $true;
+			$result.ContainsKey('Entities') | Should Be $true;
+			$result.Entities.Count | Should Be 0;
+			$result.ContainsKey('Links') | Should Be $true;
+			$result.Links.Count | Should Be 0;
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
 		}
 
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
+		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
+			$count = 2;
+			$svc = Enter-AppclusiveServer;
+			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
+			$result = Push-ChangeTracker -svc $svc -Service Diagnostics -ListAvailable;
 
 			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
+			$result -is [hashtable] | Should Be $true;
+			$result.ContainsKey('Entities') | Should Be $true;
+			$result.Entities.Count | Should Be 2;
+			$result.ContainsKey('Links') | Should Be $true;
+			$result.Links.Count | Should Be 0;
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+		}
+		
+		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
+			# Arrange
+			$count = 2;
+			$svc = Enter-AppclusiveServer;
+			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			
+			# Act
+			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+
+			# Assert
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 1;
 		}
 
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
+		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
 			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
+			$count = 2;
+			$svc = Enter-AppclusiveServer;
+			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
+			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
 
 			# Assert
-			$result | Should Be $null;
+			Assert-MockCalled Get-ModuleVariable;
+			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 2;
 		}
 	}
 }
@@ -99,8 +146,8 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjpp/AXRQGHWn4DlexTljdXza
-# PUugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYXNq+ealN82N8DlDWI54jGy3
+# 6C6gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +246,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRBWqMWyP2iaTg4
-# XKFGq/x7lXN3JjANBgkqhkiG9w0BAQEFAASCAQCgD4wpK9hKWlRn3lUnSdXhd/3j
-# P9bsxTofJg1yClw1n6GVQLfSLdgp1jHfH/Brkfw/71L/b0cgNgamVsRWkLo3EKXN
-# U9sHef56FvkP37KnjdgXV3SXYscXCDm/PIuxQVxbuiWScIPj1ySnIdDwOcMZYv7v
-# 7/tc/jgcmrj15Ftru9bU47DfI8lRgZxhhrJemfMKyYlM7Y+g4FcN3QcpG2ebRSna
-# 8Cx10vqw57Ltcg/4zEgZiG/obb/08XU6AUy/3hBhEbVCdaaWhAG64RGdVDCPly83
-# bYBRKEVZsfm3TxcfQA5zzmxklRVyb21E7GnLA7eSWigFU65zbFHCe9OMfOgDoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTt1v4T2UTEfh7a
+# uOQm2yK3n8dePzANBgkqhkiG9w0BAQEFAASCAQBt2HNUTqJoXakT2VENOewkhphA
+# 4+2ItPw72m8i4aJ7uLQZ0aLunPEl8MpTaHRBJX+nZwaK3nQoihtebu20jOn8cSzC
+# 7WYZxtb+l8/07hJaStLT5egfpdAO+RbrK4+JXtB4jEby2g1bPLPM0rYYObGeMIJE
+# ubxQiB8i7MX6c5exx9JZmDZx85D8Z/7ee9myrektmZhhqJ6xeKgU89hioTy8ApOr
+# /MlpbMNZMHB+R/QaYmSoAgFGBQ5t7AYF57zaDD2P4NOHFcH15pOUvKb4bo1BRZX+
+# SMQ1krjKQotqjTUTRPThno6AiLHD41ab868TqvrFGGDddGerdZKBYA4O/fSKoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFJq4WKsuvOerIxRBm/ExxnpYNZro
+# MTEwNzExMzY1OVowIwYJKoZIhvcNAQkEMRYEFD/v8QbSgk0mg3fCTWRZXScL7o2b
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAWcoSO3SPCmHsu2WHm
-# KwIYNzNfJstZKdk8Sha83VHfkIG2r9GAOGPGJxru27puRfQBZpM62oP71J5GZYjN
-# FWTHu1I4Dsxvv3ps8Oe9UAVl1aJX7nbxPzJaM5nXq8hX7M33P10xm7z/bGxSLH6/
-# urf2NFWKFpsKTj6YkqhPm3vJUqOH40CG2F2SBqRCeW1Key3e3VGaPLoYg8XrCjNf
-# JqrRkhLuhs9gawOLWXKlE7scH5Eliv3QxDu0xBX7hTSK1QzUa+s4uIRKBMeZW3AS
-# NVjVeWK4TS1UgMhBsU8PO9HHZdjRGtAjbU0QF3KS4uxHqmNd/QN1zNFWYH30Nykl
-# 0J9z
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQATDqu140GIUOBBhgoE
+# c0wpn6cj6UXjrNw8GBG31+1X+QT4UMb8lENZtVrQQoBrOXnfPkLJq/Xd46s5IaFX
+# FwlgoNp/i1hgIsCj33d0jtitwzh1fM2QUUbU5RnfYYZsCSYYn4x5noO4mxfO2Hah
+# 7rQq/np2M9+a/oN/CpOMdXfV0qZtQy5qqOqEaXSf6qIWl8pVTEfuAjQpAWui+VQf
+# puJphw8CyxK2JaeZkwGcFZMHqtDNKvqjimBmu6vXNL8DPgW48uZhLspGQ9ShN9Py
+# wqq2jhXey8FK2H+Gj80zWv8FGNE2f8eJ61hQ17o8hUB0fuUk2K2X/tMkG3E/xuaR
+# 2X2h
 # SIG # End signature block

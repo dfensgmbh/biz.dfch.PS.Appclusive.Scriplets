@@ -54,7 +54,9 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="biz.dfch.PS.Appclusive.Client.psd1" target="tools\biz.dfch.PS.Appclusive.Client.psd1" />
     <file src="biz.dfch.PS.Appclusive.Client.xml" target="tools\biz.dfch.PS.Appclusive.Client.xml" />
     <file src="Enter-Server.ps1" target="tools\Enter-Server.ps1" />
+    <file src="Get-ModuleVariable.ps1" target="tools\Get-ModuleVariable.ps1" />
     <file src="Import-Module.ps1" target="tools\Import-Module.ps1" />
+    <file src="Remove-Entity.ps1" target="tools\Remove-Entity.ps1" />
     <file src="New-KeyNameValue.ps1" target="tools\New-KeyNameValue.ps1" />
     <file src="Get-KeyNameValue.ps1" target="tools\Get-KeyNameValue.ps1" />
     <file src="Set-KeyNameValue.ps1" target="tools\Set-KeyNameValue.ps1" />
@@ -63,6 +65,8 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="Get-ManagementCredential.ps1" target="tools\Get-ManagementCredential.ps1" />
     <file src="Set-ManagementCredential.ps1" target="tools\Set-ManagementCredential.ps1" />
     <file src="Remove-ManagementCredential.ps1" target="tools\Remove-ManagementCredential.ps1" />
+    <file src="Push-ChangeTracker.ps1" target="tools\Push-ChangeTracker.ps1" />
+    <file src="Pop-ChangeTracker.ps1" target="tools\Pop-ChangeTracker.ps1" />
     <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
     <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
     <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />

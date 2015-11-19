@@ -95,6 +95,10 @@ NestedModules = @(
 	'Set-ManagementCredential.ps1'
 	,
 	'Remove-ManagementCredential.ps1'
+	,
+	'Remove-Entity.ps1'
+	,
+	'Get-ModuleVariable.ps1'
 )
 
 # Functions to export from this module
@@ -133,6 +137,10 @@ FileList = @(
 	'System.Spatial.dll'
 	,
 	'Import-Module.ps1'
+	,
+	'Push-ChangeTracker.ps1'
+	,
+	'Pop-ChangeTracker.ps1'
 )
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess
@@ -149,7 +157,7 @@ DefaultCommandPrefix = 'Appclusive'
 }
 
 # 
-# Copyright 2014-2015 Ronald Rink, d-fens GmbH
+# Copyright 2014-2015 d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -167,8 +175,8 @@ DefaultCommandPrefix = 'Appclusive'
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU1kUsjB3ZlmLStbD2DvZenovE
-# 2XCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUc6u/suuSk8btXDPLit5cft8k
+# YRigghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -267,26 +275,26 @@ DefaultCommandPrefix = 'Appclusive'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBShldvwcTeelZqj
-# vJNSTwZlTHOOtzANBgkqhkiG9w0BAQEFAASCAQBmCDyN3PEiRvZgWhiIGbvbfVY7
-# 2AnGAHmmbr4tD7TenUJPZlK17WY1FjDxsFGePOPgGoBL1e3bEFGVXR5IMX9X0KGz
-# v79KqR0QGnZOf2udQ/ZXgcvheIrX2IGuJcs6l08KxAKl47hYx2Q30mXJQ970dI0b
-# aODt8WM74KlMMljk7iCVjM5bcjJ5RK9JiIabG4T2i9MS5L202PLhvOmKUrbj5dLJ
-# x7zSU8XHeRcKydc9Lu6Nj9ZdK7oOi/gjWLmiPQB1kJuYQ5vPC1KR7V/JjACw5DpR
-# oHoZCJ6vs6n7p3iveCr0fhKWq1mMysEIStAcK7n2BmoFs5RRrid6Lgel543joYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ4BTGDXhcn1va+
+# p8NqW/lcYxde5zANBgkqhkiG9w0BAQEFAASCAQAgJn/C3ETRKJQzM+BtkOqesUsx
+# 5hK4gOKT3rFUTn+rosIvu6tOeBkG7FpcdL5GUTTvAhyI4pzX4KLBNrUsqGEOY+nf
+# BaQtBqN5Kq8hVwsVuFRpu7XSzM5QG74vhFSe5PTExjFuK4C9rSAWNt20hd9km8ws
+# rxNBcCckXHdkHEe33VfIgdoaSpu3mhDEBlgyIfdrZ7vQbSm2rwwterbsYVE1vnwZ
+# fdTv7IqBPVdBcPizAenOwSEyrC8YOWvOXRVKRxJq8wE4h5IKFVu2ugnZMx5R54GQ
+# y0EYDPdXP4RryYpm6TNoIlrIa7SocCSZtZgPkYjNFwEORLirb7QbuB1UMW6poYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyOTA0MzQyMVowIwYJKoZIhvcNAQkEMRYEFMQupLi3jGKnuAQb6ZlE5fnJany2
+# MTEwNzExNTU0N1owIwYJKoZIhvcNAQkEMRYEFKMlMUqxaRzL9wVBfIErLJYUdIu6
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCMksSgDv9+/faPbjgb
-# zSMXY+/loyHlmcg8VtVRX6/i2ly1Ch5Pos1f5yP5KP58ipQmY2/R5agHkOD/7kBh
-# gDZeW7ATYPpwDHobvL6tclPtIohWSpJzNeUxlH8ApBshzeullma4KKiPAgUd76EX
-# RoNppOQBPzgip4pEtnyHUfWahfXrEXOIwm2CZtbekU3/qn6X6tmaHh04Lkom6eEO
-# wXjpR9dKN39e/vAS93W1yQ5gCKoKvt59fZj6YIOEBEDiWYlEf4/7Kg7Qc2P/r9gT
-# LkOOnSN5O3hJKbEiLWGwFz5TNLUSTd3l8VSEkpwZuB36C9ykfpAJBXhkjBT694le
-# 8lx0
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB9U1EeX070QWijxBkT
+# 5pyz+M1sF5SFpYfQW14Col2SPp2A8cExvxlxCIGcWN6iTfvkXPGKJIO48KUT/ZqH
+# 4ejJEUqmpAxa9KP4OzAWI28PmU1G9OnqFHln3a5KecKzLUTvFjuzYJC680jN6vIh
+# w7SCRmEfbGotT7cACkvrCxdjm7lR8EbdIu2MvT0pTSMdS9oqe+uuSSFrJS2XMVJE
+# M/w+esanT7ziL9isVJg1C+zEO7MHX7SJs2Kz46SGa28tYCcuu1b+RGWZhaFA1K25
+# MyKx+9y4HYPwEvCGBlZ6aU4StKU/rEjSHKaHrcqMuMYG83/un9MJvQph+NiUHZsm
+# ibDL
 # SIG # End signature block

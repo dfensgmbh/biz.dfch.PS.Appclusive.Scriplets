@@ -1,106 +1,45 @@
+function Get-ModuleVariable {
+[CmdletBinding(
+    SupportsShouldProcess = $false
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/PS/Appclusive/Client/Get-ModuleVariable/'
+)]
+[OutputType([hashtable])]
+PARAM
+(
+	# Specifies a references to the Appclusive endpoints
+	[Parameter(Mandatory = $false)]
+	[hashtable] $InputObject = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly)
+)
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
-
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
-
-	Mock Export-ModuleMember { return $null; }
-	
-	. "$here\$sut"
-	
-	$svc = Enter-AppclusiveServer;
-
-	Context "Get-ManagementCredential" {
-	
-		# Context wide constants
-		# N/A
-
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Be $null;
-		}
-	}
+	$OutputParameter = $InputObject;
+	return $OutputParameter;
 }
 
-#
+# 
 # Copyright 2015 d-fens GmbH
-#
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
+
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjpp/AXRQGHWn4DlexTljdXza
-# PUugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUROCRcVaJRrdUcZW3ybSRBLbW
+# zRegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +138,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRBWqMWyP2iaTg4
-# XKFGq/x7lXN3JjANBgkqhkiG9w0BAQEFAASCAQCgD4wpK9hKWlRn3lUnSdXhd/3j
-# P9bsxTofJg1yClw1n6GVQLfSLdgp1jHfH/Brkfw/71L/b0cgNgamVsRWkLo3EKXN
-# U9sHef56FvkP37KnjdgXV3SXYscXCDm/PIuxQVxbuiWScIPj1ySnIdDwOcMZYv7v
-# 7/tc/jgcmrj15Ftru9bU47DfI8lRgZxhhrJemfMKyYlM7Y+g4FcN3QcpG2ebRSna
-# 8Cx10vqw57Ltcg/4zEgZiG/obb/08XU6AUy/3hBhEbVCdaaWhAG64RGdVDCPly83
-# bYBRKEVZsfm3TxcfQA5zzmxklRVyb21E7GnLA7eSWigFU65zbFHCe9OMfOgDoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSOyaBIRy1/R7C7
+# uZZE15FyL38HiDANBgkqhkiG9w0BAQEFAASCAQCLdHtyuc3OGkMD2uX2H+UiN7ve
+# pUAhc+1urt9VTo1mGLN/AyTbrrsKfu9NrmcYlrI3SD5/4B6dp2KaKg6s2HPqXCGB
+# yMHFhba6FbodgdbMlTPmyGoNLiZ609RrAg0qwWjqQvf0KoNNhslGkqXjJA5juF8L
+# N+mJhzSK0oZgqdozGptBWA0jpfGpj1McBqHqG7R1DSouKKjMe3VUkgN5AlfyZOnI
+# SYjN5MBmBQa3BYp0IHPkiC+ALER5ivDkjt8ZLhrhNk+5QOkbKlsEIi+wwANXTsd+
+# RxpUurrMN2qnR8UkkiTZ45jz1IWo55E8+b4Hs0c6mIXCiecAQ+/P6+fOQhqRoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFJq4WKsuvOerIxRBm/ExxnpYNZro
+# MTEwNjE0NDQyN1owIwYJKoZIhvcNAQkEMRYEFCdJBHVszZ7L29itPq3R9PmQnp4U
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAWcoSO3SPCmHsu2WHm
-# KwIYNzNfJstZKdk8Sha83VHfkIG2r9GAOGPGJxru27puRfQBZpM62oP71J5GZYjN
-# FWTHu1I4Dsxvv3ps8Oe9UAVl1aJX7nbxPzJaM5nXq8hX7M33P10xm7z/bGxSLH6/
-# urf2NFWKFpsKTj6YkqhPm3vJUqOH40CG2F2SBqRCeW1Key3e3VGaPLoYg8XrCjNf
-# JqrRkhLuhs9gawOLWXKlE7scH5Eliv3QxDu0xBX7hTSK1QzUa+s4uIRKBMeZW3AS
-# NVjVeWK4TS1UgMhBsU8PO9HHZdjRGtAjbU0QF3KS4uxHqmNd/QN1zNFWYH30Nykl
-# 0J9z
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAWp2UMZVX90lbtJqcD
+# 4C7FXN5YgZOVfUhhRSYHBoiiCbV+ZnHO3X+TnRKDwv71Q+oHguVT2w1wy1a49dbY
+# KF8R97AktKSqLsyl77BK2FSWR32f6gBj40lhTXj7w7Mu11qNm87Wcd364VEYPZ7A
+# CX/l6JLyqD8XfmAB41hkUqzoQ7odkKDXJf9Mz371XYCxnYjikyLPTJ8nZ7t8XRlD
+# mXulHPu6wb0Ulx8g4xUyHeJBI4NtTR/rYtECcQ0VpTx8C3MEcCxBrr/pcu4aah4B
+# ELYdbmgta5xYNJokmtUZD4DVsF/IETzw6vNI2RszeSLz6bEDcNh6Y3YL4OEFXXld
+# /oTU
 # SIG # End signature block

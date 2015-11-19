@@ -1,106 +1,187 @@
+function Pop-ChangeTracker {
+<#
+.SYNOPSIS
+Pops the contents of the DataServiceContext ChangeTracker from the DataContext stack.
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+.DESCRIPTION
+Pops the contents of the DataServiceContext ChangeTracker from the DataContext stack.
 
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
+.INPUTS
+The Cmdlet can either pop a context or clear the contents of the DataContext stack.
+See PARAMETERS section on possible inputs.
 
-	Mock Export-ModuleMember { return $null; }
+.OUTPUTS
+[System.Collections.Hashtable]
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Push-ChangeTracker/
+
+.NOTES
+See module manifest for required software versions and dependencies.
+#>[CmdletBinding(
+    SupportsShouldProcess = $true
+	,
+    ConfirmImpact = 'Medium'
+	,
+	HelpURI = 'http://dfch.biz/PS/Appclusive/Client/Pop-ChangeTracker/'
+)]
+[OutputType([Boolean])]
+Param 
+(
+	[ValidateScript({$_.ContainsKey('Entities') -And $_.ContainsKey('Links')})]
+	[Parameter(Mandatory = $false, Position = 0)]
+	[hashtable] $DataContext = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).DataContext.Pop()
+	,
+	# Specifies a references to the Appclusive endpoints
+	[Parameter(Mandatory = $false)]
+	[Alias("Services")]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the service or container name of the entity to remove
+	[ValidateScript( { if($svc.Keys -contains $_) { $true; } else { throw('{0}: Invalid service name specified.' -f $_); } } )]
+	[Parameter(Mandatory = $false, Position = 0)]
+	[Alias("Container")]
+	[string] $Service = 'Core'
+	,
+	[Parameter(Mandatory = $false)]
+	[switch] $Clear = $false
+	,
+	[Parameter(Mandatory = $false)]
+	[Object[]] $Exclude
+)
+
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+
+	$ModuleVar = Get-ModuleVariable;
+
+	Log-Debug -fn $fn -msg ("CALL. DataContext stack size '{0}'." -f $ModuleVar.DataContext.Count) -fac 1;
 	
-	. "$here\$sut"
+	# Parameter validation
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
+	{
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
+		throw($gotoError);
+	}
 	
-	$svc = Enter-AppclusiveServer;
+	$EntitySetName = 'Entities';
+	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
+	{
+		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+	$EntitySetName = 'Links';
+	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
+	{
+		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
 
-	Context "Get-ManagementCredential" {
-	
-		# Context wide constants
-		# N/A
+	if($DataContext -isnot [hashtable]) 
+	{
+		$msg = "DataContext: Parameter validation FAILED. Context must be a hashtable.";
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $DataContext;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+	$m = $svc.$Service;
+	if($m -isnot [System.Data.Services.Client.DataServiceContext]) 
+	{
+		$msg = "Service: Parameter validation FAILED. Service must be a DataServiceContext.";
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $Service;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
 
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+	$fReturn = $false;
+	$OutputParameter = $null;
+	$fLinks = $false;
+	$fEntities = $false;
+	if($Clear) 
+	{
+		foreach($e in $m.Entities) 
+		{ 
+			$null = $m.Detach($e.Entity); 
 		}
-
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Be $null;
+		foreach($l in $m.Links) 
+		{ 
+			$null = $m.DetachLink($l.Source, $l.SourceProperty, $l.Target); 
 		}
 	}
+	else 
+	{
+		if($DataContext.ContainsKey('Entities')) 
+		{
+			$e = '';
+			$aE = $DataContext.Entities;
+			foreach($e in $m.Entities) 
+			{ 
+				if(!$aE.Contains($e.Entity)) 
+				{ 
+					$null = $m.Detach($e.Entity);
+				}
+			}
+			$aE.Clear();
+			Remove-Variable aE;
+			Remove-Variable e;
+			$fEntities = $true;
+		}
+		if($DataContext.ContainsKey('Links')) 
+		{
+			$l = '';
+			$aL = $DataContext.Links;
+			foreach($l in $m.Links) 
+			{ 
+				if(!$aL.Contains($l)) 
+				{ 
+					$null = $m.DetachLink($l.Source, $l.SourceProperty, $l.Target); 
+				}
+			}
+			$aL.Clear();
+			Remove-Variable aL;
+			Remove-Variable l;
+			$fLinks = $true;
+		}
+	}
+	if($fLinks -Or $fEntities) 
+	{ 
+		$fReturn = $true; 
+	}
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]. Tracked objects currently: Entities [{3}]. Links [{4}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz'), $m.Entities.Count, $m.Links.Count) -fac 2;
+	return $fReturn;
+
 }
 
-#
-# Copyright 2015 d-fens GmbH
-#
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Pop-ChangeTracker; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
+
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjpp/AXRQGHWn4DlexTljdXza
-# PUugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOZ/hEVQql8u27cstAnoAJUIk
+# ipOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +280,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRBWqMWyP2iaTg4
-# XKFGq/x7lXN3JjANBgkqhkiG9w0BAQEFAASCAQCgD4wpK9hKWlRn3lUnSdXhd/3j
-# P9bsxTofJg1yClw1n6GVQLfSLdgp1jHfH/Brkfw/71L/b0cgNgamVsRWkLo3EKXN
-# U9sHef56FvkP37KnjdgXV3SXYscXCDm/PIuxQVxbuiWScIPj1ySnIdDwOcMZYv7v
-# 7/tc/jgcmrj15Ftru9bU47DfI8lRgZxhhrJemfMKyYlM7Y+g4FcN3QcpG2ebRSna
-# 8Cx10vqw57Ltcg/4zEgZiG/obb/08XU6AUy/3hBhEbVCdaaWhAG64RGdVDCPly83
-# bYBRKEVZsfm3TxcfQA5zzmxklRVyb21E7GnLA7eSWigFU65zbFHCe9OMfOgDoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS6N1GqUjdq0Nvs
+# rmv9eIfu9FJn5jANBgkqhkiG9w0BAQEFAASCAQDKncb+lnSf94QjBpz2TOTwmSSu
+# 0eKFYLH9ALw4tVGYs6UecNnzXIP3diXXx7Nvr5UONKhQwhQnhtKQTYrBLtx1/A+e
+# 4H1Qrd7dEEfyI7AnEaiLfkDTyE4l/rQ9psoHaGc1wtXBHC+NGXw5I4E99dDEw+Ns
+# 0FoeAcHjy7fCdVoSPvOl1QZkzkQu4RoWN1WyFrqYHtNIMcuYpBBvGeG0jDVD0DWO
+# UmtcSZrqqiDLS8M4WawwZ4lJVUwlXqpiZbCk+EzQSh2RY3kqLw6RRRfmUFsgji1y
+# wydFVzGH2IFC1EnW9v6Ct2wt5jD47LCK48CJNdlgDB/LP1oy3wL2pnHU7eAKoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFJq4WKsuvOerIxRBm/ExxnpYNZro
+# MTEwNzExNTU0MFowIwYJKoZIhvcNAQkEMRYEFPR1f+Gij1GkW67fCkOHBHh8qexT
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAWcoSO3SPCmHsu2WHm
-# KwIYNzNfJstZKdk8Sha83VHfkIG2r9GAOGPGJxru27puRfQBZpM62oP71J5GZYjN
-# FWTHu1I4Dsxvv3ps8Oe9UAVl1aJX7nbxPzJaM5nXq8hX7M33P10xm7z/bGxSLH6/
-# urf2NFWKFpsKTj6YkqhPm3vJUqOH40CG2F2SBqRCeW1Key3e3VGaPLoYg8XrCjNf
-# JqrRkhLuhs9gawOLWXKlE7scH5Eliv3QxDu0xBX7hTSK1QzUa+s4uIRKBMeZW3AS
-# NVjVeWK4TS1UgMhBsU8PO9HHZdjRGtAjbU0QF3KS4uxHqmNd/QN1zNFWYH30Nykl
-# 0J9z
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBBZyP2HBTtUNZpQUCc
+# 7ivr9uK2OF/vXpHJDoQsM9wsQbdzPJrBhnJRTc406ZHexZKT5sssYtZ/Dp/dRcVl
+# FG3R+eDLDUKoMHy2NVGcauihKgvE06fqG3R6uiZJnOF3vPSOLbjn1HcsWjApGa0H
+# TUPemTHLZAVKfU63OU4FxSnFFuakJnLLTsq/mYU+zyuDW82UyXRNWNeH0pHSyuGK
+# +K74b5VlWanL8D+mKBAoZ3yy7vdpVUpdaqI+DZ4ryQb/fPkuDrc+c7ogvpHVCqQp
+# 9AiZJSsgtuLXeAz0bxFgbx7y2ZAMWNTW/OYnuLFlx4mp/grUDZTwsOOIT1AgwIC/
+# gOVK
 # SIG # End signature block
