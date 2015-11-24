@@ -8,19 +8,13 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "Cart.Tests" "Cart.Tests" {
+Describe -Tags "Acl.Tests" "Acl.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
-
+	
 	. "$here\$sut"
-	. "$here\Catalogue.ps1"
 	
-	Context "Catalogue.Tests" {
-	
-		# Context wide constants
-		$catName = 'Default DaaS';
-		New-Variable -Name cat -Value 'will-be-used-later';
-		New-Variable -Name catItems -Value 'will-be-used-later';
+	Context "Acl.Tests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -29,219 +23,251 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$svc = Enter-AppclusiveServer;
 		}
 		
-		It "GettingCarts-ReturnsZeroEntities" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$entitySet = $svc.Core.Carts;
-
-			# Assert
-			$entitySet | Should Be $null;
+		It "Acl-CreateAndDeleteAcl" -Test {
+			try {
+				# Arrange
+				$aclName = "Test Acl";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				
+				# Act
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert	
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should Not Be 0;
+			} 
+			finally {
+				#Cleanup
+				$svc.Core.DeleteObject($acl);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
 		}
-
-		It "GettingCatalogue-Succeeds" -Test {
-			# Arrange
-			
-			# Get catalogue
-			$cat = GetCatalogueByName -svc $svc -catName $catName;
-			$cat | Should Not Be $null;
-			
-			# Get catalogue items
-			$catItems = GetCatalogueItemsOfCatalog -svc $svc -cat $cat;
-			$catItems | Should Not Be $null;
-			$catItems |? Name -eq 'VDI Personal' | Should Not Be $null;
-			$catItems |? Name -eq 'VDI Technical' | Should Not Be $null;
-			$catItems |? Name -eq 'DSWR Autocad 12 Production' | Should Not Be $null;
+		
+		It "Acl-UpdateNameDescripton" -Test {
+			try {
+				# Create Acl
+				$aclName = "Test Acl";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should Not Be 0;
+				
+				# Arrange
+				$aclSetName	= "Updated";
+				$aclSetDescription = "Updated";
+				$acl.Name = $aclSetName;
+				$acl.Description = $aclSetDescription;
+								
+				# Act
+				$svc.Core.UpdateObject($acl)
+				$result = $svc.core.SaveChanges();	
+				
+				# Assert
+				$result.StatusCode | Should Be 204;
+				$aclCheck = $svc.Core.Acls.AddQueryOption('$filter', ("Id eq {0}" -f $acl.Id));
+				$aclCheck.Name | Should Be $aclSetName;
+			} 
+			finally {
+				#Cleanup
+				$svc.Core.DeleteObject($acl);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
 		}
 	}
-
-	Context "Cart.Tests" {
 	
+	Context "Ace.Tests" {
+		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
 			$svc = Enter-AppclusiveServer;
-		}
-	
-		It "AddingCartItem-CreatesCart" -Test {
-
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
 			
-			# Create new cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
+			# Create Acl for Ace tests
+			$aclName = "Test Acl for Ace tests";
+			$aclDescription = "TestNode used in Test";		
+			$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+			$svc.Core.AddToAcls($acl);
+			$result = $svc.core.SaveChanges();
+			$result.StatusCode | Should be 201;
+			$acl.Id | Should Not Be 0;
 			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
-
-		It "AddingNonVdiCartItemTwice-IncreasesCount" -Test {
-			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
-			$catItem | Should Not Be $null;
-			
-			# Create new cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-
-			# check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			$cartItems[0].Quantity | Should Be 1;
-			
-			$svc = Enter-AppclusiveServer;
-			
-			# Create second cartItem
-			$cartItem2 = CreateCartItem -catItem $catItem;
-			
-			# Add second VDI cartItem
-			$svc.Core.AddToCartItems($cartItem2);
-			$result = $svc.Core.SaveChanges();
-			
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			$cartItems[0].Quantity | Should Be 2;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
+			$result = $null;
 		}
 		
-		It "AddingVdiCartItemTwice-Fails" -Test {
-			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
-			
-			# Create new VDI cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add VDI cartItem
-			$svc.Core.AddToCartItems($cartItem);
+		AfterEach {
+			# Cleanup Acl
+			$svc = Enter-AppclusiveServer;
+			$svc.Core.AttachTo('Acls', $acl);
+			$svc.Core.DeleteObject($acl);
 			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
 
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			
-			# Create second VDI cartItem
-			$cartItem2 = CreateCartItem -catItem $catItem;
-
-			# Add second VDI cartItem
-			$svc.Core.AddToCartItems($cartItem2);
-			try 
-			{
-				$svc.Core.SaveChanges();
-			} catch 
-			{
-				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
-				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
+		It "Ace-CreateAndDeleteAce" -Test {
+			try {
+				# Arrange
+				$aceName = "Test Ace"
+				$aceDescription = "Ace used in tests"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act
+				$svc.Core.AddToAces($ace);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert
+				$result.StatusCode | Should be 201;
+				$ace.Id | Should Not Be 0;
+				
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
 			}
-
-			$svc = Enter-AppclusiveServer;
-			$cart = GetCartOfUser -svc $svc;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
 		}
 		
-		It "AddAndRemoveItemToCart" -Test {
-			# Get catItem
-			$catItem1 = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem2 = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
-			$catItem1 | Should Not Be $null;
-			$catItem2 | Should Not Be $null;
+		It "Ace-CreateAceWithoutAclReferenz-ThrewException" -Test {
+			# Arrange
+			$aceName = "Test Ace"
+			$aceDescription = "Ace used in tests"
+			$aceAction = "ALLOW";
 			
-			# Create new VDI cartItem
-			$cartItem1 = CreateCartItem -catItem $catItem1;
-			$cartItem2 = CreateCartItem -catItem $catItem2;
-
-			# Add two cartItem
-			$svc.Core.AddToCartItems($cartItem1);
-			$svc.Core.AddToCartItems($cartItem2);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
-						
-			# Get Cart of User and Items
-			$cart = GetCartOfUser -svc $svc;
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.count | Should be 2;
+			$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAction $aceAction;
+			$svc.Core.AddToAces($ace);
 			
-			# Remove CartItem VDI
-			$svc.core.DeleteObject($cartItem1)
-			$result2 = $svc.Core.SaveChanges();
-			$result2.StatusCode | Should Be 204;
+			try {
+				$result = $svc.core.SaveChanges();
+			} catch {
+				$threwException = $true;
+			}
 			
-			$cartItem1 = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItem1.count | Should be 1;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
+			# Assert
+			$threwException | Should Be $true;		
+		}
+		
+		It "Ace-CreateTwoAcesToOneAcl" {
+			try {
+				# Arrange
+				$aceName1 = "Test Ace One"
+				$aceDescription1 = "Ace used in tests (one)"
+				$aceName2 = "Test Ace Two"
+				$aceDescription1 = "Ace used in tests (two)"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace1 = CreateAce -aceName $aceName1 -aceDescription $aceDescription1 -aceAclId $aceAclId -aceAction $aceAction;	
+				$ace2 = CreateAce -aceName $aceName2 -aceDescription $aceDescription2 -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act
+				$svc.Core.AddToAces($ace1);
+				$result1 = $svc.core.SaveChanges();
+				$svc.Core.AddToAces($ace2);
+				$result2 = $svc.core.SaveChanges();
+				
+				# Assert
+				$result1.StatusCode | Should be 201;
+				$ace1.Id | Should Not Be 0;
+				$result2.StatusCode | Should be 201;
+				$ace2.Id | Should Not Be 0;
+				$ace1.Id | Should Not Be $ace2.Id;
+				
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($ace2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "Ace-GetAcesOfAcl" {
+			try {
+				# Arrange Create Ace
+				$aceName1 = "Test Ace One"
+				$aceDescription1 = "Ace used in tests (one)"
+				$aceName2 = "Test Ace Two"
+				$aceDescription1 = "Ace used in tests (two)"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace1 = CreateAce -aceName $aceName1 -aceDescription $aceDescription1 -aceAclId $aceAclId -aceAction $aceAction;	
+				$ace2 = CreateAce -aceName $aceName2 -aceDescription $aceDescription2 -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create Ace
+				$svc.Core.AddToAces($ace1);
+				$result1 = $svc.core.SaveChanges();
+				$svc.Core.AddToAces($ace2);
+				$result2 = $svc.core.SaveChanges();
+				
+				# Assert Create Ace
+				$result1.StatusCode | Should be 201;
+				$ace1.Id | Should Not Be 0;
+				$result2.StatusCode | Should be 201;
+				$ace2.Id | Should Not Be 0;
+				$ace1.Id | Should Not Be $ace2.Id;
+				
+				#Act Select Ace of Acl
+				$acesOfAcl = $svc.Core.LoadProperty($acl, 'Aces') | Select
+				$acesOfAcl.Id -contains $ace1.Id | Should be $True;
+				$acesOfAcl.Id -contains $ace2.Id | Should be $True;
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($ace2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
+		
+		It "Ace-GetAclOfAce" -Test {
+			try {
+				# Arrange Create Ace
+				$aceName = "Test Ace"
+				$aceDescription = "Ace used in tests"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace = CreateAce -aceName $aceName -aceDescription $aceDescription -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create Ace
+				$svc.Core.AddToAces($ace);
+				$result = $svc.core.SaveChanges();
+				
+				# Assert Create Ace
+				$result.StatusCode | Should be 201;
+				$ace.Id | Should Not Be 0;
+				
+				# Act Load Acl of Ace
+				$aclOfAce = $svc.Core.LoadProperty($ace, 'Acl') | Select;
+				
+				#Assert Acl of Ace
+				$aclOfAce.Id | Should Be $acl.Id;
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
 		}
 	}
 }
@@ -265,8 +291,8 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU3SsRnSv0ZiD8fn6g2SSNpGLP
-# 61agghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZX5w8Xw+udMvWl6nNjqlG7YQ
+# 2tugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -365,26 +391,26 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRa1pPYPLq38F/6
-# JehYJajkgkyGgTANBgkqhkiG9w0BAQEFAASCAQB23rvBMfBaqOwpgfWu2YLe+zhe
-# 6PX7hfdQ7mfxDrMQPFmnuiVwyRrK1ag3s+nKl0Sy1f/cgsS9o0DfUMVwt40yqSlD
-# uPdFqhpI6s1DbSlUmHCBi5QLThO/avMSebHilhfakvpM25Q3qHrQV5CrFTf4PXLf
-# mPaOe5WrmsrtieoQm7HnAXcmuM9Voe8kypOh8I19gVqCPbPDTZADtgZphDYRa1sv
-# qDPaqw2ztXmtFWE3KzveBqEBcHBrivyDnQawj9DIRxo/WcDEjnaSpAfPfP7UcIpb
-# sZk70fOyMAcczFGa61wWOuAb2e85JH3+dqe3GjQGcAcE+BsWf5hQf/lkegu2oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTw3JlKeHQiw2lA
+# 2iJee4jfe1ok0zANBgkqhkiG9w0BAQEFAASCAQDBSK+A2XFr+NaI3FLcxOBVbQU/
+# aMfGJGwzAABNVWoanByc8XE6MuZ+5yXdvdeXZITHAFxrwRe7R2N6+5EcjQGWAzJi
+# HyKTZ2T5tFXBi9qJPTTKytbdYtMOJeWClr9v15iHJcOjaba4IWFxcX7n3k7fspI2
+# +ePobEIdGl7kSNMNEd8e3GgIN2EUUu6xkOPycP0Alw4oMsd+E+RV2qJyGn6ukIoW
+# +WoPCtFySmIH9vI7xP5F7T0nl1csaJtj00eSu7qREwUdefszhqDyadKmDCLus1bS
+# dSnSktG5UuVndbfFJXlssxRC4cPsvtedToZteJ08p/FWbvOZ9tQMESSZkklmoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA0OVowIwYJKoZIhvcNAQkEMRYEFNVaQnofNp8kSBVzI/BjJXLaEB8i
+# MTAyODE0MjA0NlowIwYJKoZIhvcNAQkEMRYEFPKGbdv4mF14VLiWolIKpcIGtFoF
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBSZ7IA0XxwgMK4+ySn
-# /g+SZzUkMqnvow9yjYgPUMadTkYDXOewPT0IbZkXaEJGYliPM+mUH/BAaso0D2ZP
-# 3U3xiugGVsnQA1m4D61foksrKWRl9P2eW/q4OG/MHMIDOsMIkojLWBQtmLvEkePU
-# ljJ5KAAR+fXDaeXhLq3eB78NUmsa44oT/FBUNH8nShvkx5hn0s3m6ey+ZY4TRWCp
-# iHDeqIWooT5V3OCOgmZ8jNdJuwttC0gQyr96NfmvNVWgEgzW333qTiP+ey21wv74
-# JezyaVbv3biYAsFYXijMCT88hV7HlpjAf2z8FyoHWDaYtCoNwQSVr6IRSbA1fDdM
-# 5gnH
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy7ufxDEu0kJPJ9whi
+# dhkVPCQP+gc13hOgcjAx+K8Nc+S6jofZa7dfZTI5eABZ7aDpULGQYMW8WnK8gCSL
+# HDOxHmuPOww5c7K/VBaF5Ttrt3ZO+WH8BWp1H3F7GSBJLOrzFF66AF7IhKKvmFoo
+# GegWpNuLJYAVfIy8DfkRIB9ttulWSuA7tT/4rgL5S+2rUHOi3H+GWPsBpUt+b1v/
+# koBcdbApcW/r8n6OtKqHP+PfZL9w/KYyYafr5UrlgRxSjKN+5v+viUfD3UsOrUxV
+# LetMozQxlYdZmyr3xU+exTAcaIyfvdukC/pDLMUsyJLii4ZaR5Zt9tJOzjJyxsFM
+# 034o
 # SIG # End signature block

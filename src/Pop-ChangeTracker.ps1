@@ -1,133 +1,187 @@
-#Requires -Modules biz.dfch.PS.Appclusive.Client
-Param
+function Pop-ChangeTracker {
+<#
+.SYNOPSIS
+Pops the contents of the DataServiceContext ChangeTracker from the DataContext stack.
+
+.DESCRIPTION
+Pops the contents of the DataServiceContext ChangeTracker from the DataContext stack.
+
+.INPUTS
+The Cmdlet can either pop a context or clear the contents of the DataContext stack.
+See PARAMETERS section on possible inputs.
+
+.OUTPUTS
+[System.Collections.Hashtable]
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Push-ChangeTracker/
+
+.NOTES
+See module manifest for required software versions and dependencies.
+#>[CmdletBinding(
+    SupportsShouldProcess = $true
+	,
+    ConfirmImpact = 'Medium'
+	,
+	HelpURI = 'http://dfch.biz/PS/Appclusive/Client/Pop-ChangeTracker/'
+)]
+[OutputType([Boolean])]
+Param 
 (
-	[string] $CatalogueName = 'Default DaaS'
+	[ValidateScript({$_.ContainsKey('Entities') -And $_.ContainsKey('Links')})]
+	[Parameter(Mandatory = $false, Position = 0)]
+	[hashtable] $DataContext = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).DataContext.Pop()
 	,
-	$KeyName = 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems'
+	# Specifies a references to the Appclusive endpoints
+	[Parameter(Mandatory = $false)]
+	[Alias("Services")]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
-	$SccmModulePath = 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
+	# Specifies the service or container name of the entity to remove
+	[ValidateScript( { if($svc.Keys -contains $_) { $true; } else { throw('{0}: Invalid service name specified.' -f $_); } } )]
+	[Parameter(Mandatory = $false, Position = 0)]
+	[Alias("Container")]
+	[string] $Service = 'Core'
 	,
-	$SiteName = 'P02'
+	[Parameter(Mandatory = $false)]
+	[switch] $Clear = $false
+	,
+	[Parameter(Mandatory = $false)]
+	[Object[]] $Exclude
 )
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
 
-$svc = Enter-AppclusiveServer;
+	$ModuleVar = Get-ModuleVariable;
 
-$al = New-Object System.Collections.ArrayList;
-
-# CD $SccmModulePath
-# $null = Import-Module .\ConfigurationManager.psd1;
-# CD ('{0}:' -f $SiteName);
-
-Log-Debug $fn ("Loading packages from '{0}' ..." -f $SiteName)
-# $packages = (Get-CMCollection).Name;
-$packages = Import-CliXml '.\Import-SccmPackages.xml'
-Log-Info $fn ("Loading packages from '{0}' COMPLETED. Found {1} packages." -f $SiteName, $packages.Count)
-
-Log-Debug $fn ("Loading whiteLists from '{0}' ..." -f $KeyName);
-$whiteListValues = Get-AppclusiveKeyNameValue -svc $svc -Key $KeyName -Name Whitelist -Select Value;
-$whiteLists = $whiteListValues.Value;
-Log-Debug $fn ("Loading whiteLists from '{0}' COMPLETED [{1}]." -f $KeyName, $whiteLists.Count);
-Log-Debug $fn ("Loading blackLists from '{0}' ..." -f $KeyName);
-$blackListValues = Get-AppclusiveKeyNameValue -svc $svc -Key $KeyName -Name Blacklist -Select Value;
-$blackLists = $blackListValues.Value;
-Log-Debug $fn ("Loading blackLists from '{0}' COMPLETED [{1}]." -f $KeyName, $blackLists.Count);
-
-Log-Debug $fn ("Matching packages against whiteLists and blackLists ...");
-foreach($package in $packages)
-{
-	foreach($whiteList in $whiteLists)
+	Log-Debug -fn $fn -msg ("CALL. DataContext stack size '{0}'." -f $ModuleVar.DataContext.Count) -fac 1;
+	
+	# Parameter validation
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
 	{
-		if($package -imatch $whiteList)
-		{
-			Log-Debug $fn ("{0}: whiteList matched package '{1}'" -f $whiteList, $package);
-			$null = $al.Add($package);
-			break;
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
+		throw($gotoError);
+	}
+	
+	$EntitySetName = 'Entities';
+	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
+	{
+		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+	$EntitySetName = 'Links';
+	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
+	{
+		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+
+	if($DataContext -isnot [hashtable]) 
+	{
+		$msg = "DataContext: Parameter validation FAILED. Context must be a hashtable.";
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $DataContext;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+	$m = $svc.$Service;
+	if($m -isnot [System.Data.Services.Client.DataServiceContext]) 
+	{
+		$msg = "Service: Parameter validation FAILED. Service must be a DataServiceContext.";
+		Log-Error $fn $msg;
+		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $Service;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+
+	$fReturn = $false;
+	$OutputParameter = $null;
+	$fLinks = $false;
+	$fEntities = $false;
+	if($Clear) 
+	{
+		foreach($e in $m.Entities) 
+		{ 
+			$null = $m.Detach($e.Entity); 
+		}
+		foreach($l in $m.Links) 
+		{ 
+			$null = $m.DetachLink($l.Source, $l.SourceProperty, $l.Target); 
 		}
 	}
-	foreach($blackList in $blackLists)
+	else 
 	{
-		if($package -imatch $blackList)
+		if($DataContext.ContainsKey('Entities')) 
 		{
-			Log-Debug $fn ("{0}: blackList matched package '{1}'" -f $blackList, $package);
-			if($al.Contains($package))
-			{
-				$null = $al.Remove($package);
+			$e = '';
+			$aE = $DataContext.Entities;
+			foreach($e in $m.Entities) 
+			{ 
+				if(!$aE.Contains($e.Entity)) 
+				{ 
+					$null = $m.Detach($e.Entity);
+				}
 			}
-			break;
+			$aE.Clear();
+			Remove-Variable aE;
+			Remove-Variable e;
+			$fEntities = $true;
+		}
+		if($DataContext.ContainsKey('Links')) 
+		{
+			$l = '';
+			$aL = $DataContext.Links;
+			foreach($l in $m.Links) 
+			{ 
+				if(!$aL.Contains($l)) 
+				{ 
+					$null = $m.DetachLink($l.Source, $l.SourceProperty, $l.Target); 
+				}
+			}
+			$aL.Clear();
+			Remove-Variable aL;
+			Remove-Variable l;
+			$fLinks = $true;
 		}
 	}
-}
-Log-Info $fn ("Matching packages against whiteLists and blackLists COMPLETED. '{0}' packages remaining." -f $al.Count);
+	if($fLinks -Or $fEntities) 
+	{ 
+		$fReturn = $true; 
+	}
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]. Tracked objects currently: Entities [{3}]. Links [{4}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz'), $m.Entities.Count, $m.Links.Count) -fac 2;
+	return $fReturn;
 
-Log-Debug $fn "Removing existing SCCM packages ...";
-$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Type eq 'SCCM'") | Select;
-foreach($catItem in $catItems)
-{
-	try
-	{
-		Log-Debug $fn ("Removing SCCM package '{0}' ..." -f $catItem.Name);
-		$svc.Core.DeleteObject($catItem);
-		$svc.Core.SaveChanges();
-		Log-Info $fn ("Removing SCCM package '{0}' SUCCEEDED." -f $catItem.Name);
-	}
-	catch
-	{
-		Log-Error $fn ("Removing SCCM package '{0}' FAILED." -f $catItem.Name);
-	}
 }
 
-Log-Debug $fn ("Attaching packages to catalogue. Resolving '{0}' ..." -f $CatalogueName);
-$cat = $svc.Core.Catalogues |? Name -eq $CatalogueName;
-if($null -eq $cat)
-{
-	$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $CatalogueName;
-	throw $e;
-}
-Log-Info $fn ("Attaching packages to catalogue. Resolving '{0}' SUCCEEDED." -f $CatalogueName);
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Pop-ChangeTracker; } 
 
-Log-Debug $fn ("Processing '{0}' matching packages ...'" -f $al.Count);
-foreach($catItemName in $al)
-{
-	try
-	{
-		Log-Debug $fn ("Adding '{0}' to catalogue '{1}' ..." -f $catItemName, $cat.Name);
-		$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
-		$svc.Core.AddToCatalogueItems($catItem);
-		$svc.Core.SetLink($catItem, "Catalogue", $cat);
-		$catItem.CatalogueId = $cat.Id;
-		$catItem.Type = 'SCCM';
-		$catItem.Version = 1;
-		$catItem.Name = $catItemName;
-		$catItem.Description = $catItemName;
-		$catItem.Created = [System.DateTimeOffset]::Now;
-		$catItem.Modified = $catItem.Created;
-		$catItem.ValidFrom = [System.DateTimeOffset]::MinValue;
-		$catItem.ValidUntil = [System.DateTimeOffset]::MaxValue;
-		$catItem.EndOfSale = [System.DateTimeOffset]::MaxValue;
-		$catItem.EndOfLife = [System.DateTimeOffset]::MaxValue;
-		$catItem.CreatedBy = "SYSTEM";
-		$catItem.ModifiedBy = $catItem.CreatedBy;
-		$catItem.Tid = "1";
-		$catItem.Id = 0;
-		$svc.Core.UpdateObject($catItem);
-		$svc.Core.SaveChanges();
-		Log-Info $fn ("Adding '{0}' to catalogue '{1}' SUCCEEDED." -f $catItemName, $cat.Name);
-	}
-	catch
-	{
-		Log-Error $fn ("Adding '{0}' to catalogue '{1}' FAILED." -f $catItemName, $cat.Name);
-	}
-}
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjLZtcS8l8B6iuKctx5vsLoXO
-# qQugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOZ/hEVQql8u27cstAnoAJUIk
+# ipOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -226,26 +280,26 @@ foreach($catItemName in $al)
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRogglHX9SlPQQS
-# ieOSjQC367OVfDANBgkqhkiG9w0BAQEFAASCAQDFbCBE7Wj23ZzEAsP5O9s2eyWE
-# LY2HyLLxYP08nQRZ1TIO4cLnDo5tM2pfBGHDpUx1ibd2JiE9qlm5Ej8cF1zY5fZb
-# LKPqjBDc1QubLWiwEPgmZ2OeIdymaJL+JRuSpxKplR13T0+H6j+baZc4C8Y2uAzr
-# vileOGbGOp6/4qwXEs1gy8yH/hpcX160EmkgLkB5UnJcl9hLbF6rYeY7Bo2dEu83
-# x28WuRyKW+mHe4JArHouuil3vEyv8/LaT6GjvzT7vPKICwZ+6R9S5iAVeVpHPEz1
-# 6k0+i+vNbZVGs9SoR4v3M4r/e88mSNt0LSDG5iGJYrv7Ec/71f59dkX5It8voYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS6N1GqUjdq0Nvs
+# rmv9eIfu9FJn5jANBgkqhkiG9w0BAQEFAASCAQDKncb+lnSf94QjBpz2TOTwmSSu
+# 0eKFYLH9ALw4tVGYs6UecNnzXIP3diXXx7Nvr5UONKhQwhQnhtKQTYrBLtx1/A+e
+# 4H1Qrd7dEEfyI7AnEaiLfkDTyE4l/rQ9psoHaGc1wtXBHC+NGXw5I4E99dDEw+Ns
+# 0FoeAcHjy7fCdVoSPvOl1QZkzkQu4RoWN1WyFrqYHtNIMcuYpBBvGeG0jDVD0DWO
+# UmtcSZrqqiDLS8M4WawwZ4lJVUwlXqpiZbCk+EzQSh2RY3kqLw6RRRfmUFsgji1y
+# wydFVzGH2IFC1EnW9v6Ct2wt5jD47LCK48CJNdlgDB/LP1oy3wL2pnHU7eAKoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAxODA2MDQwNlowIwYJKoZIhvcNAQkEMRYEFB1B5BCBdHFV/r3nxGy2MV/MQ6ks
+# MTEwNzExNTU0MFowIwYJKoZIhvcNAQkEMRYEFPR1f+Gij1GkW67fCkOHBHh8qexT
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCopZV7jRBpxRsaUqXp
-# CdMW5ndfJP5Nkl9EQ2cHxc1lB+S7JTcc/ur7FFZPGnggJPSPQC5aSrNqaab8Hcbo
-# 9yu9Dbhgz3enqm0Ujk8dCUXLUaENeEilhY7q76TUASZ9nvWwfDv9CItS2X4TF/9Y
-# jOq0e0QdjNz+2g17FhI97Lcvs+CKhCfWN23cgF6qzJPp+h5VZZRn13RoO3wdZHSd
-# oEKHzsS1CvQ2Gncu5CMhgsChFRV7Wpwm8pUgHwoBZTp1tVa/MlW4v4PYIx+zr2/t
-# e9szow+UgVgpkrx/rUeWrFPSJGtBuOofhBbYCYlcHfCXVN8KV8qGq+k84hCcmtnJ
-# X4DB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBBZyP2HBTtUNZpQUCc
+# 7ivr9uK2OF/vXpHJDoQsM9wsQbdzPJrBhnJRTc406ZHexZKT5sssYtZ/Dp/dRcVl
+# FG3R+eDLDUKoMHy2NVGcauihKgvE06fqG3R6uiZJnOF3vPSOLbjn1HcsWjApGa0H
+# TUPemTHLZAVKfU63OU4FxSnFFuakJnLLTsq/mYU+zyuDW82UyXRNWNeH0pHSyuGK
+# +K74b5VlWanL8D+mKBAoZ3yy7vdpVUpdaqI+DZ4ryQb/fPkuDrc+c7ogvpHVCqQp
+# 9AiZJSsgtuLXeAz0bxFgbx7y2ZAMWNTW/OYnuLFlx4mp/grUDZTwsOOIT1AgwIC/
+# gOVK
 # SIG # End signature block

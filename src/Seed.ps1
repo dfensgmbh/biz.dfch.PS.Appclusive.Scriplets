@@ -1,4 +1,5 @@
-#requires -Modules 'biz.dfch.PS.Appclusive.Client'
+#Requires -Modules biz.dfch.PS.Appclusive.Client
+
 PARAM
 (
 	[Parameter(Mandatory = $false)]
@@ -312,15 +313,24 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+Production$';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+\d$';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController' -Name 'Properties' -Value '{}';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'StubMode' -Value 'True';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'ConnectionServerName' -Value '{}';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PsSessionConfig' -Value '{}';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId' -Value '{}';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
+
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'NotifyWfe' -Value 'NOTIFY-WFE';
+	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
 
-function Links($Recreate)
+function Assocs($Recreate)
 {
 	$svc = Enter-AppclusiveServer;
 	
-	$links = $svc.Core.Links | Select;
-	DeleteItems -svc $svc -items $links;
+	$assocs = $svc.Core.Assocs | Select;
+	DeleteItems -svc $svc -items $assocs;
 
 	if(!$Recreate)
 	{
@@ -351,8 +361,8 @@ function ManagementCredentials($Recreate)
 	$svc.Core.AddToManagementCredentials($mc);
 	$mc.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController';
 	$mc.Description = 'ManagementCredential for Active Directory access';
-	$mc.Username = 'SWI\sDaaSPa';
-	$mc.Password = "tralala";
+	$mc.Username = 'DFCH\adservice';
+	$mc.Password = "P@ssw0rd";
 	$mc.EncryptedPassword = $mc.Password;
 	$mc.Created = [System.DateTimeOffset]::Now;
 	$mc.Modified = $mc.Created;
@@ -541,7 +551,7 @@ function Products($Recreate)
 	
 	$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$svc.Core.AddToProducts($product);
-	$product.Type = 'SW Package';
+	$product.Type = 'SCCM';
 	$product.Version = '1';
 	$product.Name = 'DSWR Autocad 12 Production';
 	$product.Description = 'DSWR Autocad 12 Production';
@@ -557,114 +567,6 @@ function Products($Recreate)
 	$product.Id = 0;
 	$svc.Core.UpdateObject($product);
 	$svc.Core.SaveChanges();
-}
-
-function SCCMImport($Recreate) 
-{
-	# SCCM
-	# http://thedesktopteam.com/blog/heinrich/sccm-2012-r2-powershell-basics-part-1/
-	CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
-	# Import-Module .\ConfigurationManager.psd1 -verbose;
-	Import-Module .\ConfigurationManager.psd1;
-	CD P02:
-
-	# Load software packages from Sccm
-	$svc = Enter-AppclusiveServer;
-
-	$fn = "SccmImport";
-
-	CD 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin'
-	$null = Import-Module .\ConfigurationManager.psd1;
-	CD P02:
-
-	$al = New-Object System.Collections.ArrayList;
-	$packages = (Get-CMCollection).Name;
-	Log-Debug $fn ("SCCM: Processing '{0}' packages ..." -f $packages.Count)
-
-	$whiteListValues = Get-AppclusiveKeyNameValue -svc $svc -Key biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems -Name Whitelist -Select Value;
-	$whiteLists = $whiteListValues.Value;
-	$blackListValues = Get-AppclusiveKeyNameValue -svc $svc -Key biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems -Name Blacklist -Select Value;
-	$blackLists = $blackListValues.Value;
-
-	foreach($package in $packages)
-	{
-		foreach($whiteList in $whiteLists)
-		{
-			if($package -imatch $whiteList)
-			{
-				Log-Debug $fn ("{0}: whiteList matched package '{1}'" -f $whiteList, $package);
-				$null = $al.Add($package);
-				break;
-			}
-		}
-		foreach($blackList in $blackLists)
-		{
-			if($package -imatch $blackList)
-			{
-				Log-Debug $fn ("{0}: blackList matched package '{1}'" -f $blackList, $package);
-				if($al.Contains($package))
-				{
-					$null = $al.Remove($package);
-				}
-				break;
-			}
-		}
-	}
-	Log-Debug $fn ("Found '{0}' matching packages ...'" -f $al.Count);
-
-	$catItems = $svc.Core.CatalogueItems.AddQueryOption('$filter', "Product/Type eq 'SCCM'") | Select;
-	DeleteItems -svc $svc -items $catItems;
-	
-	# Delete non referenced products
-	$products = $svc.Core.Products.AddQueryOption('$expand', 'CatalogueItems') | Select;
-	$nonReferencedProducts = $products | where {$_.CatalogueItems.Count -eq 0}
-	DeleteItems -svc $svc -items $nonReferencedProducts;
-	
-	$catName = 'Default DaaS';
-	$cat = $svc.Core.Catalogues |? Name -eq $catName;
-
-	Log-Debug $fn ("Processing '{0}' matching packages ...'" -f $al.Count);
-	foreach($catItemName in $al)
-	{
-		$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
-		$svc.Core.AddToProducts($product);
-		$product.Type = 'SCCM';
-		$product.Version = '1';
-		$product.Name = $catItemName;
-		$product.Description = $catItemName;
-		$product.Created = [System.DateTimeOffset]::Now;
-		$product.Modified = $product.Created;
-		$product.ValidFrom = [System.DateTimeOffset]::MinValue;
-		$product.ValidUntil = [System.DateTimeOffset]::MaxValue;
-		$product.EndOfSale = [System.DateTimeOffset]::MaxValue;
-		$product.EndOfLife = [System.DateTimeOffset]::MaxValue;
-		$product.CreatedBy = "SYSTEM";
-		$product.ModifiedBy = $product.CreatedBy;
-		$product.Tid = "1";
-		$product.Id = 0;
-		$svc.Core.UpdateObject($product);
-		$svc.Core.SaveChanges();
-	
-		$catItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
-		$svc.Core.AddToCatalogueItems($catItem);
-		$svc.Core.SetLink($catItem, "Catalogue", $cat);
-		$catItem.CatalogueId = $cat.Id;
-		$catItem.ProductId = $product.Id;
-		$catItem.Name = $catItemName;
-		$catItem.Description = $catItemName;
-		$catItem.Created = [System.DateTimeOffset]::Now;
-		$catItem.Modified = $catItem.Created;
-		$catItem.ValidFrom = [System.DateTimeOffset]::MinValue;
-		$catItem.ValidUntil = [System.DateTimeOffset]::MaxValue;
-		$catItem.EndOfSale = [System.DateTimeOffset]::MaxValue;
-		$catItem.EndOfLife = [System.DateTimeOffset]::MaxValue;
-		$catItem.CreatedBy = "SYSTEM";
-		$catItem.ModifiedBy = $catItem.CreatedBy;
-		$catItem.Tid = "1";
-		$catItem.Id = 0;
-		$svc.Core.UpdateObject($catItem);
-		$svc.Core.SaveChanges();
-	}
 }
 
 function DeleteItems($svc, $items) 
@@ -695,19 +597,33 @@ EntityTypes($Recreate);
 Gates($Recreate);
 Jobs($Recreate);
 KeyNameValues($Recreate);
-Links($Recreate);
+Assocs($Recreate);
 ManagementCredentials($Recreate);
 ManagementUris($Recreate);
 Nodes($Recreate);
 Orders($Recreate);
-#SCCMImport($Recreate);
 
+#
+# Copyright 2015 d-fens GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUXC1W6sVmMEpgrBG2UYiPCBCB
-# HaSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUUOeRMqdGeKjFFprCtOeKokCr
+# nbygghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -806,26 +722,26 @@ Orders($Recreate);
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRL6gv8ifzpL4pI
-# PTAqlfr+bkDD4DANBgkqhkiG9w0BAQEFAASCAQBflfrtBpmUHWwx57U3taUac2gD
-# UkznJykezoOUK9W32fZ9L3Yyf6kRm7rKn8CXOtC+yOyrP3oX8iyrISRo6BnDKam0
-# 1yNmCNAxba24jPHsyS08F0TriNfLOIAwanVjEqoQ8v5Y3YGmwJnWNfhSNTX4biX3
-# 8kC6xumjgE7Y/odnRxj9yN1BLjQxadk9mrsPAb8XzWbk9y9mCXuYSDNzEFRnVKYt
-# Kv1Hn60kIEcQSyYU++sOtqsRBFkFpcnw0wW46M0QtAUYdKs3HzAeqqNzZbtqU0H4
-# 7gC9tlWVksdeBmmHJ07qzeHVQFHLvFEV+2qlcW+1w1NCkJO24KQjGLX88Z0CoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSh/Kp/ohaCsQ4l
+# hg7ygodiLK3TeDANBgkqhkiG9w0BAQEFAASCAQAX+gGEA1pHjyVb9bOvWMlcbtBr
+# 1EXd/PLiTUl3hxEAjVgB3zTpKVwpW8RQ+LPzlqy0a/D8ZRmmGTpAJ4VbsuxPVWf/
+# DKkyTOBUxAlqQEMaQHjFhXfJfGiGvs8SzVLhVodZkGxBY1dyGBmWoAX1I3ZEAmlS
+# +EtLn94walvlowj4WV7idsLkeLSZMltITtLai1rNc7u+r/6jNGWbQcr5xUxm20wa
+# i5vFEZCxIUT6lyrno1b3HZCM8PannBF/83hAcOM20dzm/ua0bABDGVaJ4VpoNbke
+# ywpUGDG/G0irAVTbwTRNZDHcr4Pbhl1RYKH7J5YOyaHCffY043kuq9J0w/2koYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAyMlowIwYJKoZIhvcNAQkEMRYEFN3RmKkcOgHb8cwxshQegN6+BIDb
+# MTEyNDA3MTkzMFowIwYJKoZIhvcNAQkEMRYEFGNyIgjFn+81qDUGk/PDqAushFZk
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAxR/ReTr51vCnbVQL8
-# exObCE8kHMEKqFDhlpF3LXVsy07H64uqy2DZTEeG/yvmLlatbMXes+QqIIVCNa/z
-# 4D/M4nb/rO4WgCB9NByoIZHM8pmjiEV8hyf/rejqfLzcLdsL1Sz7t0c0Y8Nwqkm8
-# 0N8Lbth6OFS0QH8ECl3oZfS+MbOj1OAQw212TlObEZo1yYw89tbT9PIOlsYamiBf
-# T+yEqZVrlPZUI/1T7RnYkb25jhdAJqkWXlMaCTfhGxSDAhnyY7lWDsvonYce7T5/
-# N/aXAN0VZJZHVYv8InH4pkE9/VTLIjyLwPCko0zJRFlmg0fc1LsmnsBOO1+SfHUp
-# Ex6B
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB1sRDfKcjCrY13xDat
+# MA6NL5Gwz9gGSL8KSIolwHQNG+F0BpRVnVM2KMI61sTAQGsbEADdKC392FVzgN4M
+# p+4/PTt/qEB47pG41SLy7NlcHCigxpgj6LatTyZfgDMmb5xmVIRibpPXRU+GDk54
+# gtOMOezKH/sKZj9c1ogu+GwTY6l4+7VZvkPDJvj5+uvcnlao+py8ANrk0txylh+H
+# wQlIzyxJv738h69Vc2T8q7h7XbCMDuGbMNPoBhFgOeGDLbeP0VaUh2Z8JNiPL5Lx
+# QRyijXkTrnh1BGEKc179xpJxsjdCA4uxX/L625ys/HYR3qejx3zQ1gJc3xFh3Cum
+# TvlB
 # SIG # End signature block

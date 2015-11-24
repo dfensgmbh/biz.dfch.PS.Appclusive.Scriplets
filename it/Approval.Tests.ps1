@@ -71,7 +71,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$svc = Enter-AppclusiveServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
-			$createdOrder.Requester | Should Be $null;
+			$createdOrder.Requester | Should Be $createdOrder.Requester;
 			$createdOrder.Status | Should Be 'Approval';
 			
 			$cart = GetCartOfUser -svc $svc;
@@ -182,7 +182,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$svc = Enter-AppclusiveServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
-			$createdOrder.Requester | Should Be $null;
+			$createdOrder.Requester | Should Be $createdOrder.Requester;
 			$createdOrder.Status | Should Be 'Approval';
 			
 			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
