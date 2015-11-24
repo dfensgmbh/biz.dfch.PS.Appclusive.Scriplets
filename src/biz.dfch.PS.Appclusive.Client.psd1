@@ -152,7 +152,7 @@ PrivateData = @{
 HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
 
 # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Appclusive'
+DefaultCommandPrefix = 'Apc'
 
 }
 
