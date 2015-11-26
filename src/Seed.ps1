@@ -321,6 +321,7 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
 
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyWfeFacility' -Value 'NOTIFY-WFE';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyAllFacility' -Value 'NOTIFY-ALL';
 	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
