@@ -320,7 +320,7 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
 
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'NotifyWfe' -Value 'NOTIFY-WFE';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyWfeFacility' -Value 'NOTIFY-WFE';
 	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
@@ -372,6 +372,22 @@ function ManagementCredentials($Recreate)
 	$mc.Id = 0;
 	$svc.Core.UpdateObject($mc);
 	$svc.Core.SaveChanges();
+	
+	$mc = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
+	$svc.Core.AddToManagementCredentials($mc);
+	$mc.Name = 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient.ConnectionString';
+	$mc.Description = 'ManagementCredential for Amqp connection string';
+	$mc.Username = 'RootManageSharedAccessKey';
+	$mc.Password = 'ngolZ2sQlq2ifQqUQyaOQ4msZ53uSOEhBhxzLp85KfI=';
+	$mc.EncryptedPassword = $mc.Password;
+	$mc.Created = [System.DateTimeOffset]::Now;
+	$mc.Modified = $mc.Created;
+	$mc.CreatedBy = "SYSTEM";
+	$mc.ModifiedBy = $mc.CreatedBy;
+	$mc.Tid = "1";
+	$mc.Id = 0;
+	$svc.Core.UpdateObject($mc);
+	$svc.Core.SaveChanges();
 }
 
 function ManagementUris($Recreate)
@@ -402,6 +418,24 @@ function ManagementUris($Recreate)
 	$mgmtUri.Id = 0;
 	$mgmtUri.Type = 'json';
 	$mgmtUri.Value = '{"Path":"LDAP://dfch.biz/DC=dfch,DC=biz","AuthenticationType":"Secure"}';
+	$mgmtUri.ManagementCredentialId = $mc.Id;
+	$svc.Core.UpdateObject($mgmtUri);
+	$svc.Core.SaveChanges();
+	
+	$mc = $svc.Core.ManagementCredentials |? Name -eq 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient.ConnectionString';
+	
+	$mgmtUri = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementUri;
+	$svc.Core.AddToManagementUris($mgmtUri);
+	$mgmtUri.Name = 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient.ConnectionString';
+	$mgmtUri.Description = 'Connection String for Amqp messaging client';
+	$mgmtUri.Created = [System.DateTimeOffset]::Now;
+	$mgmtUri.Modified = $mgmtUri.Created;
+	$mgmtUri.CreatedBy = "SYSTEM";
+	$mgmtUri.ModifiedBy = $mgmtUri.CreatedBy;
+	$mgmtUri.Tid = "1";
+	$mgmtUri.Id = 0;
+	$mgmtUri.Type = 'json';
+	$mgmtUri.Value = '{"ConnectionString":"Endpoint=sb://win-8a036g6jvpj/ServiceBusDefaultNamespace;SharedAccessKeyName={0};SharedAccessKey={1}=;TransportType=Amqp"}';
 	$mgmtUri.ManagementCredentialId = $mc.Id;
 	$svc.Core.UpdateObject($mgmtUri);
 	$svc.Core.SaveChanges();
