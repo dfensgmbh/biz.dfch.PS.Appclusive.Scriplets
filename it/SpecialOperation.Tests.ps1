@@ -19,10 +19,6 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
 			
-			$moduleName = 'biz.dfch.PS.Azure.ServiceBus.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			
 			$svc = Enter-ApcServer;
 		}
 
@@ -135,17 +131,18 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			$svc = Enter-ApcServer;
 		}
 		
-		# DFTODO - Triggers event read from queue
-		
 		It "RaiseUpdateConfigurationEvent-WritesMessageToTheBus" -Test {
 			# Arrange
-			#Enter-SBServer;
-			#$message = Get-SBMessage -Receivemode ReceiveAndDelete -Facility NOTIFY-ALL -EnsureFacility;
+			$job = Start-Job -ScriptBlock {Import-Module biz.dfch.PS.Azure.ServiceBus.Client; $null = Enter-SBServer; Get-SBMessage -Receivemode ReceiveAndDelete -Facility NOTIFY-ALL -EnsureFacility | Get-SBMessageBody};
 			
 			# Act
-			#$svc...
+			Sleep -Seconds 3;
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "RaiseUpdateConfigurationEvent", $null);
 			
-			# Assert			
+			# Assert
+			$jobResult = Get-Job -Id $job.Id | Receive-Job;
+			
+			$jobResult -match 'UpdateConfigurationEvent.+UpdateConfigurationEventBody' | Should Be $true
 		}
 	}
 }
