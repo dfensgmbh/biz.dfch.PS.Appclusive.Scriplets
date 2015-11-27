@@ -320,7 +320,8 @@ function KeyNameValues($Recreate)
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
 	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
 
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus' -Name 'NotifyWfe' -Value 'NOTIFY-WFE';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyWfeFacility' -Value 'NOTIFY-WFE';
+	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyAllFacility' -Value 'NOTIFY-ALL';
 	
 	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
 }
@@ -372,6 +373,22 @@ function ManagementCredentials($Recreate)
 	$mc.Id = 0;
 	$svc.Core.UpdateObject($mc);
 	$svc.Core.SaveChanges();
+	
+	$mc = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
+	$svc.Core.AddToManagementCredentials($mc);
+	$mc.Name = 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient.ConnectionString';
+	$mc.Description = 'ManagementCredential for Amqp connection string';
+	$mc.Username = 'RootManageSharedAccessKey';
+	$mc.Password = 'ngolZ2sQlq2ifQqUQyaOQ4msZ53uSOEhBhxzLp85KfI=';
+	$mc.EncryptedPassword = $mc.Password;
+	$mc.Created = [System.DateTimeOffset]::Now;
+	$mc.Modified = $mc.Created;
+	$mc.CreatedBy = "SYSTEM";
+	$mc.ModifiedBy = $mc.CreatedBy;
+	$mc.Tid = "1";
+	$mc.Id = 0;
+	$svc.Core.UpdateObject($mc);
+	$svc.Core.SaveChanges();
 }
 
 function ManagementUris($Recreate)
@@ -402,6 +419,24 @@ function ManagementUris($Recreate)
 	$mgmtUri.Id = 0;
 	$mgmtUri.Type = 'json';
 	$mgmtUri.Value = '{"Path":"LDAP://dfch.biz/DC=dfch,DC=biz","AuthenticationType":"Secure"}';
+	$mgmtUri.ManagementCredentialId = $mc.Id;
+	$svc.Core.UpdateObject($mgmtUri);
+	$svc.Core.SaveChanges();
+	
+	$mc = $svc.Core.ManagementCredentials |? Name -eq 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient.ConnectionString';
+	
+	$mgmtUri = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementUri;
+	$svc.Core.AddToManagementUris($mgmtUri);
+	$mgmtUri.Name = 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient.ConnectionString';
+	$mgmtUri.Description = 'Connection String for Amqp messaging client';
+	$mgmtUri.Created = [System.DateTimeOffset]::Now;
+	$mgmtUri.Modified = $mgmtUri.Created;
+	$mgmtUri.CreatedBy = "SYSTEM";
+	$mgmtUri.ModifiedBy = $mgmtUri.CreatedBy;
+	$mgmtUri.Tid = "1";
+	$mgmtUri.Id = 0;
+	$mgmtUri.Type = 'json';
+	$mgmtUri.Value = '{"ConnectionString":"Endpoint=sb://win-8a036g6jvpj/ServiceBusDefaultNamespace;SharedAccessKeyName={0};SharedAccessKey={1}=;TransportType=Amqp"}';
 	$mgmtUri.ManagementCredentialId = $mc.Id;
 	$svc.Core.UpdateObject($mgmtUri);
 	$svc.Core.SaveChanges();
@@ -622,8 +657,8 @@ Orders($Recreate);
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUUOeRMqdGeKjFFprCtOeKokCr
-# nbygghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGophSPVPvxwzvCQooOWJqJYk
+# dSagghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -722,26 +757,26 @@ Orders($Recreate);
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSh/Kp/ohaCsQ4l
-# hg7ygodiLK3TeDANBgkqhkiG9w0BAQEFAASCAQAX+gGEA1pHjyVb9bOvWMlcbtBr
-# 1EXd/PLiTUl3hxEAjVgB3zTpKVwpW8RQ+LPzlqy0a/D8ZRmmGTpAJ4VbsuxPVWf/
-# DKkyTOBUxAlqQEMaQHjFhXfJfGiGvs8SzVLhVodZkGxBY1dyGBmWoAX1I3ZEAmlS
-# +EtLn94walvlowj4WV7idsLkeLSZMltITtLai1rNc7u+r/6jNGWbQcr5xUxm20wa
-# i5vFEZCxIUT6lyrno1b3HZCM8PannBF/83hAcOM20dzm/ua0bABDGVaJ4VpoNbke
-# ywpUGDG/G0irAVTbwTRNZDHcr4Pbhl1RYKH7J5YOyaHCffY043kuq9J0w/2koYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSXF3Qg7jbF0018
+# A3D8qmfahIQR2DANBgkqhkiG9w0BAQEFAASCAQCsCEj4FD4tudDjes4JIr4XzU2b
+# yu7gYITtwj4v0RBWPDgHNr6Z6cgbRLdmwE1hVbUFXXJ+S4rvwUuJz3z0jQYx2+a+
+# ZgJr3K/1UH2CRoGryfSp1oIACxkRtF/zdHnV8WiGwRVeLyCSUlmTf4Bqkr70RQ6i
+# Y2x1a1vD3oCXXx1upuCa/H87hu1PIF0VZkCFHpKaGP+VOUOEx7CJNCo0kmOAmIdh
+# S+TL7ITLT2yTApxeE3bVOYSXlx9znNf+JNWaMs5XLLxj3eF4/PlJK4XiJLKR0sg0
+# 8ysjcsZ00pCZtlp/ifPdQoqbSkZwUay3vQYdE0ZNRuj1iXLRWjJNpUX9w03ToYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTEyNDA3MTkzMFowIwYJKoZIhvcNAQkEMRYEFGNyIgjFn+81qDUGk/PDqAushFZk
+# MTEyNzE1MzUwNlowIwYJKoZIhvcNAQkEMRYEFN4Mtrt/ppNfbr+lpVxMfpppfcNL
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB1sRDfKcjCrY13xDat
-# MA6NL5Gwz9gGSL8KSIolwHQNG+F0BpRVnVM2KMI61sTAQGsbEADdKC392FVzgN4M
-# p+4/PTt/qEB47pG41SLy7NlcHCigxpgj6LatTyZfgDMmb5xmVIRibpPXRU+GDk54
-# gtOMOezKH/sKZj9c1ogu+GwTY6l4+7VZvkPDJvj5+uvcnlao+py8ANrk0txylh+H
-# wQlIzyxJv738h69Vc2T8q7h7XbCMDuGbMNPoBhFgOeGDLbeP0VaUh2Z8JNiPL5Lx
-# QRyijXkTrnh1BGEKc179xpJxsjdCA4uxX/L625ys/HYR3qejx3zQ1gJc3xFh3Cum
-# TvlB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBOjQ7IHGZZDy/P5hFs
+# F20E9Y9I5hOyVtwjCNF1fvaUTFnhG0+J+DYddBx5hJ60ZlU0kIYYmuCgB40jRWLh
+# LkiNqHLLvMqw3hKYV6jy9sQxK18qb1Icd4uvz3VaJPxzxHDdjVoALqCzzXNYoqhK
+# ag78xqmJEYXfZrc/n92dQCXPsjV32RO9RTy26/H3yfhnK6uDFIyKODt3GDDpc+6s
+# 1gLdkt6nKe/wnHPsn8GAHjMu9qNugMM/b1atpCKTDDPOg6BoKKjv5Y9YxFB8BBx0
+# 0E7zJnztprfBGtR91Cqi75yzK2zxG7EFQqojLU/bqSJQPlnVq7cAKzqH12K/7PCz
+# sEzd
 # SIG # End signature block
