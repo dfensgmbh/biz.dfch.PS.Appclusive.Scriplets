@@ -33,7 +33,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			# Act
 			try
 			{
-				$svc.Core.InvokeEntitySetActionWithSingleResult("SpecialOperations", "SetCreatedBy", [string], @{EntityType = 'AuditTrails'; EntityId = '42'});			
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'AuditTrails'; EntityId = '42'});			
 				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
 			catch
@@ -51,7 +51,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			# Act
 			try
 			{
-				$svc.Core.InvokeEntitySetActionWithSingleResult("SpecialOperations", "SetCreatedBy", [string], @{EntityType = 'ArbitraryType'; EntityId = '42'; CreatedBy = 'testuser'});			
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'ArbitraryType'; EntityId = '42'; CreatedBy = 'testuser'});			
 				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
 			catch
@@ -86,7 +86,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			# Act
 			try
 			{
-				$svc.Core.InvokeEntitySetActionWithSingleResult("SpecialOperations", "SetCreatedBy", [string], @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; CreatedBy = 'testuser'});			
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; CreatedBy = 'testuser'});			
 				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
 			catch
@@ -109,14 +109,20 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		
 		It "ClearAuditLog-DeletesAllAuditTrailEntries" -Test {
 			# Arrange
-			
+			$value = [guid]::NewGuid().Guid;
+			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
 			
 			# Act
+			$auditTrails = $svc.Diagnostics.AuditTrails | Select;
+			$auditTrails.Count | Should Not Be 0;
 			
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "ClearAuditLog", $null);
 			
 			# Assert	
+			$auditTrails = $svc.Diagnostics.AuditTrails | Select;
+			$auditTrails.Count | Should Be 0;
 			
-			
+			Remove-ApcKeyNameValue -Name $value -Confirm:$false;
 		}
 	}
 	
