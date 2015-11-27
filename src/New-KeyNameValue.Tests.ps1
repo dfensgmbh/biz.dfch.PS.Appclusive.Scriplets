@@ -8,7 +8,7 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 	
 	. "$here\$sut"
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	Context "New-KeyNameValue" {
 	

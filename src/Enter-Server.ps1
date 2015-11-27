@@ -19,7 +19,7 @@ See PARAMETER section for a description of input parameters.
 
 
 .EXAMPLE
-$svc = Enter-Appclusive;
+$svc = Enter-ApcServer;
 $svc
 
 Name            Value

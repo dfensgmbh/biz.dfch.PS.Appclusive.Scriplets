@@ -21,7 +21,7 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "KeyNameValue-AddingAndRemovingItemSucceeds" -Test {
@@ -31,10 +31,10 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			$Value = "Value-{0}" -f [guid]::NewGuid().Guid;
 			
 			# Act
-			$resultNew = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
-			$resultGet = Get-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
-			$resultRemove = Remove-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value -Confirm:$false;
-			$resultReGet = Get-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+			$resultNew = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
+			$resultGet = Get-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
+			$resultRemove = Remove-ApcKeyNameValue -Key $Key -Name $Name -Value $Value -Confirm:$false;
+			$resultReGet = Get-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
 
 			# Assert
 			$resultNew | Should Not Be $null;
@@ -62,10 +62,10 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			$Value = "Value-{0}" -f [guid]::NewGuid().Guid;
 			
 			# Act
-			$resultNew1 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+			$resultNew1 = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
 			try
 			{
-				$resultNew2 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value;
+				$resultNew2 = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
 				$ExceptionThrown = $false;
 			}
 			catch
@@ -77,7 +77,7 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			$resultNew2 | Should Be $null;
 			$ExceptionThrown | Should Be $true;
 
-			$null = Remove-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value -Confirm:$false;
+			$null = Remove-ApcKeyNameValue -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 		
 		It "KeyNameValue-RemovingMultipleItemsSucceeds" -Test {
@@ -88,12 +88,12 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;
 							
 			# Act
-			$resultNew1 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value1;
-			$resultNew2 = New-AppclusiveKeyNameValue -Key $Key -Name $Name -Value $Value2;
-			$resultGetNew = Get-AppclusiveKeyNameValue -Key $Key;
+			$resultNew1 = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value1;
+			$resultNew2 = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value2;
+			$resultGetNew = Get-ApcKeyNameValue -Key $Key;
 
-			$null = Remove-AppclusiveKeyNameValue -Key $Key -Confirm:$false;
-			$resultGetRemove = Get-AppclusiveKeyNameValue -Key $Key;
+			$null = Remove-ApcKeyNameValue -Key $Key -Confirm:$false;
+			$resultGetRemove = Get-ApcKeyNameValue -Key $Key;
 			
 			# Assert
 			$resultGetNew.Count | Should Be 2;
@@ -110,16 +110,16 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;
 			
 			# Act
-			$resultNewSet = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 -Value $Value1 -CreateIfNotExist;
-			$resultGetNewSet = Get-AppclusiveKeyNameValue -Key $Key1;
+			$resultNewSet = Set-ApcKeyNameValue -Key $Key1 -Name $Name1 -Value $Value1 -CreateIfNotExist;
+			$resultGetNewSet = Get-ApcKeyNameValue -Key $Key1;
 			
-			$resultSetValue = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 $Value1 -NewValue $Value2;
-			$resultSetName = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 -NewName $Name2 -Value $Value2;
-			$resultSetKey = Set-AppclusiveKeyNameValue $Key1 -NewKey $Key2 -Name $Name2 -Value $Value2;
+			$resultSetValue = Set-ApcKeyNameValue -Key $Key1 -Name $Name1 $Value1 -NewValue $Value2;
+			$resultSetName = Set-ApcKeyNameValue -Key $Key1 -Name $Name1 -NewName $Name2 -Value $Value2;
+			$resultSetKey = Set-ApcKeyNameValue $Key1 -NewKey $Key2 -Name $Name2 -Value $Value2;
 			
-			$resultGetSetAll = Get-AppclusiveKeyNameValue -Key $Key2;
+			$resultGetSetAll = Get-ApcKeyNameValue -Key $Key2;
 
-			$null = Remove-AppclusiveKeyNameValue -Key $Key2 -Confirm:$false;
+			$null = Remove-ApcKeyNameValue -Key $Key2 -Confirm:$false;
 						
 			# Assert
 			$resultGetNewSet | Should Not Be $null;
@@ -142,7 +142,7 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 			# Act
 			try
 			{
-				$resultNewSet = Set-AppclusiveKeyNameValue -Key $Key1 -Name $Name1 $Value1 -NewValue $Value2;
+				$resultNewSet = Set-ApcKeyNameValue -Key $Key1 -Name $Name1 $Value1 -NewValue $Value2;
 				$ExceptionThrown = $false;
 			}
 			catch

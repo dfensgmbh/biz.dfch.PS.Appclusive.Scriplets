@@ -26,7 +26,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 
 		It "GettingCatalogue-Succeeds" -Test {
