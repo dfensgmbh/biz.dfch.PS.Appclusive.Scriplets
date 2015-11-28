@@ -22,7 +22,7 @@ You can also download this module via [NuGet](http://nuget.org) with [Install-Pa
 
 See http://appclusive.net
 
-biz.dfch.CS.Appclusive.Api and the other (Microsoft) DLLs are not part of this Apache 2.0 licensed project but are only put here for convenience.
+Third party (and Microsoft) DLLs are not part of this Apache 2.0 licensed project but are only put here for convenience.
 
 See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detailed description on how to use the Cmdlets in this module.
 </description>
