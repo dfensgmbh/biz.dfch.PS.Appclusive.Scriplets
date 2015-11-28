@@ -8,7 +8,7 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 	
 	. "$here\$sut"
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	Context "Remove-ManagementCredential" {
 	

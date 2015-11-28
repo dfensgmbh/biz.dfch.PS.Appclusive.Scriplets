@@ -7,11 +7,11 @@ PARAM
 )
 
 Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-Import-Module biz.dfch.PS.Appclusive.Client -Prefix Appclusive;
+Import-Module biz.dfch.PS.Appclusive.Client -Prefix Apc;
 
 function Aces($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$aces = $svc.Core.Aces | Select;
 	DeleteItems -svc $svc -items $aces;
@@ -26,7 +26,7 @@ function Aces($Recreate)
 
 function Acls($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$acls = $svc.Core.Acls | Select;
 	DeleteItems -svc $svc -items $acls;
@@ -41,7 +41,7 @@ function Acls($Recreate)
 
 function Approvals($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$approvals = $svc.Core.Approvals | Select;
 	DeleteItems -svc $svc -items $approvals;
@@ -56,7 +56,7 @@ function Approvals($Recreate)
 
 function AuditTrails($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$auditTrails = $svc.Core.AuditTrails | Select;
 	DeleteItems -svc $svc -items $auditTrails;
@@ -71,7 +71,7 @@ function AuditTrails($Recreate)
 
 function Carts($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$carts = $svc.Core.Carts | Select;
 	DeleteItems -svc $svc -items $carts;
@@ -86,7 +86,7 @@ function Carts($Recreate)
 
 function Catalogues($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$catalogues = $svc.Core.Catalogues | Select;
 	DeleteItems -svc $svc -items $catalogues;
@@ -96,7 +96,7 @@ function Catalogues($Recreate)
 		return;
 	}
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$catName = 'Default DaaS'
 
@@ -123,7 +123,7 @@ function CatalogueItems($Recreate)
 		return;
 	}
 
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$catName = 'Default DaaS'
 	$cat = $svc.Core.Catalogues |? Name -eq $catName;
@@ -202,7 +202,7 @@ function CatalogueItems($Recreate)
 
 function EntityTypes($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	$entityTypes = $svc.Core.EntityTypes | Select;
 	DeleteItems -svc $svc -items $entityTypes;
 
@@ -211,7 +211,7 @@ function EntityTypes($Recreate)
 		return;
 	}
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$et = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType
 	$svc.Core.AddToEntityTypes($et);
@@ -261,7 +261,7 @@ function EntityTypes($Recreate)
 
 function Gates($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$gates = $svc.Core.Gates | Select;
 	DeleteItems -svc $svc -items $gates;
@@ -276,12 +276,12 @@ function Gates($Recreate)
 
 function Jobs($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$jobsWithParent = $svc.Core.Jobs |? ParentId -ne $null;
 	DeleteItems -svc $svc -items $jobsWithParent;
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$jobsWithoutParent = $svc.Core.Jobs | Select;
 	DeleteItems -svc $svc -items $jobsWithoutParent;
@@ -296,7 +296,7 @@ function Jobs($Recreate)
 
 function KeyNameValues($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$knvs = $svc.Core.KeyNameValues | Select;
 	DeleteItems -svc $svc -items $knvs;
@@ -306,29 +306,29 @@ function KeyNameValues($Recreate)
 		return;
 	}
 	
-	$svc = Enter-AppclusiveServer;
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Managers.UpdateNotificationSubscriptions' -Name 'biz.dfch.CS.Appclusive.Core.Managers.OrderEntityManager' -Value 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Blacklist' -Value 'Pilot$';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Blacklist' -Value 'Test$';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+Production$';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+\d$';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController' -Name 'Properties' -Value '{}';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'StubMode' -Value 'True';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'ConnectionServerName' -Value '{}';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PsSessionConfig' -Value '{}';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId' -Value '{}';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
+	$svc = Enter-ApcServer;
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Managers.UpdateNotificationSubscriptions' -Name 'biz.dfch.CS.Appclusive.Core.Managers.OrderEntityManager' -Value 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Blacklist' -Value 'Pilot$';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Blacklist' -Value 'Test$';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+Production$';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.DaaS.Backends.Sccm.CatalogueItems' -Name 'Whitelist' -Value 'DSWR.+\d$';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController' -Name 'Properties' -Value '{}';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'StubMode' -Value 'True';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'ConnectionServerName' -Value '{}';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PsSessionConfig' -Value '{}';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'PoolId' -Value '{}';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SccmModulePath' -Value 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Sunrise.Daas.Scripts.VDI' -Name 'SiteName' -Value 'P02';
 
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyWfeFacility' -Value 'NOTIFY-WFE';
-	New-AppclusiveKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyAllFacility' -Value 'NOTIFY-ALL';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyWfeFacility' -Value 'NOTIFY-WFE';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyAllFacility' -Value 'NOTIFY-ALL';
 	
-	Get-AppclusiveKeyNameValue -svc $svc -ListAvailable;
+	Get-ApcKeyNameValue -svc $svc -ListAvailable;
 }
 
 function Assocs($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$assocs = $svc.Core.Assocs | Select;
 	DeleteItems -svc $svc -items $assocs;
@@ -343,7 +343,7 @@ function Assocs($Recreate)
 
 function ManagementCredentials($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$mgmtUris = $svc.Core.ManagementUris | Select;
 	DeleteItems -svc $svc -items $mgmtUris;
@@ -356,7 +356,7 @@ function ManagementCredentials($Recreate)
 		return;
 	}
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$mc = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
 	$svc.Core.AddToManagementCredentials($mc);
@@ -393,7 +393,7 @@ function ManagementCredentials($Recreate)
 
 function ManagementUris($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$mgmtUris = $svc.Core.ManagementUris | Select;
 	DeleteItems -svc $svc -items $mgmtUris;
@@ -403,7 +403,7 @@ function ManagementUris($Recreate)
 		return;
 	}
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$mc = $svc.Core.ManagementCredentials |? Name -eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.ActiveDirectoryUsersController';
 
@@ -444,20 +444,20 @@ function ManagementUris($Recreate)
 
 function Nodes($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	# Delete children nodes from botton to top
 	$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
 	$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
 	while ($nodes.count > 0) {
 		DeleteItems -svc $svc -items $nodes;
-		$svc = Enter-AppclusiveServer;
+		$svc = Enter-ApcServer;
 		$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
 		$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
 	}
 	
 	# Delete root nodes
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
 	$nodes = $svc.Core.Nodes |? { ($_.ParentId -eq $null) -And ($_.Children.count -eq 0) }	
 	DeleteItems -svc $svc -items $nodes;
@@ -467,7 +467,7 @@ function Nodes($Recreate)
 		return;
 	}
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 	$svc.Core.AddToNodes($node);
@@ -521,7 +521,7 @@ function Nodes($Recreate)
 
 function Orders($Recreate)
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 	
 	$orders = $svc.Core.Orders | Select;
 	DeleteItems -svc $svc -items $orders;
@@ -536,7 +536,7 @@ function Orders($Recreate)
 
 function Products($Recreate) 
 {
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	$products = $svc.Core.Products | Select;
 	DeleteItems -svc $svc -items $products;

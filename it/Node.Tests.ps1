@@ -22,7 +22,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "Node-AddAndDeleteNewNode" -Test {
@@ -144,7 +144,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 						
 			#Cleanup
 			#Reconnect
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			$svc.Core.AttachTo('Nodes', $nodeChild);
 			$svc.Core.AttachTo('Nodes', $nodeParent);
 			

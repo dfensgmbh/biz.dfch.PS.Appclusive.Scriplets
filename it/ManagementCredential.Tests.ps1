@@ -21,7 +21,7 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "ManagementCredential-AddingAndRemovingItemSucceeds" -Test {
@@ -31,9 +31,9 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
 			
 			# Act
-			$resultNew = New-AppclusiveManagementCredential -Name $Name -Username $Username -Password $Password;
-			$resultRemove = Remove-AppclusiveManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-AppclusiveKeyNameValue -Name $Name;
+			$resultNew = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;
+			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
+			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
 			
 			# Assert
 			$resultNew | Should Not Be $null;
@@ -52,17 +52,17 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 		
 		
 			# Act
-			$resultNew1 = New-AppclusiveManagementCredential -Name $Name -Username $Username -Password $Password;
+			$resultNew1 = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;
 			
 			try {
-				$resultNew2 = New-AppclusiveManagementCredential -Name $Name -Username $Username -Password $Password;				
+				$resultNew2 = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;				
 				$exception = $false;
 			} catch {
 				$exception = $true;
 			}
 			
-			$resultRemove = Remove-AppclusiveManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-AppclusiveKeyNameValue -Name $Name;
+			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
+			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
 						
 			# Assert
 			$resultNew1 | Should Not Be $null;
@@ -83,7 +83,7 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			# Act
 				
 			try {
-				$resultNew = Remove-AppclusiveManagementCredential -Name $Name -Confirm:$false;				
+				$resultNew = Remove-ApcManagementCredential -Name $Name -Confirm:$false;				
 				$exception = $false;
 			} catch {
 				$exception = $true;
@@ -101,9 +101,9 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
 		
 			# Act
-			$resultSetNew = Set-AppclusiveManagementCredential -Name $Name -Username $Username -Password $Password -CreateIfNotExist
-			$resultRemove = Remove-AppclusiveManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-AppclusiveKeyNameValue -Name $Name;
+			$resultSetNew = Set-ApcManagementCredential -Name $Name -Username $Username -Password $Password -CreateIfNotExist
+			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
+			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
 			
 			# Assert
 			$resultSetNew | Should Not Be $null;
@@ -123,10 +123,10 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			$Password2 = "Passwort-{0}" -f [guid]::NewGuid().Guid;
 		
 			# Act
-			$resultSetNew = Set-AppclusiveManagementCredential -Name $Name -Username $Username1 -Password $Password1 -CreateIfNotExist -As json | ConvertFrom-Json;
-			$resultSetUserNamePW = Set-AppclusiveManagementCredential -Name $Name -Username $Username2 -Password $Password2 -As json | ConvertFrom-Json;
-			$resultRemove = Remove-AppclusiveManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-AppclusiveKeyNameValue -Name $Name;
+			$resultSetNew = Set-ApcManagementCredential -Name $Name -Username $Username1 -Password $Password1 -CreateIfNotExist -As json | ConvertFrom-Json;
+			$resultSetUserNamePW = Set-ApcManagementCredential -Name $Name -Username $Username2 -Password $Password2 -As json | ConvertFrom-Json;
+			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
+			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
 			
 			# Assert
 			$resultSetNew | Should Not Be $null;

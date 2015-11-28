@@ -26,7 +26,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "GettingCarts-ReturnsZeroEntities" -Test {
@@ -62,7 +62,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 	
 		It "AddingCartItem-CreatesCart" -Test {
@@ -123,7 +123,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$cartItems[0].Id | Should Be $cartItem.Id;
 			$cartItems[0].Quantity | Should Be 1;
 			
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			# Create second cartItem
 			$cartItem2 = CreateCartItem -catItem $catItem;
@@ -191,7 +191,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
 			}
 
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			$cart = GetCartOfUser -svc $svc;
 			
 			# Cleanup

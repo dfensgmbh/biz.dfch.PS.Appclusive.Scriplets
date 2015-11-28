@@ -8,7 +8,7 @@ Describe -Tags "Set-ManagementCredential" "Set-ManagementCredential" {
 	
 	. "$here\$sut"
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	Context "Set-ManagementCredential" {
 	
