@@ -13,6 +13,8 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 	Mock Export-ModuleMember { return $null; }
 	
 	Context "SetCreatedBy.Tests" {
+	
+		$actionName = 'SetCreatedBy';
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -29,7 +31,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			# Act
 			try
 			{
-				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'AuditTrails'; EntityId = '42'});			
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'AuditTrails'; EntityId = '42'});			
 				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
 			catch
@@ -42,12 +44,12 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		
 		It "SetCreatedBy-WithInvalidEntityTypeInBodyFails" -Test {
 			# Arrange
-			
+			$creator = 'testuser';
 			
 			# Act
 			try
 			{
-				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'ArbitraryType'; EntityId = '42'; CreatedBy = 'testuser'});			
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'ArbitraryType'; EntityId = '42'; CreatedBy = $creator});			
 				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
 			catch
@@ -65,7 +67,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
 			
 			# Act
-			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue'; EntityId = $knv.Id; CreatedBy = $creator});
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue'; EntityId = $knv.Id; CreatedBy = $creator});
 			
 			# Assert
 			$svc = Enter-ApcServer
@@ -77,12 +79,12 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		
 		It "SetCreatedBy-ForAuditTrailFails" -Test {
 			# Arrange
-			
+			$creator = 'testuser';
 			
 			# Act
 			try
 			{
-				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy", @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; CreatedBy = 'testuser'});			
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; CreatedBy = $creator});			
 				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
 			catch
@@ -95,6 +97,8 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 	}
 	
 	Context "ClearAuditLog.Tests" {
+		
+		$actionName = 'ClearAuditLog';
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -112,7 +116,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			$auditTrails = $svc.Diagnostics.AuditTrails | Select;
 			$auditTrails.Count | Should Not Be 0;
 			
-			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "ClearAuditLog", $null);
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, $null);
 			
 			# Assert	
 			$auditTrails = $svc.Diagnostics.AuditTrails | Select;
@@ -123,6 +127,8 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 	}
 	
 	Context "RaiseUpdateConfigurationEvent.Tests" {
+		
+		$actionName = 'RaiseUpdateConfigurationEvent';
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -137,13 +143,97 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			
 			# Act
 			Sleep -Seconds 3;
-			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "RaiseUpdateConfigurationEvent", $null);
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, $null);
 			
 			# Assert
 			Sleep -Seconds 2;
 			$jobResult = Get-Job -Id $job.Id | Receive-Job;
 			
 			$jobResult -match 'UpdateConfigurationEvent.+UpdateConfigurationEventBody' | Should Be $true
+		}
+	}
+	
+	Context "SetTenant.Tests" {
+		
+		$actionName = 'SetTenant';
+		
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			
+			$svc = Enter-ApcServer;
+		}
+
+		It "SetTenant-WithMissingParameterInBodyFails" -Test {
+			# Arrange
+			
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'AuditTrails'; EntityId = '42'});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Precondition.+TenantId' | Should Be $true
+			}
+		}
+		
+		It "SetTenant-WithInvalidEntityTypeInBodyFails" -Test {
+			# Arrange
+			$tenantId = [guid]::NewGuid().Guid;
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'ArbitraryType'; EntityId = '42'; TenantId = $tenantId.ToString()});		
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Assertion.+entityType' | Should Be $true
+			}
+		}
+
+		It "SetTenant-ForKeyNameValueSucceeds" -Test {
+			# Arrange
+			$tenantId = [guid]::NewGuid().Guid;
+			$value = [guid]::NewGuid().Guid;
+			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
+			
+			# Act
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue'; EntityId = $knv.Id; TenantId = $tenantId.ToString()});
+			
+			# Assert
+			$svc = Enter-ApcServer
+			$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter', ("Name eq '{0}'" -f $value)) | Select;
+			$knv.Tid | Should be $tenantId;
+			
+			Remove-ApcKeyNameValue -Name $value -Confirm:$false;
+		}
+		
+		It "SetTenant-ForAuditTrailFails" -Test {
+			# Arrange
+			$tenantId = [guid]::NewGuid().Guid;
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; TenantId = $tenantId.ToString()});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Assertion.+Blacklist.+Contains.+entityType' | Should Be $true
+			}
 		}
 	}
 }
