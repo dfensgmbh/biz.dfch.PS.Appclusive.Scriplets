@@ -16,7 +16,7 @@ Describe -Tags "Product.Tests" "Product.Tests" {
 	. "$here\Catalogue.ps1"
 	
 	
-	Context "Product.Tests" {
+	Context "#CLOUDTCL-1878-ProductTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';

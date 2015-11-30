@@ -14,7 +14,7 @@ Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 	
 	. "$here\$sut"
 	
-	Context "EntityType.Tests" {
+	Context "#CLOUDTCL-1879-EntityTypeTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';

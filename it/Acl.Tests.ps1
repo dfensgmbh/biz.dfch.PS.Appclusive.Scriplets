@@ -14,7 +14,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 	
 	. "$here\$sut"
 	
-	Context "Acl.Tests" {
+	Context "#CLOUDTCL-1871-AclTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -27,7 +27,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			try {
 				# Arrange
 				$aclName = "Test Acl";
-				$aclDescription = "TestNode used in Test";		
+				$aclDescription = "TestAcl used in Test";		
 				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
 				
 				# Act
@@ -72,29 +72,6 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$aclCheck = $svc.Core.Acls.AddQueryOption('$filter', ("Id eq {0}" -f $acl.Id));
 				$aclCheck.Name | Should Be $aclSetName;
 				$aclCheck.Description | Should Be $aclSetDescription;
-			} 
-			finally {
-				#Cleanup
-				$svc.Core.DeleteObject($acl);
-				$result = $svc.Core.SaveChanges();
-				$result.StatusCode | Should Be 204;
-			}
-		}
-		
-		It "Acl-CreateAndDeleteAcl" -Test {
-			try {
-				# Arrange
-				$aclName = "Test Acl";
-				$aclDescription = "TestNode used in Test";		
-				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
-				
-				# Act
-				$svc.Core.AddToAcls($acl);
-				$result = $svc.core.SaveChanges();
-				
-				# Assert	
-				$result.StatusCode | Should be 201;
-				$acl.Id | Should Not Be 0;
 			} 
 			finally {
 				#Cleanup
@@ -167,10 +144,65 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$result.StatusCode | Should Be 204;
 			}
 		}
+		
+		It "Acl-GetAcesOfAcl" {
+			try {
+				# Create Acl for Ace tests
+				$aclName = "Test Acl for Ace tests";
+				$aclDescription = "TestNode used in Test";		
+				$acl = CreateAcl -aclName $aclName -aclDescription $aclDescription;	
+				$svc.Core.AddToAcls($acl);
+				$result = $svc.core.SaveChanges();
+				$result.StatusCode | Should be 201;
+				$acl.Id | Should Not Be 0;
+			
+				# Arrange Create Ace
+				$aceName1 = "Test Ace One"
+				$aceDescription1 = "Ace used in tests (one)"
+				$aceName2 = "Test Ace Two"
+				$aceDescription1 = "Ace used in tests (two)"
+				$aceAclId = $acl.Id;
+				$aceAction = "ALLOW";
+				
+				$ace1 = CreateAce -aceName $aceName1 -aceDescription $aceDescription1 -aceAclId $aceAclId -aceAction $aceAction;	
+				$ace2 = CreateAce -aceName $aceName2 -aceDescription $aceDescription2 -aceAclId $aceAclId -aceAction $aceAction;	
+				
+				# Act Create Ace
+				$svc.Core.AddToAces($ace1);
+				$result1 = $svc.core.SaveChanges();
+				$svc.Core.AddToAces($ace2);
+				$result2 = $svc.core.SaveChanges();
+				
+				# Assert Create Ace
+				$result1.StatusCode | Should be 201;
+				$ace1.Id | Should Not Be 0;
+				$result2.StatusCode | Should be 201;
+				$ace2.Id | Should Not Be 0;
+				$ace1.Id | Should Not Be $ace2.Id;
+				
+				#Act Select Ace of Acl
+				$acesOfAcl = $svc.Core.LoadProperty($acl, 'Aces') | Select
+				$acesOfAcl.Id -contains $ace1.Id | Should be $True;
+				$acesOfAcl.Id -contains $ace2.Id | Should be $True;
+			} 			
+			Finally {
+				#Cleanup	
+				$svc.Core.DeleteObject($ace1);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($ace2);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+				
+				$svc.Core.DeleteObject($acl);
+				$result = $svc.Core.SaveChanges();
+				$result.StatusCode | Should Be 204;
+			}
+		}
 	}
 	
-	Context "Ace.Tests" {
-		
+	Context "#CLOUDTCL-1872-AceTests" {
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
@@ -312,49 +344,6 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 				$ace2.Id | Should Not Be 0;
 				$ace1.Id | Should Not Be $ace2.Id;
 				
-			} 			
-			Finally {
-				#Cleanup	
-				$svc.Core.DeleteObject($ace1);
-				$result = $svc.Core.SaveChanges();
-				$result.StatusCode | Should Be 204;
-				
-				$svc.Core.DeleteObject($ace2);
-				$result = $svc.Core.SaveChanges();
-				$result.StatusCode | Should Be 204;
-			}
-		}
-		
-		It "Ace-GetAcesOfAcl" {
-			try {
-				# Arrange Create Ace
-				$aceName1 = "Test Ace One"
-				$aceDescription1 = "Ace used in tests (one)"
-				$aceName2 = "Test Ace Two"
-				$aceDescription1 = "Ace used in tests (two)"
-				$aceAclId = $acl.Id;
-				$aceAction = "ALLOW";
-				
-				$ace1 = CreateAce -aceName $aceName1 -aceDescription $aceDescription1 -aceAclId $aceAclId -aceAction $aceAction;	
-				$ace2 = CreateAce -aceName $aceName2 -aceDescription $aceDescription2 -aceAclId $aceAclId -aceAction $aceAction;	
-				
-				# Act Create Ace
-				$svc.Core.AddToAces($ace1);
-				$result1 = $svc.core.SaveChanges();
-				$svc.Core.AddToAces($ace2);
-				$result2 = $svc.core.SaveChanges();
-				
-				# Assert Create Ace
-				$result1.StatusCode | Should be 201;
-				$ace1.Id | Should Not Be 0;
-				$result2.StatusCode | Should be 201;
-				$ace2.Id | Should Not Be 0;
-				$ace1.Id | Should Not Be $ace2.Id;
-				
-				#Act Select Ace of Acl
-				$acesOfAcl = $svc.Core.LoadProperty($acl, 'Aces') | Select
-				$acesOfAcl.Id -contains $ace1.Id | Should be $True;
-				$acesOfAcl.Id -contains $ace2.Id | Should be $True;
 			} 			
 			Finally {
 				#Cleanup	

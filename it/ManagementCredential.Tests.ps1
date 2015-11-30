@@ -15,7 +15,7 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 
 	. "$here\$sut"
 	
-	Context "ManagementCredential.Tests" {
+	Context "#CLOUDTCL-1885-ManagementCredentialTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -141,9 +141,6 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			
 			$resultGetRemove | Should Be $null;
 		}
-		
-		
-		
 	}
 }
 

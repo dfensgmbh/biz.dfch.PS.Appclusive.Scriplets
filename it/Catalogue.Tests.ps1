@@ -15,7 +15,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 	. "$here\$sut"
 	. "$here\Product.ps1"
 	
-	Context "Catalogue.Tests" {
+	Context "#CLOUDTCL-1874-CatalogueTests" {
 	
 		# Context wide constants
 		$catName = 'Default DaaS';
@@ -199,7 +199,7 @@ Describe -Tags "Catalogue.Tests" "Catalogue.Tests" {
 		}
 	}
 	
-	Context "CatalogueItems.Tests" {
+	Context "#CLOUDTCL-1877-CatalogueItemsTests" {
 	
 		# Context wide constants
 		$catName = 'Default DaaS';

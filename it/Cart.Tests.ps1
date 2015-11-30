@@ -56,7 +56,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 		}
 	}
 
-	Context "Cart.Tests" {
+	Context "#CLOUDTCL-1875-CartTests" {
 	
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -138,6 +138,186 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			
 		}
 		
+		It "AddingVdiCartItemTwice-Fails" -Test {
+			
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new VDI cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add VDI cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+			$cartItem.Id | Should Not Be 0;
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.Count | Should Be 1;
+			$cartItems[0].Id | Should Be $cartItem.Id;
+			
+			# Create second VDI cartItem
+			$cartItem2 = CreateCartItem -catItem $catItem;
+
+			# Add second VDI cartItem
+			$svc.Core.AddToCartItems($cartItem2);
+			try 
+			{
+				$svc.Core.SaveChanges();
+			} catch 
+			{
+				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
+				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
+			}
+
+			$svc = Enter-AppclusiveServer;
+			$cart = GetCartOfUser -svc $svc;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+		
+		It "Cart-SetCartDescription" -Test {
+			# # Assert
+			# $newDescription = "Updated"
+			
+			# # Get catItem
+			# $catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			# $catItem | Should Not Be $null;
+			
+			# # Create new cartItem
+			# $cartItem = CreateCartItem -catItem $catItem;
+
+			# # Add cartItem
+			# $svc.Core.AddToCartItems($cartItem);
+			# $result = $svc.Core.SaveChanges();
+			
+			# $cart = GetCartOfUser -svc $svc;
+			# $cart | Should Not Be $null;
+			
+			# # Update description
+			# $cart.Description = $newDescription;
+			# $svc.Core.UpdateObject($cart);
+			# $result = $svc.Core.SaveChanges();
+			
+			# $cartUpdated = GetCartOfUser -svc $svc;
+			
+			# #Check Update
+			# $cartUpdated | Should Not Be $null;
+			# $cartUpdated.Id | Should Not $cart.Id;
+			# $cartUpdated.Description | Should Be $newDescription;
+			
+			# # Cleanup
+			# $svc.Core.DeleteObject($cart);
+			# $result = $svc.Core.SaveChanges();
+			# $result.StatusCode | Should Be 204;
+
+			# $cart = GetCartOfUser -svc $svc;
+			# $cart | Should Be $null;
+		}
+	}
+	
+	Context "#CLOUDTCL-1876-CartItemTests" {	
+		
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-AppclusiveServer;
+		}
+		
+		It "AddAndRemoveItemToCart" -Test {
+			# Get catItem
+			$catItem1 = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem2 = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
+			$catItem1 | Should Not Be $null;
+			$catItem2 | Should Not Be $null;
+			
+			# Create new VDI cartItem
+			$cartItem1 = CreateCartItem -catItem $catItem1;
+			$cartItem2 = CreateCartItem -catItem $catItem2;
+
+			# Add two cartItem
+			$svc.Core.AddToCartItems($cartItem1);
+			$svc.Core.AddToCartItems($cartItem2);
+			$result = $svc.Core.SaveChanges();
+
+			# Check result
+			$result.StatusCode | Should Be 201;
+						
+			# Get Cart of User and Items
+			$cart = GetCartOfUser -svc $svc;
+			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItems.count | Should be 2;
+			
+			# Remove CartItem VDI
+			$svc.core.DeleteObject($cartItem1)
+			$result2 = $svc.Core.SaveChanges();
+			$result2.StatusCode | Should Be 204;
+			
+			$cartItem1 = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
+			$cartItem1.count | Should be 1;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+		
+		It "Cart-SetCartItemDescription" -Test {
+			# Assert
+			$newDescription = "Updated"
+			
+			# Get catItem
+			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
+			$catItem | Should Not Be $null;
+			
+			# Create new cartItem
+			$cartItem = CreateCartItem -catItem $catItem;
+
+			# Add cartItem
+			$svc.Core.AddToCartItems($cartItem);
+			$result = $svc.Core.SaveChanges();
+			
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Not Be $null;
+			
+			# Update description
+			$cartItem.Description = $newDescription;
+			$svc.Core.UpdateObject($cartItem);
+			$result = $svc.Core.SaveChanges();
+			
+			$cartItemUpdated = $svc.Core.CartItems.AddQueryOption('$filter', "Id eq {0}" -f $cartItem.Id) | Select;
+			
+			#Check Update
+			$result.StatusCode | Should Be 204;
+			$cartItemUpdated | Should Not Be $null;
+			$cartItemUpdated.Id | Should Be $cartItem.Id;
+			$cartItemUpdated.Description | Should Be $newDescription;
+			
+			# Cleanup
+			$svc.Core.DeleteObject($cart);
+			$result = $svc.Core.SaveChanges();
+			$result.StatusCode | Should Be 204;
+
+			$cart = GetCartOfUser -svc $svc;
+			$cart | Should Be $null;
+		}
+		
 		It "AddingNonVdiCartItemTwice-IncreasesCount" -Test {
 			
 			# Get catItem
@@ -193,175 +373,6 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$cart | Should Be $null;
 		}
 		
-		It "AddingVdiCartItemTwice-Fails" -Test {
-			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
-			
-			# Create new VDI cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add VDI cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
-			$cartItem.Id | Should Not Be 0;
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.Count | Should Be 1;
-			$cartItems[0].Id | Should Be $cartItem.Id;
-			
-			# Create second VDI cartItem
-			$cartItem2 = CreateCartItem -catItem $catItem;
-
-			# Add second VDI cartItem
-			$svc.Core.AddToCartItems($cartItem2);
-			try 
-			{
-				$svc.Core.SaveChanges();
-			} catch 
-			{
-				$exception = ConvertFrom-Json $error[0].Exception.InnerException.InnerException.Message;
-				$exception.'odata.error'.message.value | Should Be 'There can only be one VDI in the cart.';
-			}
-
-			$svc = Enter-AppclusiveServer;
-			$cart = GetCartOfUser -svc $svc;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
-		
-		It "AddAndRemoveItemToCart" -Test {
-			# Get catItem
-			$catItem1 = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem2 = GetCatalogueItemByName -svc $svc -name 'DSWR Autocad 12 Production';
-			$catItem1 | Should Not Be $null;
-			$catItem2 | Should Not Be $null;
-			
-			# Create new VDI cartItem
-			$cartItem1 = CreateCartItem -catItem $catItem1;
-			$cartItem2 = CreateCartItem -catItem $catItem2;
-
-			# Add two cartItem
-			$svc.Core.AddToCartItems($cartItem1);
-			$svc.Core.AddToCartItems($cartItem2);
-			$result = $svc.Core.SaveChanges();
-
-			# Check result
-			$result.StatusCode | Should Be 201;
-						
-			# Get Cart of User and Items
-			$cart = GetCartOfUser -svc $svc;
-			$cartItems = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItems.count | Should be 2;
-			
-			# Remove CartItem VDI
-			$svc.core.DeleteObject($cartItem1)
-			$result2 = $svc.Core.SaveChanges();
-			$result2.StatusCode | Should Be 204;
-			
-			$cartItem1 = $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-			$cartItem1.count | Should be 1;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
-		
-		It "Cart-SetCartDescription" -Test {
-			# # Assert
-			# $newDescription = "Updated"
-			
-			# # Get catItem
-			# $catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			# $catItem | Should Not Be $null;
-			
-			# # Create new cartItem
-			# $cartItem = CreateCartItem -catItem $catItem;
-
-			# # Add cartItem
-			# $svc.Core.AddToCartItems($cartItem);
-			# $result = $svc.Core.SaveChanges();
-			
-			# $cart = GetCartOfUser -svc $svc;
-			# $cart | Should Not Be $null;
-			
-			# # Update description
-			# $cart.Description = $newDescription;
-			# $svc.Core.UpdateObject($cart);
-			# $result = $svc.Core.SaveChanges();
-			
-			# $cartUpdated = GetCartOfUser -svc $svc;
-			
-			# #Check Update
-			# $cartUpdated | Should Not Be $null;
-			# $cartUpdated.Id | Should Not $cart.Id;
-			# $cartUpdated.Description | Should Be $newDescription;
-			
-			# # Cleanup
-			# $svc.Core.DeleteObject($cart);
-			# $result = $svc.Core.SaveChanges();
-			# $result.StatusCode | Should Be 204;
-
-			# $cart = GetCartOfUser -svc $svc;
-			# $cart | Should Be $null;
-		}
-		
-		It "Cart-SetCartItemDescription" -Test {
-			# Assert
-			$newDescription = "Updated"
-			
-			# Get catItem
-			$catItem = GetCatalogueItemByName -svc $svc -name 'VDI Personal';
-			$catItem | Should Not Be $null;
-			
-			# Create new cartItem
-			$cartItem = CreateCartItem -catItem $catItem;
-
-			# Add cartItem
-			$svc.Core.AddToCartItems($cartItem);
-			$result = $svc.Core.SaveChanges();
-			
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Not Be $null;
-			
-			# Update description
-			$cartItem.Description = $newDescription;
-			$svc.Core.UpdateObject($cartItem);
-			$result = $svc.Core.SaveChanges();
-			
-			$cartItemUpdated = $svc.Core.CartItems.AddQueryOption('$filter', "Id eq {0}" -f $cartItem.Id) | Select;
-			
-			#Check Update
-			$result.StatusCode | Should Be 204;
-			$cartItemUpdated | Should Not Be $null;
-			$cartItemUpdated.Id | Should Be $cartItem.Id;
-			$cartItemUpdated.Description | Should Be $newDescription;
-			
-			# Cleanup
-			$svc.Core.DeleteObject($cart);
-			$result = $svc.Core.SaveChanges();
-			$result.StatusCode | Should Be 204;
-
-			$cart = GetCartOfUser -svc $svc;
-			$cart | Should Be $null;
-		}
 	}
 }
 
