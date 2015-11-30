@@ -140,6 +140,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "RaiseUpdateConfigurationEvent", $null);
 			
 			# Assert
+			Sleep -Seconds 2;
 			$jobResult = Get-Job -Id $job.Id | Receive-Job;
 			
 			$jobResult -match 'UpdateConfigurationEvent.+UpdateConfigurationEventBody' | Should Be $true
