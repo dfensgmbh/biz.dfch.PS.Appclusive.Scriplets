@@ -75,7 +75,7 @@ BEGIN
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'ManagementCredentials';
+	$EntitySetName = 'Jobs';
 	
 	# Parameter validation
 	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
