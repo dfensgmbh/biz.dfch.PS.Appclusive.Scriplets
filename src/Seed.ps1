@@ -274,6 +274,54 @@ function Gates($Recreate)
 	# create new entries as applicable
 }
 
+function JobsWithRandomData($Recreate)
+{
+	$wordlist = @("belong", "myotonia", "mariner", "basque", "rainbow", "batten", "tussle", "lollygag", 
+	"sporty", "barogram", "droll", "mainland", "joy", "petrosal", "surname", "recoup", 
+	"footsie", "potash", "missal", "floater", "aggrade", "mandrake", "port", "repel", 
+	"derma", "riant", "caroche", "covert", "carabao", "aloof", "deadhead", "tandem", 
+	"mannish", "lax", "oxidase", "deodand", "cheeky", "drain", "terrapin", "journey", 
+	"febrile", "fitly", "overtake", "cleft", "ikon", "lurdan", "enclasp", "basis", 
+	"baronet", "abhenry", "timeous", "resale", "benzoin", "glazier", "bullring", "chip", 
+	"glucinum", "varices", "tapestry", "avaunt", "ultra", "espy", "gaslit", "ramrod", 
+	"heronry", "matins", "peen", "squeeze", "ardeb", "vendace", "hindmost", "grating", 
+	"link", "toneme", "oodles", "melic", "unwashed", "pitman", "sonic", "still", "flicker", 
+	"fraenum", "stagnate", "epicotyl", "locally", "ecbolic", "frag", "recess", "leal", 
+	"compo", "glycol", "broom", "oculist", "sarcenet", "saintly", "papaya", "potheen", 
+	"dating", "revolute", "spicule", "nee", "vitellin", "leaky", "mooned", "locate", 
+	"tortilla", "whiles", "quarrel", "sneak", "aside", "absence", "yeti", "hent", "jut", 
+	"ars", "swain", "thanks", "fro", "proa", "nutbrown");
+	
+	$jobTemplate = $svc.Core.InvokeEntitySetActionWithSingleResult('Jobs', 'Template', [System.Object], $null);
+	$cMin = 1000;
+	$cMax = 1999;
+	for($c = $cMin; $c -le $cMax; $c++)
+	{
+		$rnd1 = Get-Random -Minimum 0 -Maximum ($wordlist.Length -1);
+		$rnd2 = Get-Random -Minimum 0 -Maximum ($wordlist.Length -1);
+		$rnd3 = Get-Random -Minimum 0 -Maximum ($wordlist.Length -1);
+		
+		Write-Progress -Activity ('{0} {1}' -f $c, $wordlist[$rnd1]) -PercentComplete (100*($c - $cMin)/($cMax - $cMin));
+
+		$job = New-Object biz.dfch.CS.Appclusive.Api.Core.Job;
+
+		$job.Tid = $jobTemplate.Tid;
+		$job.Name = 'System.Object';
+		$job.Description = '{0} is a {1} for {2} purposes' -f $wordlist[$rnd1], $wordlist[$rnd2], $wordlist[$rnd3];
+		$job.Status = $jobTemplate.Status;
+		$job.CreatedBy = 'SYSTEM';
+		$job.ModifiedBy = 'SYSTEM';
+		
+		$svc.Core.AddToJobs($job);
+		$svc.Core.UpdateObject($job);
+		$result = $svc.Core.SaveChanges();
+		if($result.StatusCode -ne 201)
+		{
+			Write-Warning ('{0}: {1}`r`n{2}' -f $c, $job.Description, ($result | Out-String));
+		}
+	}
+}
+
 function Jobs($Recreate)
 {
 	$svc = Enter-ApcServer;
@@ -292,6 +340,8 @@ function Jobs($Recreate)
 	}
 	
 	# create new entries as applicable
+	
+	JobsWithRandomData($Recreate)
 }
 
 function KeyNameValues($Recreate)
