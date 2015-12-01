@@ -30,6 +30,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <releaseNotes>20151127
 
 * update API version to 1.0.10
+* added Cmdlet Test-Status
 * installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
     <copyright>(c) 2015 d-fens GmbH</copyright>
     <language>en-US</language>
@@ -65,6 +66,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="Remove-ManagementCredential.ps1" target="tools\Remove-ManagementCredential.ps1" />
     <file src="Push-ChangeTracker.ps1" target="tools\Push-ChangeTracker.ps1" />
     <file src="Pop-ChangeTracker.ps1" target="tools\Pop-ChangeTracker.ps1" />
+    <file src="Test-Status.ps1" target="tools\Test-Status.ps1" />
     <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
     <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
     <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />
