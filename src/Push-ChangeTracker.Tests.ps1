@@ -29,7 +29,7 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 		
 		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 
 			try
 			{
@@ -46,7 +46,7 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 
 		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 
 			# Act and Assert
 			Assert-MockCalled Get-ModuleVariable;
@@ -56,7 +56,7 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 
 		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
 			# Arrange
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			# Act
 			$result = Push-ChangeTracker -svc $svc -ListAvailable;
@@ -75,7 +75,7 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
 			# Arrange
 			$count = 2;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 			
 			# Act
@@ -95,7 +95,7 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
 			# Arrange
 			$count = 2;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 			
 			# Act
@@ -110,7 +110,7 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
 			# Arrange
 			$count = 2;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 			
 			# Act

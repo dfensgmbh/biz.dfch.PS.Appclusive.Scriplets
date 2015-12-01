@@ -20,7 +20,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "Acl-CreateAndDeleteAcl" -Test {
@@ -207,7 +207,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			# Create Acl for Ace tests
 			$aclName = "Test Acl for Ace tests";
@@ -223,7 +223,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 		
 		AfterEach {
 			# Cleanup Acl
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			$svc.Core.AttachTo('Acls', $acl);
 			$svc.Core.DeleteObject($acl);
 			$result = $svc.Core.SaveChanges();

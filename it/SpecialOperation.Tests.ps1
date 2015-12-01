@@ -1,4 +1,3 @@
-
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
@@ -9,13 +8,97 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
+Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
-
-	. "$here\$sut"
 	
-	Context "#CLOUDTCL-1885-ManagementCredentialTests" {
+	Context "SetCreatedBy.Tests" {
+	
+		$actionName = 'SetCreatedBy';
+		
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			
+			$svc = Enter-ApcServer;
+		}
+
+		It "SetCreatedBy-WithMissingParameterInBodyFails" -Test {
+			# Arrange
+			
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'AuditTrails'; EntityId = '42'});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Precondition.+CreatedBy' | Should Be $true
+			}
+		}
+		
+		It "SetCreatedBy-WithInvalidEntityTypeInBodyFails" -Test {
+			# Arrange
+			$creator = 'testuser';
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'ArbitraryType'; EntityId = '42'; CreatedBy = $creator});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Assertion.+entityType' | Should Be $true
+			}
+		}
+		
+		It "SetCreatedBy-ForKeyNameValueSucceeds" -Test {
+			# Arrange
+			$creator = 'testuser';
+			$value = [guid]::NewGuid().Guid;
+			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
+			
+			# Act
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue'; EntityId = $knv.Id; CreatedBy = $creator});
+			
+			# Assert
+			$svc = Enter-ApcServer
+			$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter', ("Name eq '{0}'" -f $value)) | Select;
+			$knv.CreatedBy | Should be $creator;
+			
+			Remove-ApcKeyNameValue -Name $value -Confirm:$false;
+		}
+		
+		It "SetCreatedBy-ForAuditTrailFails" -Test {
+			# Arrange
+			$creator = 'testuser';
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; CreatedBy = $creator});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Assertion.+Blacklist.+Contains.+entityType' | Should Be $true
+			}
+		}
+	}
+	
+	Context "ClearAuditLog.Tests" {
+		
+		$actionName = 'ClearAuditLog';
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -24,122 +107,133 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 			$svc = Enter-ApcServer;
 		}
 		
-		It "ManagementCredential-AddingAndRemovingItemSucceeds" -Test {
+		It "ClearAuditLog-DeletesAllAuditTrailEntries" -Test {
 			# Arrange
-			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Username = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
+			$value = [guid]::NewGuid().Guid;
+			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
 			
 			# Act
-			$resultNew = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;
-			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
+			$auditTrails = $svc.Diagnostics.AuditTrails | Select;
+			$auditTrails.Count | Should Not Be 0;
+			
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, $null);
+			
+			# Assert	
+			$auditTrails = $svc.Diagnostics.AuditTrails | Select;
+			$auditTrails.Count | Should Be 0;
+			
+			Remove-ApcKeyNameValue -Name $value -Confirm:$false;
+		}
+	}
+	
+	Context "RaiseUpdateConfigurationEvent.Tests" {
+		
+		$actionName = 'RaiseUpdateConfigurationEvent';
+		
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-ApcServer;
+		}
+		
+		It "RaiseUpdateConfigurationEvent-WritesMessageToTheBus" -Test {
+			# Arrange
+			$job = Start-Job -ScriptBlock {Import-Module biz.dfch.PS.Azure.ServiceBus.Client; $null = Enter-SBServer; Get-SBMessage -Receivemode ReceiveAndDelete -Facility NOTIFY-ALL -EnsureFacility | Get-SBMessageBody};
+			
+			# Act
+			Sleep -Seconds 3;
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, $null);
 			
 			# Assert
-			$resultNew | Should Not Be $null;
-			$resultNew.Name | Should Be $Name;
-			$resultNew.Username | Should Be $Username;
-			$resultNew.Password | Should Not Be $Null;
+			Sleep -Seconds 2;
+			$jobResult = Get-Job -Id $job.Id | Receive-Job;
 			
-			$resultGetRemove | Should Be $null;
+			$jobResult -match 'UpdateConfigurationEvent.+UpdateConfigurationEventBody' | Should Be $true
+		}
+	}
+	
+	Context "SetTenant.Tests" {
+		
+		$actionName = 'SetTenant';
+		
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			
+			$svc = Enter-ApcServer;
 		}
 
-		It "ManagementCredential-AddingDoubleItemSameNameThrowException" -Test {
+		It "SetTenant-WithMissingParameterInBodyFails" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-			$Username = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
-		
-		
-			# Act
-			$resultNew1 = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;
 			
-			try {
-				$resultNew2 = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;				
-				$exception = $false;
-			} catch {
-				$exception = $true;
+			
+			# Act
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'AuditTrails'; EntityId = '42'});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
 			}
-			
-			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
-						
-			# Assert
-			$resultNew1 | Should Not Be $null;
-			$resultNew1.Name | Should Be $Name;
-			$resultNew1.Username | Should Be $Username;
-			$resultNew1.Password | Should Not Be $Null; 
-			
-			$resultNew2 | Should Be $null;
-			$exception | Should Be $true;
-			
-			$resultGetRemove | Should Be $null;
-		}
-		
-		It "ManagementCredential-RemoveNonExtistingItemThrowException" -Test {
-			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-		
-			# Act
-				
-			try {
-				$resultNew = Remove-ApcManagementCredential -Name $Name -Confirm:$false;				
-				$exception = $false;
-			} catch {
-				$exception = $true;
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Precondition.+TenantId' | Should Be $true
 			}
-			
-			# Assert
-			$resultNew1 | Should Be $null;
-			$exception | Should Be $true;
 		}
 		
-		It "ManagementCredential-SetAndRemoveNewItemSucceed" -Test {
+		It "SetTenant-WithInvalidEntityTypeInBodyFails" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-			$Username = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
-		
+			$tenantId = [guid]::NewGuid().Guid;
+			
 			# Act
-			$resultSetNew = Set-ApcManagementCredential -Name $Name -Username $Username -Password $Password -CreateIfNotExist
-			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'ArbitraryType'; EntityId = '42'; TenantId = $tenantId.ToString()});		
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Assertion.+entityType' | Should Be $true
+			}
+		}
+
+		It "SetTenant-ForKeyNameValueSucceeds" -Test {
+			# Arrange
+			$tenantId = [guid]::NewGuid().Guid;
+			$value = [guid]::NewGuid().Guid;
+			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
+			
+			# Act
+			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue'; EntityId = $knv.Id; TenantId = $tenantId.ToString()});
 			
 			# Assert
-			$resultSetNew | Should Not Be $null;
-			$resultSetNew.Name | Should Be $Name;
-			$resultSetNew.Username | Should Be $Username;
-			$resultSetNew.Password | Should Not Be $Null;
+			$svc = Enter-ApcServer
+			$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter', ("Name eq '{0}'" -f $value)) | Select;
+			$knv.Tid | Should be $tenantId;
 			
-			$resultGetRemove | Should Be $null;
+			Remove-ApcKeyNameValue -Name $value -Confirm:$false;
 		}
 		
-		It "ManagementCredential-SetNewPasswordAndUsernameSucceed" -Test {
+		It "SetTenant-ForAuditTrailFails" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-			$Username1 = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Username2 = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password1 = "Passwort-{0}" -f [guid]::NewGuid().Guid;
-			$Password2 = "Passwort-{0}" -f [guid]::NewGuid().Guid;
-		
+			$tenantId = [guid]::NewGuid().Guid;
+			
 			# Act
-			$resultSetNew = Set-ApcManagementCredential -Name $Name -Username $Username1 -Password $Password1 -CreateIfNotExist -As json | ConvertFrom-Json;
-			$resultSetUserNamePW = Set-ApcManagementCredential -Name $Name -Username $Username2 -Password $Password2 -As json | ConvertFrom-Json;
-			$resultRemove = Remove-ApcManagementCredential -Name $Name -Confirm:$false;
-			$resultGetRemove = Get-ApcKeyNameValue -Name $Name;
-			
-			# Assert
-			$resultSetNew | Should Not Be $null;
-			$resultSetNew.Name | Should Be $Name;
-			$resultSetNew.Username | Should Be $Username1;
-			$resultSetNew.Password | Should Not Be $Null;
-			
-			$resultSetUserNamePW | Should Not Be $null;
-			$resultSetUserNamePW.Name | Should Be $Name;
-			$resultSetUserNamePW.Username | Should Not Be $resultSetNew.Username;
-			$resultSetUserNamePW.Password | Should Not Be $resultSetNew.Password;
-			
-			$resultGetRemove | Should Be $null;
+			try
+			{
+				$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, @{EntityType = 'biz.dfch.CS.Appclusive.Core.OdataServices.Diagnostics.AuditTrail'; EntityId = '42'; TenantId = $tenantId.ToString()});			
+				"No error occurred" | Should Be "An exception was expected but did not occur."
+			}
+			catch
+			{
+				# Assert	
+				$errorResponse = $error[0].Exception.InnerException.InnerException.Message | ConvertFrom-Json;
+				$errorResponse.'odata.error'.message.value -match 'Assertion.+Blacklist.+Contains.+entityType' | Should Be $true
+			}
 		}
 	}
 }
@@ -163,8 +257,8 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVEVs6JNCekhctBzTx5XA74VI
-# nK2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZX5w8Xw+udMvWl6nNjqlG7YQ
+# 2tugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -263,26 +357,26 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTgk4V9pbZ5SpeT
-# JN2iEXN1ATwXijANBgkqhkiG9w0BAQEFAASCAQBBf8m3S+UD67sZF08Bt+R5w3xw
-# GihNx2MCNdmCG45pMVb9T74cnORMzKEUYYmQmG+mRAgluPuUmqy/zTzku5TbaVjF
-# NezED/NM2viySTtT5CYgIRAihCHeLeShYvfEwmoDroKPLTMUTchG/Ar0qMjciGnl
-# OOSZT1MDSobvFxCA4ySFda7E3fV9AicZEDUFOoTUVfZg4uLub3LyL4RBFk2lIj2T
-# WyBCe5MDFnfSIV5H0hhtUV83JiWhSu4JiQbp1lyyZ9FAo8cwiWNQ3nWDT6tLmZqB
-# WuYPfGkdAocT4KbiBYbCwIZunUi9sedvdKvSaYafKRLIxf7PZnIKKAcjkW80oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTw3JlKeHQiw2lA
+# 2iJee4jfe1ok0zANBgkqhkiG9w0BAQEFAASCAQDBSK+A2XFr+NaI3FLcxOBVbQU/
+# aMfGJGwzAABNVWoanByc8XE6MuZ+5yXdvdeXZITHAFxrwRe7R2N6+5EcjQGWAzJi
+# HyKTZ2T5tFXBi9qJPTTKytbdYtMOJeWClr9v15iHJcOjaba4IWFxcX7n3k7fspI2
+# +ePobEIdGl7kSNMNEd8e3GgIN2EUUu6xkOPycP0Alw4oMsd+E+RV2qJyGn6ukIoW
+# +WoPCtFySmIH9vI7xP5F7T0nl1csaJtj00eSu7qREwUdefszhqDyadKmDCLus1bS
+# dSnSktG5UuVndbfFJXlssxRC4cPsvtedToZteJ08p/FWbvOZ9tQMESSZkklmoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAxNjA5MzIzN1owIwYJKoZIhvcNAQkEMRYEFK/uh4Jb18a7sJqk1xzcsKFRoqwz
+# MTAyODE0MjA0NlowIwYJKoZIhvcNAQkEMRYEFPKGbdv4mF14VLiWolIKpcIGtFoF
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB+JX+YJZ9V0HOysq3Z
-# CGV6dwHIxuSQEu/pJG47utxZJ4DEj34MG+K+aivmVv1Bj1vQi6QDMeaWtci1Vb/r
-# Oy5JJhVs1A1UFnkYftynbV6Vi+jLAx7emALfQ+FW37Fsj2V1b8+otYdkMlYfus2p
-# u8zl+lhjlF5SVGCYoDD8qEZEiVwD6/yRq5oFdIwn5c4zhDVa+zWQ3NL2mAqG+uxn
-# bJJl7ViZWtXbKGCqtF0akeOoaYmgFssXeaVxRzGUr8H7O3zK+01KLINAlLmKGpKW
-# hfBPPKhhFK7/ce9JEpsFd5ZnSTcOEiWbqCMtK4I+mwUb5aHpH+PHM0sm+wjMGM35
-# dxD8
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy7ufxDEu0kJPJ9whi
+# dhkVPCQP+gc13hOgcjAx+K8Nc+S6jofZa7dfZTI5eABZ7aDpULGQYMW8WnK8gCSL
+# HDOxHmuPOww5c7K/VBaF5Ttrt3ZO+WH8BWp1H3F7GSBJLOrzFF66AF7IhKKvmFoo
+# GegWpNuLJYAVfIy8DfkRIB9ttulWSuA7tT/4rgL5S+2rUHOi3H+GWPsBpUt+b1v/
+# koBcdbApcW/r8n6OtKqHP+PfZL9w/KYyYafr5UrlgRxSjKN+5v+viUfD3UsOrUxV
+# LetMozQxlYdZmyr3xU+exTAcaIyfvdukC/pDLMUsyJLii4ZaR5Zt9tJOzjJyxsFM
+# 034o
 # SIG # End signature block

@@ -1,116 +1,103 @@
-function Enter-Server {
-<#
-.SYNOPSIS
-Performs a login to an Appclusive server.
-
-
-.DESCRIPTION
-Performs a login to an Appclusive server. 
-
-This is the first Cmdlet to be executed and required for all other Cmdlets of this module. It creates service references to the routers of the application.
-
-
-.OUTPUTS
-This Cmdlet returns a hashtable with references to the DataServiceContexts of the application. On failure it returns $null.
-
-
-.INPUTS
-See PARAMETER section for a description of input parameters.
-
-
-.EXAMPLE
-$svc = Enter-ApcServer;
-$svc
-
-Name            Value
-----            -----
-Diagnostics     biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics
-CoreData        biz.dfch.CS.Appclusive.Api.Core.Core
-
-Perform a login to an Appclusive server with default credentials (current user) and against server defined within module configuration xml file.
-
-
-.LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/
-
-
-.NOTES
-See module manifest for required software versions and dependencies at: 
-http://dfch.biz/biz/dfch/PS/Appclusive/Client/biz.dfch.PS.Appclusive.Client.psd1/
-
-
-#>
+function Test-Status {
 [CmdletBinding(
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/'
+    SupportsShouldProcess = $false
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/'
+	,
+	DefaultParameterSetName = 'ping'
 )]
-[OutputType([hashtable])]
-Param 
+PARAM 
 (
-	# [Optional] The ServerBaseUri such as 'https://appclusive/'. If you do not 
-	# specify this value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 0)]
-	[Uri] $ServerBaseUri = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).ServerBaseUri
-	, 
-	# [Optional] The BaseUrl such as '/Appclusive/'. If you do not specify this 
-	# value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 1)]
-	[string] $BaseUrl = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).BaseUrl
-	, 
-	# Encrypted credentials as [System.Management.Automation.PSCredential] with 
-	# which to perform login. Default is credential as specified in the module 
-	# configuration file.
-	[Parameter(Mandatory = $false, Position = 2)]
-	[alias("cred")]
-	$Credential = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Credential
+	#
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'echo')]
+	[ValidateLength(1, 32)]
+	[string] $InputObject
+	,
+	# Specifies if the connection to the server will be authenticated with current credentials
+	[Parameter(Mandatory = $false, ParameterSetName = 'ping')]
+	[switch] $Authenticate = $false
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias("Services")]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias("ReturnFormat")]
+	[string] $As = 'default'
 )
 
 BEGIN 
 {
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	
+	$EntitySetName = 'Endpoints';
+	
+	# Parameter validation
+	if($svc.Diagnostics -isnot [biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics]) 
+	{
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Diagnostics;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
 }
-# BEGIN 
+# BEGIN
 
 PROCESS 
 {
 
-[boolean] $fReturn = $false;
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
 
 try 
 {
 	# Parameter validation
 	# N/A
 	
-	[Uri] $Uri = '{0}{1}' -f $ServerBaseUri.AbsoluteUri.TrimEnd('/'), ('{0}/' -f $BaseUrl.TrimEnd('/'));
-	foreach($k in (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.Keys) 
-	{ 
-		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.$k;
-		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $k, $UriService.AbsoluteUri);
-		switch($k) 
+	try
+	{
+		if($PSCmdlet.ParameterSetName -eq 'ping')
 		{
-		'Diagnostics' 
+			if($Authenticate)
+			{
+				$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'AuthenticatedPing', $null);
+			}
+			else
+			{
+				$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'Ping', $null);
+			}
+			$Response = $null;
+		}
+		else
 		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
+			$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
 		}
-		'Core' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Core.Core($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		default 
-		{
-			Log-Error $fn ("Unknown service '{0}': '{1}'. Skipping ..." -f $k, $UriService.AbsoluteUri);
-		}
-		}
+		
+	}
+	catch
+	{
+		$msg = "{0}: Status check FAILED." -f $fn;
+		$e = New-CustomErrorRecord -m $msg -cat InvalidOperation -o $svc.Diagnostics;
+		$PSCmdlet.ThrowTerminatingError($e);
 	}
 
-	$OutputParameter = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services;
+	$r = $Response;
+	switch($As) 
+	{
+		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
+		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
+		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
+		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
+		Default { $OutputParameter = $r; }
+	}
 	$fReturn = $true;
 
 }
@@ -118,7 +105,7 @@ catch
 {
 	if($gotoSuccess -eq $_.Exception.Message) 
 	{
-			$fReturn = $true;
+		$fReturn = $true;
 	} 
 	else 
 	{
@@ -129,7 +116,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn "Login to Uri '$Uri' with Username '$Username' FAILED [$_].";
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
@@ -158,23 +145,25 @@ finally
 	# Clean up
 	# N/A
 }
-return $OutputParameter;
 
 }
 # PROCESS
 
 END 
 {
-	$datEnd = [datetime]::Now;
-	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
+
 }
 # END
 
 } # function
 
-Set-Alias -Name Connect- -Value 'Enter-Server';
-Set-Alias -Name Enter- -Value 'Enter-Server';
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias Connect-, Enter-; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -195,8 +184,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUinvqKU2t9nTQwJkPtoItottF
-# 79OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUeGbyPGVKJMgdOqvEG6xyutK2
+# MjCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +284,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTL763k+hWP+N1b
-# 3/aOWSmdFr8k7zANBgkqhkiG9w0BAQEFAASCAQC3ZDi+1Nl9j7cVZXHw/Kyhdgrx
-# bpuey0y/4S9Qn3V8ltFWaS/btbsaWPlxx+X6FBAZgPYvKma6IFHKeVnswU1hStt2
-# U1Gbp3hQxkLyMrJ1YUuJDlJbei9Z/JaBcTgEEsiD168Hy4bdkNy9J6cDGcooZc0I
-# L3KjhfLc5zmaq3YWyUBwlD6s3cPltqNXCOUTJkXItCgXB8A/tPbtmPYMQnq02RqN
-# keDVlIukgC74Tn1cKlKznSbw3jRhr2rHbKBJXe4Phptph5kuUNJfOt3n8Trac7nP
-# 2CU2TTu0+zFx9sdZAIPNIwxOVrsO665oPunSR9jmos3ZB1w6AdPhK1Hl01d0oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRjO7vpR2TMQ0Dy
+# 4aOTqWdj9Ch1gDANBgkqhkiG9w0BAQEFAASCAQBjDE8pF0ARBAr347i/NAKmvlyy
+# sGkqcnma/g+PzNh6vVTNXZdAgSJb7F5MqP9DfNtxZ5tidGYzsrRRhNE7YJN5lsXw
+# xr5gSp8eKr3DbcmKk32Wl5Qi9B8V6GI+oCVpFB8Q4i6gDOiOnYMd6NCOjoMiXVc6
+# j1a5FI5PfsIaZRjjBzkZ0whTcp6XhOxe9BLozDIpNgZpdTmCqKq+0BVhSxa5XET6
+# Z3xpa7uGR+1uYZTgk2qWtnHagV5neW1lGSf87sSX5f11sZsY3Ej5daFtPFk7NE/s
+# D5v0YuXRAl3Owvn/t7jAJgfMuT1nyz0k5dVOz7Dddkj05mOJn7TN8/EQA1H9oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxMlowIwYJKoZIhvcNAQkEMRYEFJrCIvR/2C+slpGqr0SayvbsjhB3
+# MTAyODE0MjAxM1owIwYJKoZIhvcNAQkEMRYEFDBLJAHeq0NZdJ/t2lMBsI17ADyv
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBLaU0mJuNN369mr3bs
-# PTAuEt/c2TNul1VOXMD8ozf/pwlTFGxKGe0SfdIgDzhlb9Iwb4zGX/U2RYLK2KZt
-# K6hOW/OwfN5/mlSPGFuAH9YinCMI95oOEL+Xt/QFcllkj2YHVLAwILidV7n2siI0
-# 4hNfh2W2RYJoYsuer/iwinTlExQJJ7fzfUGRcgxvzETxwlz8yeZV2NCMVFCHGsyu
-# fd6gkGYL5jRsoNEqHiYY0ePfOaUZsn8c+jpbRnLc140U0Q4JBLY9OB+RvKxI/KgS
-# v1LULtg99gKQH8FSwZn8UslQ5xn8cQmQfj6pBuu35Opp9dkmV8wv9hl6y4jSaEgw
-# 9nMK
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCnasjJHXLqVgoVQFyG
+# uqBYUO/jdnbpdwQ4bmbwh262r0xGHBOkLiux/mIDT+MvIPz6HhQWXEbA6JWES8iV
+# RHDlQnLdBVHI8Qgj1y4nLf01FkZiJ/ZabNm1CHVrPnGyI6RqroCGUqt+phMS1FJd
+# 58qkBaK+acN5E3/Sk2zBvWKaVrxWbKalL/3OOPt5moUas/TqldtHtJBNEwilccN6
+# 6/z+/HeoMF01omhzieKVV94W3upcU0SJrHMhWVV8NoUtcOMr5+ih8Np6TyIlXhuh
+# TSxzJjU3NTjwYWEqi9N6Rc9qEfFwzZJ1hopKPlEHzrHgU+b0SAVPqwe6KqnSM8vB
+# 1p2D
 # SIG # End signature block

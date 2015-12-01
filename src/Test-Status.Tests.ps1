@@ -1,202 +1,124 @@
-function Enter-Server {
-<#
-.SYNOPSIS
-Performs a login to an Appclusive server.
 
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-.DESCRIPTION
-Performs a login to an Appclusive server. 
+Describe -Tags "Test-Status" "Test-Status" {
 
-This is the first Cmdlet to be executed and required for all other Cmdlets of this module. It creates service references to the routers of the application.
-
-
-.OUTPUTS
-This Cmdlet returns a hashtable with references to the DataServiceContexts of the application. On failure it returns $null.
-
-
-.INPUTS
-See PARAMETER section for a description of input parameters.
-
-
-.EXAMPLE
-$svc = Enter-ApcServer;
-$svc
-
-Name            Value
-----            -----
-Diagnostics     biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics
-CoreData        biz.dfch.CS.Appclusive.Api.Core.Core
-
-Perform a login to an Appclusive server with default credentials (current user) and against server defined within module configuration xml file.
-
-
-.LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/
-
-
-.NOTES
-See module manifest for required software versions and dependencies at: 
-http://dfch.biz/biz/dfch/PS/Appclusive/Client/biz.dfch.PS.Appclusive.Client.psd1/
-
-
-#>
-[CmdletBinding(
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/'
-)]
-[OutputType([hashtable])]
-Param 
-(
-	# [Optional] The ServerBaseUri such as 'https://appclusive/'. If you do not 
-	# specify this value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 0)]
-	[Uri] $ServerBaseUri = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).ServerBaseUri
-	, 
-	# [Optional] The BaseUrl such as '/Appclusive/'. If you do not specify this 
-	# value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 1)]
-	[string] $BaseUrl = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).BaseUrl
-	, 
-	# Encrypted credentials as [System.Management.Automation.PSCredential] with 
-	# which to perform login. Default is credential as specified in the module 
-	# configuration file.
-	[Parameter(Mandatory = $false, Position = 2)]
-	[alias("cred")]
-	$Credential = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Credential
-)
-
-BEGIN 
-{
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
-}
-# BEGIN 
-
-PROCESS 
-{
-
-[boolean] $fReturn = $false;
-
-try 
-{
-	# Parameter validation
-	# N/A
+	Mock Export-ModuleMember { return $null; }
 	
-	[Uri] $Uri = '{0}{1}' -f $ServerBaseUri.AbsoluteUri.TrimEnd('/'), ('{0}/' -f $BaseUrl.TrimEnd('/'));
-	foreach($k in (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.Keys) 
-	{ 
-		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.$k;
-		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $k, $UriService.AbsoluteUri);
-		switch($k) 
-		{
-		'Diagnostics' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		'Core' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Core.Core($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		default 
-		{
-			Log-Error $fn ("Unknown service '{0}': '{1}'. Skipping ..." -f $k, $UriService.AbsoluteUri);
-		}
-		}
-	}
-
-	$OutputParameter = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services;
-	$fReturn = $true;
-
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-			$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
+	. "$here\$sut"
+	. "$here\Get-ModuleVariable.ps1"
+	
+	Context "Test-Status" {
+	
+		# Context wide constants
+		$biz_dfch_PS_Appclusive_Client = @{ };
+		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
 		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn "Login to Uri '$Uri' with Username '$Username' FAILED [$_].";
-			Log-Debug $fn $ErrorText -fac 3;
+		
+		BeforeEach {
+			$error.Clear();
+			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+			
+			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
 		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
+		
+		AfterEach {
+			if(0 -ne $error.Count)
 			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
+				Write-Warning ($error | Out-String);
 			}
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+		
+		It "Test-StatusAnonymousSucceeds" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+
+			# Act
+			$result = Test-Status -svc $svc;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+		
+		It "Test-StatusAuthenticatedSucceeds" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+
+			# Act
+			$result = Test-Status -Authenticate -svc $svc;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+
+		It "Test-StatusEchoSucceeds" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+			$InputObject = 'tralala';
+
+			# Act
+			$result = Test-Status $InputObject -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $InputObject
+		}
+
+		It "Test-StatusEchoWithEmptyInputFails" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+			$InputObject = '';
+
+			# Act
+			$result = Test-Status $InputObject -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $InputObject
+		}
+
+		It "Test-StatusEchoWithTooLongInputFails" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+			$Echo = '1234567890123456789012345678901234567890';
+
+			# Act
+			$result = Test-Status $InputObject -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $InputObject
+		}
 	}
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
-return $OutputParameter;
 
-}
-# PROCESS
-
-END 
-{
-	$datEnd = [datetime]::Now;
-	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-}
-# END
-
-} # function
-
-Set-Alias -Name Connect- -Value 'Enter-Server';
-Set-Alias -Name Enter- -Value 'Enter-Server';
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias Connect-, Enter-; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUinvqKU2t9nTQwJkPtoItottF
-# 79OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjKZ4oFcrPaM/CONtZtOcQ1XU
+# JgCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +217,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTL763k+hWP+N1b
-# 3/aOWSmdFr8k7zANBgkqhkiG9w0BAQEFAASCAQC3ZDi+1Nl9j7cVZXHw/Kyhdgrx
-# bpuey0y/4S9Qn3V8ltFWaS/btbsaWPlxx+X6FBAZgPYvKma6IFHKeVnswU1hStt2
-# U1Gbp3hQxkLyMrJ1YUuJDlJbei9Z/JaBcTgEEsiD168Hy4bdkNy9J6cDGcooZc0I
-# L3KjhfLc5zmaq3YWyUBwlD6s3cPltqNXCOUTJkXItCgXB8A/tPbtmPYMQnq02RqN
-# keDVlIukgC74Tn1cKlKznSbw3jRhr2rHbKBJXe4Phptph5kuUNJfOt3n8Trac7nP
-# 2CU2TTu0+zFx9sdZAIPNIwxOVrsO665oPunSR9jmos3ZB1w6AdPhK1Hl01d0oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRG/4dGYFLpfvmO
+# +VmGhRWxQbdAiDANBgkqhkiG9w0BAQEFAASCAQBAbAq3hsMWweNqEAojvgtbtX/M
+# eVmNf3dnzbEY9a7id/bTR1j5uw0q96M+GZ3ZKuvLHhxFn+2gsBw5/8wf1E/11gdd
+# 0zItKqAauUgE2eFHz2F43Zwy6l6vEx7f2LiZrzjVX+O9BQfSQ0Q1BBoqp8pIorDm
+# IRZG4JRYGboULvNG8FXTI1a63lea9ZlyQMIlgZ4geaqzKgAuiZ43JlndqTLf9vT1
+# WnfKimERvwh8cOJiIY4uhpokovLFNMyt2URctlGbu+mag0m6e1sOcnDtg0Of4zK/
+# Lx6HYXZKnBhOxDWWjGYWY7/F0XukeYZcTPL0Cczq7KWEax6m6AOyuvTfh/rFoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxMlowIwYJKoZIhvcNAQkEMRYEFJrCIvR/2C+slpGqr0SayvbsjhB3
+# MTEwNzExNTU0MVowIwYJKoZIhvcNAQkEMRYEFLBg3WKt1gCWw3OHuRpbm49X/8pi
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBLaU0mJuNN369mr3bs
-# PTAuEt/c2TNul1VOXMD8ozf/pwlTFGxKGe0SfdIgDzhlb9Iwb4zGX/U2RYLK2KZt
-# K6hOW/OwfN5/mlSPGFuAH9YinCMI95oOEL+Xt/QFcllkj2YHVLAwILidV7n2siI0
-# 4hNfh2W2RYJoYsuer/iwinTlExQJJ7fzfUGRcgxvzETxwlz8yeZV2NCMVFCHGsyu
-# fd6gkGYL5jRsoNEqHiYY0ePfOaUZsn8c+jpbRnLc140U0Q4JBLY9OB+RvKxI/KgS
-# v1LULtg99gKQH8FSwZn8UslQ5xn8cQmQfj6pBuu35Opp9dkmV8wv9hl6y4jSaEgw
-# 9nMK
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBl11X5TCw5a/hRGAvd
+# 1KIIvOMSrthkkbCR3KvLI4VsBz86thgYRyTP0NqK7ir8rsxxcm4y1wUBGbmDpNP2
+# d1RsByLz/ratY+3S3jqRzsyEjwLXlsxGQc2eb5MwD1XWOn9a4xKcsOF9l8VlOZED
+# P5bS5vInClSIOgD5UI7uaFPvaUReN9drTSkOd8kepGRlI8iWrwbowyYEhddrmdKW
+# VCNXrBOaLVMCt5t9FekmTGJS0NSRWecf0Ex8mBJarzKBQg5oC+uhedaCtWerMoRh
+# i/PyNsXhE0yfH2/AdslQR5/nhu3jhwp7ZHmU5W6qX/b1Y8nNFAve2DAphH2ows8c
+# 0La/
 # SIG # End signature block

@@ -38,7 +38,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 		
 		It "Pop-ChangeTrackerWithNullStack-ThrowsException" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 
 			try
 			{
@@ -56,7 +56,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 
 		It "Pop-ChangeTrackerWithEmptyStack-ThrowsException" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 			$stack = @{};
 
 			try
@@ -75,7 +75,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 
 		It "Pop-ChangeTrackerWithEmptyHashtable-ClearsChangeTracker" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 			$stack = @{};
 			$stack.Entities = New-Object System.Collections.ArrayList;
 			$stack.Links = New-Object System.Collections.ArrayList;
@@ -92,7 +92,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 
 		It "Pop-ChangeTrackerReinitialised-HasNoDataContext" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 
 			# Act and Assert
 			Assert-MockCalled Get-ModuleVariable;
@@ -102,7 +102,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 		
 		It "Pop-ChangeTrackerReinitialised-PushAndPopHasNoDataContext" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 			$count = 2;
 			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 
@@ -121,7 +121,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 
 		It "Pop-ChangeTrackerClear-Succeeds" -Test {
 			# Arrange
-			$svc = Enter-Appclusive;
+			$svc = Enter-ApcServer;
 			$count = 2;
 			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
 

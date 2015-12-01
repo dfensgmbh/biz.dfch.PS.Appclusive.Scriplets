@@ -23,7 +23,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "Approval-ApproveChangesOrderStatusToWaitingToRun" -Test {
@@ -68,7 +68,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Requester | Should Be $createdOrder.Requester;
@@ -103,7 +103,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'WaitingToRun';
@@ -179,7 +179,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Requester | Should Be $createdOrder.Requester;
@@ -214,7 +214,7 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'Cancelled';

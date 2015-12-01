@@ -8,7 +8,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 	
 	. "$here\$sut"
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	Context "Set-KeyNameValue" {
 	

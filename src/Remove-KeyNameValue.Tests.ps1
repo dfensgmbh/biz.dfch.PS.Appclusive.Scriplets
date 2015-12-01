@@ -8,7 +8,7 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 	
 	. "$here\$sut"
 	
-	$svc = Enter-AppclusiveServer;
+	$svc = Enter-ApcServer;
 
 	Context "Remove-KeyNameValue" {
 	

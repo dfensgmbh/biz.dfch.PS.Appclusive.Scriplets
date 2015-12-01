@@ -1,202 +1,26 @@
-function Enter-Server {
-<#
-.SYNOPSIS
-Performs a login to an Appclusive server.
+# This file intentionally left blank
 
-
-.DESCRIPTION
-Performs a login to an Appclusive server. 
-
-This is the first Cmdlet to be executed and required for all other Cmdlets of this module. It creates service references to the routers of the application.
-
-
-.OUTPUTS
-This Cmdlet returns a hashtable with references to the DataServiceContexts of the application. On failure it returns $null.
-
-
-.INPUTS
-See PARAMETER section for a description of input parameters.
-
-
-.EXAMPLE
-$svc = Enter-ApcServer;
-$svc
-
-Name            Value
-----            -----
-Diagnostics     biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics
-CoreData        biz.dfch.CS.Appclusive.Api.Core.Core
-
-Perform a login to an Appclusive server with default credentials (current user) and against server defined within module configuration xml file.
-
-
-.LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/
-
-
-.NOTES
-See module manifest for required software versions and dependencies at: 
-http://dfch.biz/biz/dfch/PS/Appclusive/Client/biz.dfch.PS.Appclusive.Client.psd1/
-
-
-#>
-[CmdletBinding(
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Enter-Server/'
-)]
-[OutputType([hashtable])]
-Param 
-(
-	# [Optional] The ServerBaseUri such as 'https://appclusive/'. If you do not 
-	# specify this value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 0)]
-	[Uri] $ServerBaseUri = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).ServerBaseUri
-	, 
-	# [Optional] The BaseUrl such as '/Appclusive/'. If you do not specify this 
-	# value it is taken from the module configuration file.
-	[Parameter(Mandatory = $false, Position = 1)]
-	[string] $BaseUrl = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).BaseUrl
-	, 
-	# Encrypted credentials as [System.Management.Automation.PSCredential] with 
-	# which to perform login. Default is credential as specified in the module 
-	# configuration file.
-	[Parameter(Mandatory = $false, Position = 2)]
-	[alias("cred")]
-	$Credential = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Credential
-)
-
-BEGIN 
-{
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
-}
-# BEGIN 
-
-PROCESS 
-{
-
-[boolean] $fReturn = $false;
-
-try 
-{
-	# Parameter validation
-	# N/A
-	
-	[Uri] $Uri = '{0}{1}' -f $ServerBaseUri.AbsoluteUri.TrimEnd('/'), ('{0}/' -f $BaseUrl.TrimEnd('/'));
-	foreach($k in (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.Keys) 
-	{ 
-		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.$k;
-		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $k, $UriService.AbsoluteUri);
-		switch($k) 
-		{
-		'Diagnostics' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		'Core' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Core.Core($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		default 
-		{
-			Log-Error $fn ("Unknown service '{0}': '{1}'. Skipping ..." -f $k, $UriService.AbsoluteUri);
-		}
-		}
-	}
-
-	$OutputParameter = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services;
-	$fReturn = $true;
-
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-			$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn "Login to Uri '$Uri' with Username '$Username' FAILED [$_].";
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-return $OutputParameter;
-
-}
-# PROCESS
-
-END 
-{
-	$datEnd = [datetime]::Now;
-	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-}
-# END
-
-} # function
-
-Set-Alias -Name Connect- -Value 'Enter-Server';
-Set-Alias -Name Enter- -Value 'Enter-Server';
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias Connect-, Enter-; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUinvqKU2t9nTQwJkPtoItottF
-# 79OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUxYSSGDBuauk589wRQa9mOsDb
+# /UugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +119,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTL763k+hWP+N1b
-# 3/aOWSmdFr8k7zANBgkqhkiG9w0BAQEFAASCAQC3ZDi+1Nl9j7cVZXHw/Kyhdgrx
-# bpuey0y/4S9Qn3V8ltFWaS/btbsaWPlxx+X6FBAZgPYvKma6IFHKeVnswU1hStt2
-# U1Gbp3hQxkLyMrJ1YUuJDlJbei9Z/JaBcTgEEsiD168Hy4bdkNy9J6cDGcooZc0I
-# L3KjhfLc5zmaq3YWyUBwlD6s3cPltqNXCOUTJkXItCgXB8A/tPbtmPYMQnq02RqN
-# keDVlIukgC74Tn1cKlKznSbw3jRhr2rHbKBJXe4Phptph5kuUNJfOt3n8Trac7nP
-# 2CU2TTu0+zFx9sdZAIPNIwxOVrsO665oPunSR9jmos3ZB1w6AdPhK1Hl01d0oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTBhDiDGg1+2tXG
+# W1CaMajnolVNcTANBgkqhkiG9w0BAQEFAASCAQA6IqoJGL0LejPPGy2/JnswJApo
+# KXoFpFPM3cpSDUc24OFMfMRnwnCVWrjSuFVsRXMVKaj0Rs+P83zHxqqla8WGB9Vk
+# bvcCVT0R4ixP84y9xk92oSZLc4alfLEOULqfqTbeK7yKVDpsNO5WoaarXu7pGAEZ
+# OMA1XvWC1srJyTeg/KxVYAEFZULJ9kjwhO3oghLBqDl7bP+C7A5e+ndmOYPJowUk
+# AN0ubOEZb81WVCb0oq/Kav/N2v2szxENN/Y0cix5Xx9qjRwOd750yRDs673W9K8P
+# GMvuOX6TOqLpR3TxYMk2c6Qkd+YkvzjWoppRAniWJtCNcPDzMMZdZ0Mdys6noYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxMlowIwYJKoZIhvcNAQkEMRYEFJrCIvR/2C+slpGqr0SayvbsjhB3
+# MTAyODE0MjA1MVowIwYJKoZIhvcNAQkEMRYEFJWHSVx2J2n0ni0D6yrsSY4/6sWy
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBLaU0mJuNN369mr3bs
-# PTAuEt/c2TNul1VOXMD8ozf/pwlTFGxKGe0SfdIgDzhlb9Iwb4zGX/U2RYLK2KZt
-# K6hOW/OwfN5/mlSPGFuAH9YinCMI95oOEL+Xt/QFcllkj2YHVLAwILidV7n2siI0
-# 4hNfh2W2RYJoYsuer/iwinTlExQJJ7fzfUGRcgxvzETxwlz8yeZV2NCMVFCHGsyu
-# fd6gkGYL5jRsoNEqHiYY0ePfOaUZsn8c+jpbRnLc140U0Q4JBLY9OB+RvKxI/KgS
-# v1LULtg99gKQH8FSwZn8UslQ5xn8cQmQfj6pBuu35Opp9dkmV8wv9hl6y4jSaEgw
-# 9nMK
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCbcKXeI4z6LLz7dV3E
+# zxllTTpeuo+4f4Xm/hyU8eQgwFKVLXpmsvfwnFUxMvPe6XzMEcazaiEu9LT4TVh1
+# 6+tkoU2ZM1bmuCp6RyaprY+2r+QefS39blUWYHc9weJpriSomHvIRrWoQBT1O6SV
+# ujJXdC/G8mxQVsTFg9zAaitjMh9CguOlSyj5Ob0bYZNCqqX9I4ZbzU2PNZIfpjwY
+# Ts8LVXP9Nu5URIWPwxpSs1NBmsvPZUG5Y1Tt+uVBg9+z4ncSKA8ccTLkn99Qfaij
+# Wob5T8zlCvaVtSEjlIMtOeXkDz6bG41bPzcsLwkOkaHXFjooFVuBL8nDisRWYla8
+# qhRm
 # SIG # End signature block

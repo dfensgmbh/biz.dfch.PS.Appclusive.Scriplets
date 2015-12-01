@@ -22,7 +22,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "AddAndDeleteNewNode" -Test {

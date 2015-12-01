@@ -20,7 +20,7 @@ Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "GetEntityTypesCreatedBySeed" -Test {

@@ -33,7 +33,7 @@ Describe -Tags "Base.Tests" "Base.Tests" {
 			# N/A
 			
 			# Act
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 
 			# Assert
 			$svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core] | Should Be $true;
@@ -42,7 +42,7 @@ Describe -Tags "Base.Tests" "Base.Tests" {
 
 		It "TestEndpointsVersion-Succeeds" -Test {
 			# Arrange
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			# Act
 			$diag = $svc.Diagnostics.Endpoints |? Name -eq 'Diagnostics';
