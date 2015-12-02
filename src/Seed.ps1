@@ -692,23 +692,23 @@ function DeleteItems($svc, $items)
 	}
 }
 
-# Aces($Recreate);
-# Acls($Recreate);
-# Approvals($Recreate);
-# AuditTrails($Recreate);
-# Carts($Recreate);
-# Catalogues($Recreate);
-# Products($Recreate);
-# CatalogueItems($Recreate);
-# EntityTypes($Recreate);
-# Gates($Recreate);
+Aces($Recreate);
+Acls($Recreate);
+Approvals($Recreate);
+AuditTrails($Recreate);
+Carts($Recreate);
+Catalogues($Recreate);
+Products($Recreate);
+CatalogueItems($Recreate);
+EntityTypes($Recreate);
+Gates($Recreate);
 Jobs($Recreate);
-#KeyNameValues($Recreate);
-# Assocs($Recreate);
-#ManagementCredentials($Recreate);
-#ManagementUris($Recreate);
-# Nodes($Recreate);
-# Orders($Recreate);
+KeyNameValues($Recreate);
+Assocs($Recreate);
+ManagementCredentials($Recreate);
+ManagementUris($Recreate);
+Nodes($Recreate);
+Orders($Recreate);
 
 #
 # Copyright 2015 d-fens GmbH
