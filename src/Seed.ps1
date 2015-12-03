@@ -293,6 +293,8 @@ function JobsWithRandomData($Recreate)
 	"ars", "swain", "thanks", "fro", "proa", "nutbrown");
 	
 	$jobTemplate = $svc.Core.InvokeEntitySetActionWithSingleResult('Jobs', 'Template', [System.Object], $null);
+	$nodeTemplate = $svc.Core.InvokeEntitySetActionWithSingleResult('Nodes', 'Template', [System.Object], $null);
+
 	$cMin = 1000;
 	$cMax = 1999;
 	for($c = $cMin; $c -le $cMax; $c++)
@@ -303,14 +305,33 @@ function JobsWithRandomData($Recreate)
 		
 		Write-Progress -Activity ('{0} {1}' -f $c, $wordlist[$rnd1]) -PercentComplete (100*($c - $cMin)/($cMax - $cMin));
 
+		$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+		$node.Tid = $nodeTemplate.Tid;
+		$node.Name = $wordlist[$rnd1];
+		$node.Type = 'biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos';
+		$node.Description = '{0} is a {1} for {2} purposes' -f $wordlist[$rnd1], $wordlist[$rnd2], $wordlist[$rnd3];
+		$node.CreatedBy = 'SYSTEM';
+		$node.ModifiedBy = 'SYSTEM';
+		$node.Parameters = '{}';
+
+		$svc.Core.AddToNodes($node);
+		$svc.Core.UpdateObject($node);
+		$result = $svc.Core.SaveChanges();
+		if($result.StatusCode -ne 201)
+		{
+			Write-Warning ('{0}: {1}`r`n{2}' -f $c, $node.Description, ($result | Out-String));
+			continue;
+		}
+		
 		$job = New-Object biz.dfch.CS.Appclusive.Api.Core.Job;
 
 		$job.Tid = $jobTemplate.Tid;
-		$job.Name = 'System.Object';
+		$job.Name = 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node';
 		$job.Description = '{0} is a {1} for {2} purposes' -f $wordlist[$rnd1], $wordlist[$rnd2], $wordlist[$rnd3];
 		$job.Status = $jobTemplate.Status;
 		$job.CreatedBy = 'SYSTEM';
 		$job.ModifiedBy = 'SYSTEM';
+		$job.ReferencedItemId = $node.Id;
 		
 		$svc.Core.AddToJobs($job);
 		$svc.Core.UpdateObject($job);
@@ -318,6 +339,7 @@ function JobsWithRandomData($Recreate)
 		if($result.StatusCode -ne 201)
 		{
 			Write-Warning ('{0}: {1}`r`n{2}' -f $c, $job.Description, ($result | Out-String));
+			continue;
 		}
 	}
 }
