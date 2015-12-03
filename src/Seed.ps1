@@ -412,7 +412,7 @@ function KeyNameValues($Recreate)
 	
 	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'FacilityReceive' -Value 'NOTIFY-WFE\Subscriptions\RECV';
 	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'FacilitySend' -Value 'NOTIFY-ORCH';
-	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'ApplicationName' -Value 'Worker#1';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'ApplicationName' -Value 'Worker-{0}-{1}';
 	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'FacilitySetting' -Value 'biz.dfch.PS.Azure.ServiceBus.Client.Setting';
 	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'WorkflowSetting' -Value 'biz.dfch.PS.Activiti.Client.Setting';
 	
