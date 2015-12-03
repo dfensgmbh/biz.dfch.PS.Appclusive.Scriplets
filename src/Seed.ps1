@@ -410,6 +410,12 @@ function KeyNameValues($Recreate)
 	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyWfeFacility' -Value 'NOTIFY-WFE';
 	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.CS.Appclusive.Core.Messaging.Bus.AmqpMessagingClient' -Name 'NotifyAllFacility' -Value 'NOTIFY-ALL';
 	
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'FacilityReceive' -Value 'NOTIFY-WFE\Subscriptions\RECV';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'FacilitySend' -Value 'NOTIFY-ORCH';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'ApplicationName' -Value 'Worker#1';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'FacilitySetting' -Value 'biz.dfch.PS.Azure.ServiceBus.Client.Setting';
+	New-ApcKeyNameValue -svc $svc -Key 'biz.dfch.PS.Appclusive.Core.Worker.Default' -Name 'WorkflowSetting' -Value 'biz.dfch.PS.Activiti.Client.Setting';
+	
 	Get-ApcKeyNameValue -svc $svc -ListAvailable;
 }
 
@@ -476,6 +482,38 @@ function ManagementCredentials($Recreate)
 	$mc.Id = 0;
 	$svc.Core.UpdateObject($mc);
 	$svc.Core.SaveChanges();
+	
+	$mc = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
+	$svc.Core.AddToManagementCredentials($mc);
+	$mc.Name = 'biz.dfch.PS.Azure.ServiceBus.Client.Setting';
+	$mc.Description = 'Credential for Amqp client';
+	$mc.Username = 'RootManageSharedAccessKey';
+	$mc.Password = 'ngolZ2sQlq2ifQqUQyaOQ4msZ53uSOEhBhxzLp85KfI=';
+	$mc.EncryptedPassword = $mc.Password;
+	$mc.Created = [System.DateTimeOffset]::Now;
+	$mc.Modified = $mc.Created;
+	$mc.CreatedBy = "SYSTEM";
+	$mc.ModifiedBy = $mc.CreatedBy;
+	$mc.Tid = "1";
+	$mc.Id = 0;
+	$svc.Core.UpdateObject($mc);
+	$svc.Core.SaveChanges();
+	
+	$mc = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
+	$svc.Core.AddToManagementCredentials($mc);
+	$mc.Name = 'biz.dfch.PS.Activiti.Client.Setting';
+	$mc.Description = 'Credential for Activiti client';
+	$mc.Username = 'kermit';
+	$mc.Password = 'kermit';
+	$mc.EncryptedPassword = $mc.Password;
+	$mc.Created = [System.DateTimeOffset]::Now;
+	$mc.Modified = $mc.Created;
+	$mc.CreatedBy = "SYSTEM";
+	$mc.ModifiedBy = $mc.CreatedBy;
+	$mc.Tid = "1";
+	$mc.Id = 0;
+	$svc.Core.UpdateObject($mc);
+	$svc.Core.SaveChanges();
 }
 
 function ManagementUris($Recreate)
@@ -524,6 +562,42 @@ function ManagementUris($Recreate)
 	$mgmtUri.Id = 0;
 	$mgmtUri.Type = 'json';
 	$mgmtUri.Value = '{"ConnectionString":"Endpoint=sb://win-8a036g6jvpj/ServiceBusDefaultNamespace;SharedAccessKeyName={0};SharedAccessKey={1}=;TransportType=Amqp"}';
+	$mgmtUri.ManagementCredentialId = $mc.Id;
+	$svc.Core.UpdateObject($mgmtUri);
+	$svc.Core.SaveChanges();
+	
+	$mc = $svc.Core.ManagementCredentials |? Name -eq 'biz.dfch.PS.Azure.ServiceBus.Client.Setting';
+	
+	$mgmtUri = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementUri;
+	$svc.Core.AddToManagementUris($mgmtUri);
+	$mgmtUri.Name = 'biz.dfch.PS.Azure.ServiceBus.Client.Setting';
+	$mgmtUri.Description = 'Settings for Amqp messaging client';
+	$mgmtUri.Created = [System.DateTimeOffset]::Now;
+	$mgmtUri.Modified = $mgmtUri.Created;
+	$mgmtUri.CreatedBy = "SYSTEM";
+	$mgmtUri.ModifiedBy = $mgmtUri.CreatedBy;
+	$mgmtUri.Tid = "1";
+	$mgmtUri.Id = 0;
+	$mgmtUri.Type = 'json';
+	$mgmtUri.Value = '{"RuntimePort":"5671","ManagementPort":"9355","EndpointServerName":"amqp.example.com","NameSpace":"Appclusive","TransportType":"Amqp"}';
+	$mgmtUri.ManagementCredentialId = $mc.Id;
+	$svc.Core.UpdateObject($mgmtUri);
+	$svc.Core.SaveChanges();
+
+	$mc = $svc.Core.ManagementCredentials |? Name -eq 'biz.dfch.PS.Activiti.Client.Setting';
+	
+	$mgmtUri = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementUri;
+	$svc.Core.AddToManagementUris($mgmtUri);
+	$mgmtUri.Name = 'biz.dfch.PS.Activiti.Client.Setting';
+	$mgmtUri.Description = 'Settings for Activiti client';
+	$mgmtUri.Created = [System.DateTimeOffset]::Now;
+	$mgmtUri.Modified = $mgmtUri.Created;
+	$mgmtUri.CreatedBy = "SYSTEM";
+	$mgmtUri.ModifiedBy = $mgmtUri.CreatedBy;
+	$mgmtUri.Tid = "1";
+	$mgmtUri.Id = 0;
+	$mgmtUri.Type = 'json';
+	$mgmtUri.Value = '{"ServerUri":"http://activiti.example.com:8080/activiti-rest/service/"}';
 	$mgmtUri.ManagementCredentialId = $mc.Id;
 	$svc.Core.UpdateObject($mgmtUri);
 	$svc.Core.SaveChanges();
