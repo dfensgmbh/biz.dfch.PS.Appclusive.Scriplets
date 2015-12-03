@@ -257,6 +257,21 @@ function EntityTypes($Recreate)
 	$et.Id = 0;
 	$svc.Core.UpdateObject($et);
 	$svc.Core.SaveChanges();
+	
+	$et = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType
+	$svc.Core.AddToEntityTypes($et);
+	$et.Name = 'biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos';
+	$et.Description = 'Mos product definition';
+	$et.Parameters = '{"InitialState-Create":"Created","Created-Run":"Running","Created-Delete":"Deleted","Running-Stop":"Stopped","Stopped-Decommission":"Decomissioned"}';
+	$et.Version = '1';
+	$et.Created = [System.DateTimeOffset]::Now;
+	$et.Modified = $et.Created;
+	$et.CreatedBy = "SYSTEM";
+	$et.ModifiedBy = $et.CreatedBy;
+	$et.Tid = "1";
+	$et.Id = 0;
+	$svc.Core.UpdateObject($et);
+	$svc.Core.SaveChanges();
 }
 
 function Gates($Recreate)
