@@ -12,7 +12,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
-	Context "SetCreatedBy.Tests" {
+	Context "#CLOUDTCL-1900-CMS Appclusive Client - Special Operation SetCreatedBy" {
 	
 		$actionName = 'SetCreatedBy';
 		
@@ -96,7 +96,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		}
 	}
 	
-	Context "ClearAuditLog.Tests" {
+	Context "#CLOUDTCL-1901-CMS Appclusive Client - Special Operation Clear Audit Log" {
 		
 		$actionName = 'ClearAuditLog';
 		
@@ -126,7 +126,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		}
 	}
 	
-	Context "RaiseUpdateConfigurationEvent.Tests" {
+	Context "#CLOUDTCL-1902-CMS Appclusive Client - Special Operation RaiseUpdateConfigurationEvent" {
 		
 		$actionName = 'RaiseUpdateConfigurationEvent';
 		
@@ -153,7 +153,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		}
 	}
 	
-	Context "SetTenant.Tests" {
+	Context "#CLOUDTCL-1903-CMS Appclusive Client - Special Operation SetTenant" {
 		
 		$actionName = 'SetTenant';
 		

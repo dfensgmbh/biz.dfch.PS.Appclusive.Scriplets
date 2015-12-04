@@ -29,7 +29,8 @@ Describe -Tags "NameTest.Tests" "NameTest.Tests" {
 			
 			
 			# Assert	
-				
+			"There " | Should Be "an error... Not yet implemented!";
+			# TODO: Change description in Jira.
 		}
 	}
 }
