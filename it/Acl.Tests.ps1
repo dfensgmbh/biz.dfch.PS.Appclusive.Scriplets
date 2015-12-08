@@ -129,7 +129,7 @@ Describe -Tags "Acl.Tests" "Acl.Tests" {
 			} 
 			finally {
 				# Relogin and bind objects
-				$svc = Enter-AppclusiveServer;
+				$svc = Enter-ApcServer;
 				$svc.Core.AttachTo('Acls', $acl);
 				$svc.Core.AttachTo('Aces', $ace);
 
