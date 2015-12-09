@@ -610,7 +610,7 @@ function Nodes($Recreate)
 	# Delete children nodes from botton to top
 	$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
 	$nodes = $svc.Core.Nodes |? { ($_.ParentId -ne $null) -And ($_.Children.count -eq 0) };
-	while ($nodes.count > 0) {
+	while ($nodes.count -gt 0) {
 		DeleteItems -svc $svc -items $nodes;
 		$svc = Enter-ApcServer;
 		$svc.Core.Nodes.AddQueryOption('$expand', 'Children');
