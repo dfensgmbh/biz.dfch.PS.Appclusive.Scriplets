@@ -12,13 +12,13 @@ Describe -Tags "NameTest.Tests" "NameTest.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
-	Context "NameContext.Tests" {
+	Context "#CLOUDTCL-1881-AssocTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "TestName" -Test {
@@ -29,8 +29,8 @@ Describe -Tags "NameTest.Tests" "NameTest.Tests" {
 			
 			
 			# Assert	
-			
-			
+			"There " | Should Be "an error... Not yet implemented!";
+			# TODO: Change description in Jira.
 		}
 	}
 }

@@ -16,13 +16,13 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 	. "$here\Catalogue.ps1"
 	. "$here\Cart.ps1"
 	
-	Context "Order.Tests" {
+	Context "#CLOUDTCL-1886-OrderTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "PlaceOrderWithoutCart-Fails" -Test {
@@ -79,7 +79,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
 			$createdOrder.Requester | Should Be $createdOrder.Requester;
@@ -160,7 +160,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
 			$createdOrder.Requester | Should Be $requester;
@@ -240,7 +240,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Requester | Should Be $createdOrder.Requester;
@@ -275,7 +275,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'WaitingToRun';
@@ -307,7 +307,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'Running';
@@ -382,7 +382,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Requester | Should Be $createdOrder.Requester;
@@ -417,7 +417,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'WaitingToRun';
@@ -451,7 +451,7 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			Start-Sleep -s 5;
 			
 			# Check result
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'Cancelled';

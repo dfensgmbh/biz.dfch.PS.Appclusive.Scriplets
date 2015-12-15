@@ -1,4 +1,20 @@
-# This file intentionally left blank
+
+function CreateEntityType($entityTypeName, $entityTypeDescription) 
+{
+	$entityType = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType;
+	$entityType.Version = "1";
+	$entityType.Parameters = '{}';
+	$entityType.Tid = '11111111-1111-1111-1111-111111111111';
+	$entityType.Name = $entityTypeName;
+	$entityType.Description = $entityTypeDescription;
+	$entityType.CreatedBy = $ENV:USERNAME;
+	$entityType.ModifiedBy = $entityType.CreatedBy;
+	$entityType.Created = [DateTimeOffset]::Now;
+	$entityType.Modified = $entityType.Created;
+	$entityType.Id = 0;
+	return $entityType;
+}
+
 
 #
 # Copyright 2015 d-fens GmbH

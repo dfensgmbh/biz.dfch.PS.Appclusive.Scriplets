@@ -2,80 +2,98 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
+Describe -Tags "Test-Status" "Test-Status" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-ModuleVariable.ps1"
 	
-	$svc = Enter-ApcServer;
-
-	Context "Get-ManagementCredential" {
+	Context "Test-Status" {
 	
 		# Context wide constants
-		# N/A
-
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
+		$biz_dfch_PS_Appclusive_Client = @{ };
+		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
+		
+		
+		BeforeEach {
+			$error.Clear();
+			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
 		}
-
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
+		
+		AfterEach {
+			if(0 -ne $error.Count)
+			{
+				Write-Warning ($error | Out-String);
+			}
 		}
-
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
 		}
-
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
+		
+		It "Test-StatusAnonymousSucceeds" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
+			$svc = Enter-ApcServer;
+
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
+			$result = Test-Status -svc $svc;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
 			# Assert
 			$result | Should Be $null;
+		}
+		
+		It "Test-StatusAuthenticatedSucceeds" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+
+			# Act
+			$result = Test-Status -Authenticate -svc $svc;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+
+		It "Test-StatusEchoSucceeds" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+			$InputObject = 'tralala';
+
+			# Act
+			$result = Test-Status $InputObject -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $InputObject
+		}
+
+		It "Test-StatusEchoWithEmptyInputFails" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+			$InputObject = '';
+
+			# Act
+			$result = Test-Status $InputObject -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $InputObject
+		}
+
+		It "Test-StatusEchoWithTooLongInputFails" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
+			$Echo = '1234567890123456789012345678901234567890';
+
+			# Act
+			$result = Test-Status $InputObject -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $InputObject
 		}
 	}
 }
@@ -99,8 +117,8 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiO5BdHgkCzGzYLkpDVjhb/9G
-# sP6gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVrpjdbOtVsliBCW2g/HNVcVV
+# 3EGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +217,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRStu6bpfAf3LIq
-# Xgp8HM0qC33dPDANBgkqhkiG9w0BAQEFAASCAQCJuDTK1rJaUzARid2qrXnO7uBY
-# 5XT26ixRS1YjSjIsgj5mO73Pk0erGz+QWQmJZdfS3FGjTfOm/f0dS9TfAOU+YRn1
-# H8IhOtW5PLUfMDhCmoeWkuZzP9+Ia04oJeFSQjiyOuXIKqXKW6OLY2IOZ227bxCs
-# /28VigKZpoBaOyEMkSN8I2G5eqICRKWVaS4kAh1Jpv+U9IpVkc1fy2lgMGsYGX8d
-# OadkCgE1Ej8FaMBW7ocU1jTjsd65/NVo6hTsqXDYVjlt6xF7JKM8upBYd5V/GwFK
-# 5NLAtWMlOtwaOH3uFSpC9wNCVuvZEQfkb7hEgpqXUhxUtD7ApC37M7XFG0wpoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSsH+llutN3tMT+
+# LFBndVCrTiDSgDANBgkqhkiG9w0BAQEFAASCAQA6f8RjmTwZrWq0rJmN3EoOWU8s
+# Fnxcpaxq4v2I0/R7zqbx4HLTDHne9WzwEGTMA8nN0Zkd+d9sFHoo7xUeYu5lu2aJ
+# G6cI+uPzfaeID9MZQucNK7YM7kmc+SToa+1PST+T66Cw5Cr2ALDQeB69pMmYM6aK
+# HHogylqqygGws6Ui4hLd3Gkbyhyp2bkvIquBAuXrtKfa4wuH63KqC3Bd0hQVl6UX
+# o07JVwTMyYp0KvitUu5v7L3EYEFAWd7fzgYy6f0IEDls1c2a1/lDlb86Z8UIEeWY
+# YlL5h8k1kJE72qJkz08s9Il7tjuF3R3+auHGhQo1AoPING0kyRPOFyAMLldWoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIxNVowIwYJKoZIhvcNAQkEMRYEFKodneWx3pmsXEArXUtI57ETq1S7
+# MTIxNTA2NTIyNlowIwYJKoZIhvcNAQkEMRYEFH77ywCs2e2DdbuqHQTg9hvwktIV
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBqjD9W0lm6WD79nUdz
-# Uj7LpsnKxjjVZ8lh77b4rnICI1/YO+g6/Bq11RrvtpwQipm56roa0QD53Jf2UvE/
-# X9POT7fwlod4Q5c8avJVrxVqE+illvdodWb0W+oPVDopvhipBA0NdbUHRzaSnbM0
-# F5hc2JfXWFDBarVG3Sw4Tad0wc3gQd60ofHIB8938FjrN/elAeNfdKkAm1Ricu4e
-# sSB/jrvE9xm9G0+MLxEBiAM15esIpvx6ioiZpVXxKID/EiN6Ffrkl1iB8bW1WxUw
-# OKrXBoPufRWY5ivcQ2SGM1qY81oQl7ccMzk0BTxlyMgVaIg2c/6o1pPRx3Xg2enT
-# M1ns
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBa6bd20ocSEgmSFp5o
+# X5M7Bv5hpLEOwaxyOJJfzJsD8+UnWtvracbNS+HPVwqZadr4IRMoDG9YRXHW1J+S
+# 0HmSuUf1O+bxVOKMHYRJjsVs4tsbKdWII9WcwhHsKh+t9K/WtfIqJCjy63SBRqNl
+# Wwj2nPAcUmLLhVWudM65zt7awwgtKHJ72aGdaEelgvJ9+F+3UYRQpgh5Wvkrj8pw
+# HTqIfaAAhn+Bev4FnsXCTVO05TUUNKpGmJNb6Omh0WQDhpGUsNeam32E9WBIL1Vh
+# evQ5YJOmzPS73/EWWAvvvq6sCA6fEZbSLcSAJiriWEfI2lDIDUqKVf9R57ekpwnl
+# t+RP
 # SIG # End signature block

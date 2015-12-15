@@ -1,106 +1,191 @@
+function Test-Status {
+[CmdletBinding(
+    SupportsShouldProcess = $false
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/'
+	,
+	DefaultParameterSetName = 'ping'
+)]
+PARAM 
+(
+	#
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'echo')]
+	[ValidateLength(1, 32)]
+	[string] $InputObject
+	,
+	# Specifies if the connection to the server will be authenticated with current credentials
+	[Parameter(Mandatory = $false, ParameterSetName = 'ping')]
+	[switch] $Authenticate = $false
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias("Services")]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias("ReturnFormat")]
+	[string] $As = 'default'
+)
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
-
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
-
-	Mock Export-ModuleMember { return $null; }
+BEGIN 
+{
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	. "$here\$sut"
+	$EntitySetName = 'Endpoints';
 	
-	$svc = Enter-ApcServer;
-
-	Context "Get-ManagementCredential" {
-	
-		# Context wide constants
-		# N/A
-
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Be $null;
-		}
+	# Parameter validation
+	if($svc.Diagnostics -isnot [biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics]) 
+	{
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Diagnostics;
+		$PSCmdlet.ThrowTerminatingError($e);
 	}
 }
+# BEGIN
 
-#
-# Copyright 2015 d-fens GmbH
-#
+PROCESS 
+{
+
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+
+try 
+{
+	# Parameter validation
+	# N/A
+	
+	try
+	{
+		if($PSCmdlet.ParameterSetName -eq 'ping')
+		{
+			if($Authenticate)
+			{
+				$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'AuthenticatedPing', $null);
+			}
+			else
+			{
+				$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'Ping', $null);
+			}
+			$Response = $null;
+		}
+		else
+		{
+			$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
+		}
+		
+	}
+	catch
+	{
+		$msg = "{0}: Status check FAILED." -f $fn;
+		$e = New-CustomErrorRecord -m $msg -cat InvalidOperation -o $svc.Diagnostics;
+		$PSCmdlet.ThrowTerminatingError($e);
+	}
+
+	$r = $Response;
+	switch($As) 
+	{
+		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
+		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
+		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
+		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
+		Default { $OutputParameter = $r; }
+	}
+	$fReturn = $true;
+
+}
+catch 
+{
+	if($gotoSuccess -eq $_.Exception.Message) 
+	{
+		$fReturn = $true;
+	} 
+	else 
+	{
+		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
+		$ErrorText += (($_ | fl * -Force) | Out-String);
+		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
+		$ErrorText += (Get-PSCallStack | Out-String);
+		
+		if($_.Exception -is [System.Net.WebException]) 
+		{
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Debug $fn $ErrorText -fac 3;
+		}
+		else 
+		{
+			Log-Error $fn $ErrorText -fac 3;
+			if($gotoError -eq $_.Exception.Message) 
+			{
+				Log-Error $fn $e.Exception.Message;
+				$PSCmdlet.ThrowTerminatingError($e);
+			} 
+			elseif($gotoFailure -ne $_.Exception.Message) 
+			{ 
+				Write-Verbose ("$fn`n$ErrorText"); 
+			} 
+			else 
+			{
+				# N/A
+			}
+		}
+		$fReturn = $false;
+		$OutputParameter = $null;
+	}
+}
+finally 
+{
+	# Clean up
+	# N/A
+}
+
+}
+# PROCESS
+
+END 
+{
+
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
+
+}
+# END
+
+} # function
+
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiO5BdHgkCzGzYLkpDVjhb/9G
-# sP6gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqnbiLQrB0ZpT5pLoNgR0toKK
+# Q4OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +284,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRStu6bpfAf3LIq
-# Xgp8HM0qC33dPDANBgkqhkiG9w0BAQEFAASCAQCJuDTK1rJaUzARid2qrXnO7uBY
-# 5XT26ixRS1YjSjIsgj5mO73Pk0erGz+QWQmJZdfS3FGjTfOm/f0dS9TfAOU+YRn1
-# H8IhOtW5PLUfMDhCmoeWkuZzP9+Ia04oJeFSQjiyOuXIKqXKW6OLY2IOZ227bxCs
-# /28VigKZpoBaOyEMkSN8I2G5eqICRKWVaS4kAh1Jpv+U9IpVkc1fy2lgMGsYGX8d
-# OadkCgE1Ej8FaMBW7ocU1jTjsd65/NVo6hTsqXDYVjlt6xF7JKM8upBYd5V/GwFK
-# 5NLAtWMlOtwaOH3uFSpC9wNCVuvZEQfkb7hEgpqXUhxUtD7ApC37M7XFG0wpoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSyUnhxtoopjHYI
+# piveOSad9KcSnjANBgkqhkiG9w0BAQEFAASCAQAnymUpoHqCzDVSw8IM4JkH3qdO
+# 3aym6xvUa172smmYD1Nn1DtGsh/0VvsltblGQwwyHJb7ufwXblt2PdfNrqCnTweF
+# c8QVnovIALZVQ700kYy8PS8lLpIqzybQO3dL+yHvVg05YaHRN0T4jZnv5GfvxefX
+# QS8njRL6gLdZGObCCuEnlcyRVuByOOKR1+AyCBwYghjHaX0XmuyKlKR+6mrSzPCw
+# EJlzW54GjkvqTi+nk5SYz3turt2lB6JMfsj9kb8PqaNbV08SKKx435DiCNwZOd2/
+# EbIsTNlKsArB0OAbPwF1xJciLMaz3VouagMaq5VFgfumPTeB9hnuzyphWaxsoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIxNVowIwYJKoZIhvcNAQkEMRYEFKodneWx3pmsXEArXUtI57ETq1S7
+# MTIxNTA2NTIyNVowIwYJKoZIhvcNAQkEMRYEFOaVJ5EtFTVi4DRl6unARtPnxZ8f
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBqjD9W0lm6WD79nUdz
-# Uj7LpsnKxjjVZ8lh77b4rnICI1/YO+g6/Bq11RrvtpwQipm56roa0QD53Jf2UvE/
-# X9POT7fwlod4Q5c8avJVrxVqE+illvdodWb0W+oPVDopvhipBA0NdbUHRzaSnbM0
-# F5hc2JfXWFDBarVG3Sw4Tad0wc3gQd60ofHIB8938FjrN/elAeNfdKkAm1Ricu4e
-# sSB/jrvE9xm9G0+MLxEBiAM15esIpvx6ioiZpVXxKID/EiN6Ffrkl1iB8bW1WxUw
-# OKrXBoPufRWY5ivcQ2SGM1qY81oQl7ccMzk0BTxlyMgVaIg2c/6o1pPRx3Xg2enT
-# M1ns
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCwF1sPP1hrxBu3ekWI
+# WNrllK/TXdP9Q25gDae9+q0cFbc+jvpadRST41lOmBNZK+I0aQ8DRo8yQ2msidkH
+# kq50YckXha8Vs1RKiMibQGY5kBP28/nEOSavsqj7414i790ynVKAJn8EGQvrOBAK
+# vpso0yEZjcKU/A34Qjuc3454HVIM/8LwXIR28FM8/VuD+uZk4NRTiN1SmgUllaOF
+# iMW8Z/eUCO1tpW2hzKV1CbepqC5rarsV0jSrEXKq+Lu26H263YQ1oGhxJf8vkCXP
+# yUczvzSgLr5rEg7KBQxKBOYAtClHRyTGWP0Rw2wAx8AIi9j2n4pZMezwKJ1vRFDa
+# llNj
 # SIG # End signature block

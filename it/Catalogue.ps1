@@ -28,8 +28,23 @@ function CreateCatalogueItem($catalogue, $product)
 	$catItem.EndOfSale = [DateTimeOffset]::Now;
 	$catItem.EndOfLife = [DateTimeOffset]::Now;
 	$catItem.Parameters = '{}';
-	
 	return $catItem;
+}
+
+function CreateCatalogue($catName)
+{
+	$cat = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
+	$cat.Status = "Published";
+	$cat.Version = 1;
+	$cat.Name = $catName;
+	$cat.Description = "Default catalogue for the test run";
+	$cat.Created = [System.DateTimeOffset]::Now;
+	$cat.Modified = $cat.Created;
+	$cat.CreatedBy = $ENV:USERNAME;;
+	$cat.ModifiedBy = $ENV:USERNAME;;
+	$cat.Tid = "1";
+	$cat.Id = 0;
+	return $cat;
 }
 
 #

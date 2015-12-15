@@ -2,80 +2,68 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
+Describe -Tags "Get-Time" "Get-Time" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-ModuleVariable.ps1"
 	
-	$svc = Enter-ApcServer;
-
-	Context "Get-ManagementCredential" {
+	Context "Get-Time" {
 	
 		# Context wide constants
-		# N/A
-
-		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
+		$biz_dfch_PS_Appclusive_Client = @{ };
+		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
+		
+		
+		BeforeEach {
+			$error.Clear();
+			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable;
+			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
+		}
+		
+		AfterEach {
+			if(0 -ne $error.Count)
+			{
+				Write-Warning ($error | Out-String);
+			}
+		}
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+		
+		It "Get-TimeSucceeds" -Test {
+			# Arrange
+			$svc = Enter-ApcServer;
 
+			# Act
+			$result = Get-Time -svc $svc;
+			
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+			$serverDateTimeOffset = [System.DateTimeOffset]::Parse($result);
+			$serverDateTimeOffset | Should Not Be $null;
 		}
 
-		It "Get-ManagementCredentialListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+		It "Get-TimeMatchesLocalTimeSucceeds" -Test {
 			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -ListAvailable -Select Name;
+			$svc = Enter-ApcServer;
+			$localDateTimeOffset = [System.DateTimeOffset]::Now;
 
+			# Act
+			$result = Get-Time -svc $svc;
+			
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
+			$serverDateTimeOffset = [System.DateTimeOffset]::Parse($result);
+			$serverDateTimeOffset | Should Not Be $null;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
-			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
+			$serverDateTimeOffset -le $localDateTimeOffset.AddSeconds(60) | Should Be $true;
+			$serverDateTimeOffset -ge $localDateTimeOffset.AddSeconds(-60) | Should Be $true;
 			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
-		}
-
-		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
-
-			# Assert
-			$result | Should Be $null;
 		}
 	}
 }
@@ -99,8 +87,8 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiO5BdHgkCzGzYLkpDVjhb/9G
-# sP6gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUUG9vg9J9f3fZXF19nkBhvwBi
+# QLSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -199,26 +187,26 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRStu6bpfAf3LIq
-# Xgp8HM0qC33dPDANBgkqhkiG9w0BAQEFAASCAQCJuDTK1rJaUzARid2qrXnO7uBY
-# 5XT26ixRS1YjSjIsgj5mO73Pk0erGz+QWQmJZdfS3FGjTfOm/f0dS9TfAOU+YRn1
-# H8IhOtW5PLUfMDhCmoeWkuZzP9+Ia04oJeFSQjiyOuXIKqXKW6OLY2IOZ227bxCs
-# /28VigKZpoBaOyEMkSN8I2G5eqICRKWVaS4kAh1Jpv+U9IpVkc1fy2lgMGsYGX8d
-# OadkCgE1Ej8FaMBW7ocU1jTjsd65/NVo6hTsqXDYVjlt6xF7JKM8upBYd5V/GwFK
-# 5NLAtWMlOtwaOH3uFSpC9wNCVuvZEQfkb7hEgpqXUhxUtD7ApC37M7XFG0wpoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRhMa2bh5B9fB2l
+# Di79v/j3DhmAhTANBgkqhkiG9w0BAQEFAASCAQAOGHboFho7fmZPpa5YkRoi3aEf
+# 3dgHvQJVNqTYc9T4+sSPd8kinCK7pLLesXSQhTd35QBgqPML9CAGPPBXPtVFGta7
+# g7BEoyxC6GpEXSTj09DOqSH7cDlNvERVfAt2zJerf07/YRzTk7nK5KhTM7bnDzuW
+# m3lOC/e0Ivj+5UMu+Jdxgh/P2FUL6cokpj7ZQnfu+58xCiaEuC0tHnQgzMdKKEtV
+# i69+c7AUPduDt5lf3XrkGJ8itK3rLJTb9WplmT1/htt7UWPY2nO95Wulygp2+qe0
+# XqUca88E2KjyDUc9nnoZ+wpDRCKfiQuBSZtJB00WUwsk+JDP2HE7tvSQP+N0oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIxNVowIwYJKoZIhvcNAQkEMRYEFKodneWx3pmsXEArXUtI57ETq1S7
+# MTIxNTA2NTIxN1owIwYJKoZIhvcNAQkEMRYEFDNOGx6KUtaBdWRbNAlH5W6Zj8vP
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBqjD9W0lm6WD79nUdz
-# Uj7LpsnKxjjVZ8lh77b4rnICI1/YO+g6/Bq11RrvtpwQipm56roa0QD53Jf2UvE/
-# X9POT7fwlod4Q5c8avJVrxVqE+illvdodWb0W+oPVDopvhipBA0NdbUHRzaSnbM0
-# F5hc2JfXWFDBarVG3Sw4Tad0wc3gQd60ofHIB8938FjrN/elAeNfdKkAm1Ricu4e
-# sSB/jrvE9xm9G0+MLxEBiAM15esIpvx6ioiZpVXxKID/EiN6Ffrkl1iB8bW1WxUw
-# OKrXBoPufRWY5ivcQ2SGM1qY81oQl7ccMzk0BTxlyMgVaIg2c/6o1pPRx3Xg2enT
-# M1ns
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQANa9IAApdVuOeTY+1n
+# 4rx3ZND/fWrNj1UWWCVWtnB2er9Iw2Ed1LaVnMiH6yP+B9jyKIpDKsxiuk8fwGP3
+# lalwu7kDzTJ9XxCK+McBfCjqFAiZW9aZYPoOhtyBR0paXDspyKzgpHQsniLi2LjX
+# UjylwNGYnQatvoKt1bUH3q2R42tZZQ6D4Sojx/fL83RdYShbNcTL02bGvhr/T1iR
+# oqkPhy6AQFsTcSACVya2isIQWPtYw2KMyCB9HD7+WB2ZxrWG03BCbqnRtRVvftfW
+# 7aZIOBL9tfxZYVe/ztuBhq0wk6n2nP4jkERMaqJRvYbUMvWxvFbHrUMc8u4spDQW
+# 3R5S
 # SIG # End signature block
