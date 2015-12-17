@@ -272,16 +272,30 @@ try
 		if($PSCmdlet.ParameterSetName -eq 'id')
 		{
 			$Exp += ("Id eq {0}" -f $Id);
-		}
+		} # if
 		if($Name) 
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
-		}
-		if($CreatedBy) { 
-			$Exp += ("(substringof('{0}', tolower(CreatedBy)) eq true)" -f $CreatedBy.ToLower());
 		} # if
-		if($ModifiedBy) { 
-			$Exp += ("(substringof('{0}', tolower(ModifiedBy)) eq true)" -f $ModifiedBy.ToLower());
+		if($CreatedBy) 
+		{ 
+			$CreatedById = Get-User $CreatedBy -Select Id -ValueOnly;
+			if ( !$CreatedById )
+			{
+				# User not found
+				throw($gotoSuccess);
+			}
+			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
+		} # if
+		if($ModifiedBy)
+		{ 
+			$ModifiedById = Get-User $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById ) 
+			{
+				# User not found
+				throw($gotoSuccess);
+			}			
+			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
 		} # if
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
