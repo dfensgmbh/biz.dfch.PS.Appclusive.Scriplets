@@ -164,6 +164,7 @@ PARAM
 	# This parameter takes precendes over the 'Select' parameter.
 	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias("HideTableHeaders")]
 	[switch] $ValueOnly
 	,
@@ -175,6 +176,7 @@ PARAM
 	# Specifies to deserialize JSON payloads
 	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias("Convert")]
 	[switch] $ConvertFromJson
 	,
