@@ -24,32 +24,24 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Name, Id
+Get-Job -ListAvailable -Select Id, Status, Name
 
-	 Id Name
-	 -- ----
-	  2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	  9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   1027 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-...
+	  Id Status                                  Name
+	  -- ------                                  ----
+	1029 Approved                                biz.dfch.CS.Appclusive.Core.OdataSer...
+	1031 Approved                                biz.dfch.CS.Appclusive.Core.OdataSer...
+	1033 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
+	1035 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
+	1037 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
+	1039 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
+	   2 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
+	   3 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
+	   4 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
+	   5 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
+	   6 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
+	...
 
-Retrieves the name of all Jobs.
+Retrieves the id, status and name of all Jobs.
 
 
 .EXAMPLE
@@ -70,7 +62,7 @@ Get-Job -ListAvailable -Select Id -First 3
 	 3
 	 4
 
-Retrieves the name of the first 3 Jobs.
+Retrieves the id of the first 3 Jobs.
 
 
 .EXAMPLE
@@ -107,8 +99,8 @@ Get-Job -ModifiedBy SYSTEM -Select Id, Name
 	19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 	20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 
-Retrieves Id and Name of all Jobs that have been modified by user 
-with name 'Administrator' (case insensitive substring match).
+Retrieves id and name of all Jobs that have been modified by user 
+with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
