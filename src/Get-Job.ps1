@@ -26,73 +26,76 @@ In addition output can be filtered on specified properties.
 .EXAMPLE
 Get-Job -ListAvailable -Select Id, Status, Name
 
-	  Id Status                                  Name
-	  -- ------                                  ----
-	1029 Approved                                biz.dfch.CS.Appclusive.Core.OdataSer...
-	1031 Approved                                biz.dfch.CS.Appclusive.Core.OdataSer...
-	1033 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
-	1035 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
-	1037 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
-	1039 Created                                 biz.dfch.CS.Appclusive.Core.OdataSer...
-	   2 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
-	   3 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
-	   4 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
-	   5 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
-	   6 InitialState                            biz.dfch.CS.Appclusive.Core.OdataSer...
-	...
+  Id Status                                  Name
+  -- ------                                  ----
+1029 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1031 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1033 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1035 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1037 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1039 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   2 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   3 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   4 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   5 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   6 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+...
 
 Retrieves the id, status and name of all Jobs.
 
 
 .EXAMPLE
 Get-Job 1027
-	Status              : InitialState
-	ReferencedItemId    : 1027
-	Token               :
-	TenantId            : 00000000-0000-0000-0000-000000000000
-	EntityKindId        : 2
-	Parameters          :
-	Condition           :
-	ConditionParameters :
-	Error               :
-	EndTime             :
-	ParentId            : 1
-	Id                  : 2
-	Tid                 : 22222222-2222-2222-2222-222222222222
-	Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	Description         : This is a node job
-	CreatedById         : 1
-	ModifiedById        : 1
-	Created             : 01.12.2015 00:00:00 +01:00
-	Modified            : 01.12.2015 00:00:00 +01:00
-	RowVersion          : {0, 0, 0, 0...}
-	EntityKind          :
-	Parent              :
-	Children            : {}
-	Tenant              :
-	CreatedBy           :
-	ModifiedBy          :
+
+Status              : InitialState
+ReferencedItemId    : 1027
+Token               :
+TenantId            : 00000000-0000-0000-0000-000000000000
+EntityKindId        : 2
+Parameters          :
+Condition           :
+ConditionParameters : {"ServiceId":"100054"}
+Error               :
+EndTime             :
+ParentId            : 1
+Id                  : 2
+Tid                 : 22222222-2222-2222-2222-222222222222
+Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+Description         : This is a node job
+CreatedById         : 1
+ModifiedById        : 1
+Created             : 01.12.2015 00:00:00 +01:00
+Modified            : 01.12.2015 00:00:00 +01:00
+RowVersion          : {0, 0, 0, 0...}
+EntityKind          :
+Parent              :
+Children            : {}
+Tenant              :
+CreatedBy           :
+ModifiedBy          :
 
 Retrieves the Job object with Id 1027 and returns all properties of it.
 
 
 .EXAMPLE
-Get-Job 1027 -Select Description -ValueOnly -ConvertFromJson
+Get-Job 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
 
-	This is a node job
+ServiceId
+---
+100054
 
-Similar to the previous example, but only returns the 'Description' property 
+Similar to the previous example, but only returns the 'ConditionParameters' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
 Get-Job -ListAvailable -Select Id -First 3
 
-	Id
-	--
-	 2
-	 3
-	 4
+Id
+--
+ 2
+ 3
+ 4
 
 Retrieves the id of the first 3 Jobs.
 
@@ -100,7 +103,7 @@ Retrieves the id of the first 3 Jobs.
 .EXAMPLE
 Get-Job 1027 -Select Name -ValueOnly
 
-	biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 
 Retrieves the name of the Job with Id 4005.
 
@@ -108,28 +111,28 @@ Retrieves the name of the Job with Id 4005.
 .EXAMPLE
 Get-Job -ModifiedBy SYSTEM -Select Id, Name
 
-	Id Name
-	-- ----
-	 1 Root Job
-	 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-	20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+Id Name
+-- ----
+ 1 Root Job
+ 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 
 Retrieves id and name of all Jobs that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
@@ -138,7 +141,7 @@ with name 'SYSTEM' (case insensitive substring match).
 .EXAMPLE
 Get-Job AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
 
-	AppclusiveSchedulerNotAvailable
+AppclusiveSchedulerNotAvailable
 
 Retrieves the 'Name' property of a Job with Name 'AppclusiveScheduler' 
 and AppclusiveSchedulerNotAvailable if the entity is not found.
