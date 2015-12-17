@@ -7,6 +7,7 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-User.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -14,6 +15,10 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 	
 		# Context wide constants
 		# N/A
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
 
 		It "Get-ManagementCredentialListAvailable-ShouldReturnList" -Test {
 			# Arrange
@@ -45,26 +50,54 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 
 		It "Get-ManagementCredentialAsPSCredential-ShouldReturnPSCredential" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
+			$ShowFirst = 1;
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -As PSCredential;
+			$result = Get-ManagementCredential -svc $svc -First $ShowFirst -As PSCredential;
 
 			# Assert
 			$result | Should Not Be $null;
 			$result -is [PSCredential] | Should Be $true;
 		}
 
-		It "Get-ManagementCredential-ShouldReturnEntity" -Test {
+		It "Get-ManagementCredential-ShouldReturnFirstEntity" -Test {
 			# Arrange
-			$ManagementCredentialName = 'myManagementCredential';
+			$ShowFirst = 1;
 			
 			# Act
-			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName;
+			$result = Get-ManagementCredential -svc $svc -First $ShowFirst;
 
 			# Assert
 			$result | Should Not Be $null;
 			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
+		}
+		
+		It "Get-ManagementCredential-ShouldReturnFirstEntityById" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-ManagementCredential -svc $svc -First $ShowFirst;
+			$Id = $resultFirst.Id;
+			$result = Get-ManagementCredential -Id $Id -svc $svc;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $resultFirst;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
+		}
+		
+		It "Get-ManagementCredential-ShouldReturnFiveEntities" -Test {
+			# Arrange
+			$ShowFirst = 5;
+			
+			# Act
+			$result = Get-ManagementCredential -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$ShowFirst -eq $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.ManagementCredential] | Should Be $true;
 		}
 
 		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnNull" -Test {
@@ -76,6 +109,94 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 
 			# Assert
 			$result | Should Be $null;
+		}
+		
+		It "Get-ManagementCredentialThatDoesNotExist-ShouldReturnDefaultValue" -Test {
+			# Arrange
+			$ManagementCredentialName = 'ManagementCredential-that-does-not-exist';
+			$DefaultValue = 'MyDefaultValue';
+			
+			# Act
+			$result = Get-ManagementCredential -svc $svc -Name $ManagementCredentialName -DefaultValue $DefaultValue;
+
+			# Assert
+			$result | Should Be $DefaultValue;
+		}
+		
+		It "Get-ManagementCredential-ShouldReturnXML" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-ManagementCredential -svc $svc -First $ShowFirst -As xml;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0,5) | Should Be '<?xml';
+		}
+		
+		It "Get-ManagementCredential-ShouldReturnJSON" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-ManagementCredential -svc $svc -First $ShowFirst -As json;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0, 1) | Should Be '{';
+			$result.Substring($result.Length -1, 1) | Should Be '}';
+		}
+		
+		It "Get-ManagementCredential-WithInvalidId-ShouldReturnException" -Test {
+			# Act
+			try 
+			{
+				$result = Get-ManagementCredential -Id 'myManagementCredential';
+				'throw exception' | Should Be $true;
+			} 
+			catch
+			{
+				# Assert
+			   	$result | Should Be $null;
+			}
+		}
+		
+		It "Get-ManagementCredentialByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$User = 'User-that-does-not-exist';
+			
+			# Act
+			$result = Get-ManagementCredential -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Be $null;
+		}
+		
+		It "Get-ManagementCredentialByCreatedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-ManagementCredential -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-ManagementCredentialByModifiedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-ManagementCredential -ModifiedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
 	}
 }
