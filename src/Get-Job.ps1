@@ -45,11 +45,43 @@ Retrieves the id, status and name of all Jobs.
 
 
 .EXAMPLE
+Get-Job 1027
+	Status              : InitialState
+	ReferencedItemId    : 1027
+	Token               :
+	TenantId            : 00000000-0000-0000-0000-000000000000
+	EntityKindId        : 2
+	Parameters          :
+	Condition           :
+	ConditionParameters :
+	Error               :
+	EndTime             :
+	ParentId            : 1
+	Id                  : 2
+	Tid                 : 22222222-2222-2222-2222-222222222222
+	Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	Description         : This is a node job
+	CreatedById         : 1
+	ModifiedById        : 1
+	Created             : 01.12.2015 00:00:00 +01:00
+	Modified            : 01.12.2015 00:00:00 +01:00
+	RowVersion          : {0, 0, 0, 0...}
+	EntityKind          :
+	Parent              :
+	Children            : {}
+	Tenant              :
+	CreatedBy           :
+	ModifiedBy          :
+
+Retrieves the Job object with Id 1027 and returns all properties of it.
+
+
+.EXAMPLE
 Get-Job 1027 -Select Description -ValueOnly -ConvertFromJson
 
-	This is a worker job
+	This is a node job
 
-Retrieves the Job with Id 1027 and only returns the 'Description' property 
+Similar to the previous example, but only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
