@@ -1,4 +1,134 @@
 function Get-Job {
+<#
+.SYNOPSIS
+Retrieves one or more entities from the Job entity set.
+
+
+.DESCRIPTION
+Retrieves one or more entities from the Job entity set.
+
+You can retrieve one ore more entities from the entity set by specifying 
+Id, Name or other properties.
+
+
+.INPUTS
+The Cmdlet can either return all available entities or filter entities on 
+specified conditions.
+See PARAMETERS section on possible inputs.
+
+
+.OUTPUTS
+default | json | json-pretty | xml | xml-pretty
+
+In addition output can be filtered on specified properties.
+
+
+.EXAMPLE
+Get-Job -ListAvailable -Select Name, Id
+
+	 Id Name
+	 -- ----
+	  2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	  9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   1027 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+...
+
+Retrieves the name of all Jobs.
+
+
+.EXAMPLE
+Get-Job 1027 -Select Description -ValueOnly -ConvertFromJson
+
+	This is a worker job
+
+Retrieves the Job with Id 1027 and only returns the 'Description' property 
+of it. In addition the contents of the property will be converted from JSON.
+
+
+.EXAMPLE
+Get-Job -ListAvailable -Select Id -First 3
+
+	Id
+	--
+	 2
+	 3
+	 4
+
+Retrieves the name of the first 3 Jobs.
+
+
+.EXAMPLE
+Get-Job 1027 -Select Name -ValueOnly
+
+	biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+
+Retrieves the name of the Job with Id 4005.
+
+
+.EXAMPLE
+Get-Job -ModifiedBy SYSTEM -Select Id, Name
+
+	Id Name
+	-- ----
+	 1 Root Job
+	 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+	20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+
+Retrieves Id and Name of all Jobs that have been modified by user 
+with name 'Administrator' (case insensitive substring match).
+
+
+.EXAMPLE
+Get-Job AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
+
+	AppclusiveSchedulerNotAvailable
+
+Retrieves the 'Name' property of a Job with Name 'AppclusiveScheduler' 
+and AppclusiveSchedulerNotAvailable if the entity is not found.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/
+
+
+.NOTES
+See module manifest for required software versions and dependencies.
+
+
+#>
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
