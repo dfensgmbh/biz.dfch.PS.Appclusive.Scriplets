@@ -1,4 +1,73 @@
 function New-ManagementCredential {
+<#
+.SYNOPSIS
+Creates a ManagementCredential entry in Appclusive.
+
+
+.DESCRIPTION
+Creates a ManagementCredential entry in Appclusive.
+
+You must specify all three parameters 'Name', 'Username' and 'Password'. If the entry already exists no update of the existing entry is performed.
+
+
+.OUTPUTS
+[biz.dfch.CS.Appclusive.Api.Core.ManagementCredential]
+
+
+.EXAMPLE
+New-ManagementCredential myName myUserName myPassword
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new ManagementCredential entry if it not already exists.
+
+
+.EXAMPLE
+New-ManagementCredential -Name myName -Username myUserName -Password myPassword -Description myDescription
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : myDescription
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new ManagementCredential entry if it not already exists.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ManagementCredential/
+Set-ManagementCredential: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ManagementCredential/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
@@ -62,7 +131,8 @@ try
 		throw($gotoError);
 	}
 
-	$FilterExpression = "Name eq '{0}'" -f $Name;
+	$ManagementCredentialContents = @($Name);
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
 	if($entity) 
 	{
@@ -94,7 +164,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 

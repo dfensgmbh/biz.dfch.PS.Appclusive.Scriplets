@@ -18,7 +18,7 @@ See PARAMETERS section on possible inputs.
 
 
 .OUTPUTS
-default | json | json-pretty | xml | xml-pretty
+default | json | json-pretty | xml | xml-pretty | PSCredential
 
 In addition output can be filtered on specified properties.
 
@@ -26,37 +26,83 @@ In addition output can be filtered on specified properties.
 .EXAMPLE
 Get-ManagementCredential -ListAvailable -Select Name
 
+Name
+----
+myvCenter
+ActivitiClientAcct
+ServiceBusClientAcct
+WindowsAdminAcct
+
 Retrieves the name of all ManagementCredentials.
 
 
 .EXAMPLE
-Get-ManagementCredential myvCenter -Select Description -ValueOnly -ConvertFrom-Json
+Get-ManagementCredential 4
+
+Username          : Administrator
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myvCenter
+Description       : Description of myvCenter
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Retrieves the ManagementCredential object with Id 4 and returns all properties of it.
+
+
+.EXAMPLE
+Get-ManagementCredential myvCenter -Select Description -ValueOnly -ConvertFromJson
+
+Description of myvCenter
 
 Retrieves the ManagementCredential 'myvCenter' and only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-ManagementCredential -ListAvailable -Select Name -First 3
+Get-ManagementCredential -ListAvailable -Select Name, Id -First 3
 
-Retrieves the name of the first 3 ManagementCredentials.
+Name                    Id
+----                    --
+myvCenter               4
+ActivitiClientAcct      3
+ServiceBusClientAcct    8
+
+Retrieves the name and id of the first 3 ManagementCredentials.
 
 
 .EXAMPLE
-Get-ManagementCredential 4005 -Select Name -ValueOnly
+Get-ManagementCredential 8 -Select Name -ValueOnly
 
-Retrieves the name of the ManagementCredential with Id 4005.
+ServiceBusClientAcct
+
+Retrieves the name of the ManagementCredential with Id 8.
 
 
 .EXAMPLE
-Get-ManagementCredential -ModifiedBy Administrator -Select Id, Name
+Get-ManagementCredential -ModifiedBy SYSTEM -Select Id, Name
 
-Retrieves Id and Name of all ManagementCredentials that have been modified by user 
-with name 'Administrator' (case insensitive substring match).
+Id Name
+-- ----
+ 4 myvCenter
+ 8 ServiceBusClientAcct
+
+Retrieves id and name of all Users that have been modified by user 
+with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
 Get-ManagementCredential AppclusiveScheduler -Select Value -ValueOnly -DefaultValue 42
+
+42
 
 Retrieves the 'Value' property of a ManagementCredential with Name 'AppclusiveScheduler' 
 and 42 if the entity is not found.
@@ -82,10 +128,15 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Specifies the name of the entity
+	# Specifies an reference object of the entity
+	[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'pipe')]
+	[biz.dfch.CS.Appclusive.Api.Core.ManagementUri] $InputObject
+	,
+	# Specifies the id of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[Alias("n")]
 	[string] $Name
@@ -106,6 +157,7 @@ PARAM
 	# This parameter takes precendes over the 'Select' parameter.
 	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias("HideTableHeaders")]
 	[switch] $ValueOnly
 	,
@@ -117,6 +169,7 @@ PARAM
 	# Specifies to deserialize JSON payloads
 	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias("Convert")]
 	[switch] $ConvertFromJson
 	,
@@ -150,7 +203,8 @@ BEGIN
 	$EntitySetName = 'ManagementCredentials';
 	
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core])
+	{
 		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
 		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
 		$PSCmdlet.ThrowTerminatingError($e);
@@ -159,7 +213,6 @@ BEGIN
 	if($Select) 
 	{
 		$Select = $Select | Select -Unique;
-		$SelectString = [String]::Join(',',$Select);
 	}
 }
 # BEGIN
@@ -178,6 +231,21 @@ try
 	
 	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 	{
+		throw($gotoSuccess);
+	}
+	
+	if($PSCmdlet.ParameterSetName -eq 'pipe') 
+	{
+		# Get ValueFromPipeline
+		foreach($Object in $InputObject)
+		{
+			if($PSCmdlet.ShouldProcess($Object) -and $Object.ManagementCredentialId)
+			{
+				$LimitedParameters = $PSBoundParameters;
+				$LimitedParameters.Remove("InputObject") | Out-Null;
+				return Get-ManagementCredential -Id $Object.ManagementCredentialId @LimitedParameters;
+			}
+		}
 		throw($gotoSuccess);
 	}
 
@@ -212,16 +280,30 @@ try
 		if($PSCmdlet.ParameterSetName -eq 'id')
 		{
 			$Exp += ("Id eq {0}" -f $Id);
-		}
+		} # if
 		if($Name) 
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
-		}
-		if($CreatedBy) { 
-			$Exp += ("(substringof('{0}', tolower(CreatedBy)) eq true)" -f $CreatedBy.ToLower());
 		} # if
-		if($ModifiedBy) { 
-			$Exp += ("(substringof('{0}', tolower(ModifiedBy)) eq true)" -f $ModifiedBy.ToLower());
+		if($CreatedBy) 
+		{ 
+			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
+			if ( !$CreatedById )
+			{
+				# User not found
+				throw($gotoSuccess);
+			}
+			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
+		} # if
+		if($ModifiedBy)
+		{ 
+			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById )
+			{
+				# User not found
+				throw($gotoSuccess);
+			}			
+			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
 		} # if
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
@@ -246,15 +328,15 @@ try
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 			}
-		}
+		} # if
 		if(1 -eq $Select.Count -And $ValueOnly)
 		{
 			$Response = $Response.$Select;
-		}
+		} # if
 		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
 		{
 			$Response = $DefaultValue;
-		}
+		} # if
 		if($ValueOnly -And $ConvertFromJson)
 		{
 			$ResponseTemp = New-Object System.Collections.ArrayList;
@@ -270,8 +352,8 @@ try
 				}
 			}
 			$Response = $ResponseTemp.ToArray();
-		}
-	}
+		} # if
+	} # if ParameterSetName
 
 	$r = $Response;
 	switch($As) 
@@ -306,7 +388,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
