@@ -161,9 +161,9 @@ try
 		$entity.Name = $Name;
 		$entity.Created = [System.DateTimeOffset]::Now;
 		$entity.Modified = $entity.Created;
-		$entity.CreatedBy = $ENV:USERNAME;
-		$entity.ModifiedBy = $ENV:USERNAME;
-		$entity.Tid = "1";
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.Tid = [guid]::Empty.Guid;
 		$entity.EncryptedPassword = "crypttext";
 	}
 	if($PSBoundParameters.ContainsKey('Description'))
