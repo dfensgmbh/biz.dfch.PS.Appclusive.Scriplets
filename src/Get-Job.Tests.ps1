@@ -2,7 +2,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-function Stop-Pester($message = "Test are unrepresentative, because no entities found.")
+function Stop-Pester($message = "Tests are unrepresentative, because no entities existing.")
 {
 	$msg = $message;
 	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
@@ -72,7 +72,7 @@ Describe -Tags "Get-Job" "Get-Job" {
 			$result -is [biz.dfch.CS.Appclusive.Api.Core.Job] | Should Be $true;
 		}
 		
-		It "Get-Job-ShouldReturnFirst5Entities" -Test {
+		It "Get-Job-ShouldReturnFiveEntities" -Test {
 			# Arrange
 			$ShowFirst = 5;
 			
