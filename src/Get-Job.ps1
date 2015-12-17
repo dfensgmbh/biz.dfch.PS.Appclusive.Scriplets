@@ -208,7 +208,8 @@ BEGIN
 	$EntitySetName = 'Jobs';
 	
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core])
+	{
 		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
 		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
 		$PSCmdlet.ThrowTerminatingError($e);
@@ -217,7 +218,6 @@ BEGIN
 	if($Select) 
 	{
 		$Select = $Select | Select -Unique;
-		$SelectString = [String]::Join(',',$Select);
 	}
 }
 # BEGIN
@@ -304,15 +304,15 @@ try
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 			}
-		}
+		} # if
 		if(1 -eq $Select.Count -And $ValueOnly)
 		{
 			$Response = $Response.$Select;
-		}
+		} # if
 		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
 		{
 			$Response = $DefaultValue;
-		}
+		} # if
 		if($ValueOnly -And $ConvertFromJson)
 		{
 			$ResponseTemp = New-Object System.Collections.ArrayList;
@@ -328,8 +328,8 @@ try
 				}
 			}
 			$Response = $ResponseTemp.ToArray();
-		}
-	}
+		} # if
+	} # if ParameterSetName
 
 	$r = $Response;
 	switch($As) 
@@ -358,7 +358,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
