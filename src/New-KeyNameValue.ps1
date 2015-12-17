@@ -11,7 +11,7 @@ You must specify all three parameters 'Key', 'Name' and 'Value'. If the entry al
 
 
 .OUTPUTS
-default | json | json-pretty | xml | xml-pretty | PSCredential | Clear
+default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
 New-KeyNameValue myKey myName myValue
@@ -189,7 +189,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 

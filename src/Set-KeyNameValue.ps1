@@ -19,9 +19,6 @@ By updating a K/N/V entry you can specify if you want to update the Key, Name, V
 default | json | json-pretty | xml | xml-pretty | PSCredential | Clear
 
 .EXAMPLE
-
-Create a new K/N/V entry if it does not exists.
-
 Set-KeyNameValue myKey myName myValue -CreateIfNotExist
 
 Id         : 3131
@@ -34,11 +31,10 @@ ModifiedBy : SERVER1\Administrator
 Modified   : 11/13/2014 11:08:46 PM +00:00
 RowVersion : {0, 0, 0, 0...}
 
+Create a new K/N/V entry if it does not exists.
+
 
 .EXAMPLE
-
-Update an existing K/N/V with new key and new value.
-
 Set-KeyNameValue myKey -NewKey myNewKey myName myValue -NewValue myNewValue
 
 Id         : 3131
@@ -51,12 +47,10 @@ ModifiedBy : SERVER1\Administrator
 Modified   : 11/13/2014 11:08:46 PM +00:00
 RowVersion : {0, 0, 0, 0...}
 
+Update an existing K/N/V with new key and new value.
+
 
 .EXAMPLE
-
-Update an existing K/N/V with new key and new value. Return format is json with pretty-print.
-
-
 Set-KeyNameValue myNewKey -NewKey myNewKey2 myName myNewValue -NewValue myNewValue2 -as json-pretty
 {
   "Id":  3131,
@@ -78,6 +72,8 @@ Set-KeyNameValue myNewKey -NewKey myNewKey2 myName myNewValue -NewValue myNewVal
 	17
     ]
 }
+
+Update an existing K/N/V with new key and new value. Return format is json with pretty-print.
 
 .LINK
 
@@ -253,7 +249,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 

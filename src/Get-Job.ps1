@@ -167,10 +167,11 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Specifies the name of the entity
+	# Specifies the id of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[Alias("n")]
 	[string] $Name

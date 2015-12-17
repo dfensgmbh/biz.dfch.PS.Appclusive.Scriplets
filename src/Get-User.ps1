@@ -26,10 +26,10 @@ In addition output can be filtered on specified properties.
 .EXAMPLE
 Get-User -ListAvailable -Select Name, Id, ExternalId, Mail
 
-Name                       Id ExternalId                           Mail
-----                       -- ----------                           ----
-Administrator  				2 5ab3f3cf-d37e-4714-807b-5bfe14a1e51c Administrator@appclusive.net
-User1  						3 e67a2c50-b98b-4f25-be52-16ac1926234b User1@appclusive.net
+Name           Id ExternalId                           Mail
+----           -- ----------                           ----
+Administrator   2 5ab3f3cf-d37e-4714-807b-5bfe14a1e51c Administrator@appclusive.net
+User1           3 e67a2c50-b98b-4f25-be52-16ac1926234b User1@appclusive.net
 ...
 
 Retrieves the Name, Id, ExternalId and Mail property of all Users.
@@ -38,7 +38,7 @@ Retrieves the Name, Id, ExternalId and Mail property of all Users.
 .EXAMPLE
 Get-User 2
 
-ExternalId   : 5ab3f3cf-d37e-4714-807b-5bfe14a1e51c
+ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
 ExternalType : AuthenticationFilter
 Mail         : Administrator@appclusive.net
 Id           : 2
@@ -51,8 +51,8 @@ Created      : 15.12.2015 00:00:00 +01:00
 Modified     : 17.12.2015 00:00:00 +01:00
 RowVersion   : {0, 0, 0, 0...}
 Tenant       :
-CreatedBy    :
-ModifiedBy   :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
 Retrieves the User object with Id 2 and returns all properties of it.
 
@@ -129,10 +129,11 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Specifies the name of the entity
+	# Specifies the id of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[Alias("n")]
 	[string] $Name
