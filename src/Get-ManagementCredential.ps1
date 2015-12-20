@@ -196,19 +196,16 @@ PARAM
 
 Begin 
 {
+	trap { Log-Exception $_; break; }
+	
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	Log-Debug -fn $fn -msg ("CALL. ParameterSetName '{0}'." -f $PSCmdlet.ParameterSetName) -fac 1;
 	
 	$EntitySetName = 'ManagementCredentials';
 	
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core])
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	if($Select) 
 	{
@@ -219,20 +216,16 @@ Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
 
-try 
-{
 	# Parameter validation
 	
-	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
-	{
-		throw($gotoSuccess);
-	}
+	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 	
 	if($PSCmdlet.ParameterSetName -eq 'pipe') 
 	{
@@ -242,11 +235,11 @@ try
 			if($PSCmdlet.ShouldProcess($Object) -and $Object.ManagementCredentialId)
 			{
 				$LimitedParameters = $PSBoundParameters;
-				$LimitedParameters.Remove("InputObject") | Out-Null;
+				$null = $LimitedParameters.Remove("InputObject");
 				return Get-ManagementCredential -Id $Object.ManagementCredentialId @LimitedParameters;
 			}
 		}
-		throw($gotoSuccess);
+		return;
 	}
 
 	if($PSCmdlet.ParameterSetName -eq 'list') 
@@ -301,7 +294,7 @@ try
 			if ( !$ModifiedById )
 			{
 				# User not found
-				throw($gotoSuccess);
+				return;
 			}			
 			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
 		}
@@ -329,14 +322,17 @@ try
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 			}
 		}
+		
 		if(1 -eq $Select.Count -And $ValueOnly)
 		{
 			$Response = $Response.$Select;
 		}
+		
 		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
 		{
 			$Response = $DefaultValue;
 		}
+		
 		if($ValueOnly -And $ConvertFromJson)
 		{
 			$ResponseTemp = New-Object System.Collections.ArrayList;
@@ -371,64 +367,17 @@ try
 		Default { $OutputParameter = $r; }
 	}
 	$fReturn = $true;
-
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-
 }
 # Process
 
 End 
 {
 
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
 
 }
 # End
