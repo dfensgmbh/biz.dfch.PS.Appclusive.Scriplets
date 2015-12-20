@@ -1,196 +1,75 @@
-#
-# Module manifest for module 'biz.dfch.PS.Appclusive.Client'
-#
 
-@{
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
+Describe -Tags "New-User" "New-User" {
 
-# Version number of this module.
-ModuleVersion = '1.1.0.20151217'
+	Mock Export-ModuleMember { return $null; }
+	
+	. "$here\$sut"
+	. "$here\Set-User.ps1"
+	
+	$svc = Enter-ApcServer;
 
-# ID used to uniquely identify this module
-GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
+	Context "New-User" {
+	
+		# Context wide constants
+		# N/A
 
-# Author of this module
-Author = 'Ronald Rink'
+		It "New-User-ShouldReturnNewEntity" -Test {
+			# Arrange
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
+			$ExternalId = "{0}" -f [guid]::NewGuid();
+			
+			# Act
+			$result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId;
 
-# Company or vendor of this module
-CompanyName = 'd-fens GmbH'
+			# Assert
+			$result | Should Not Be $null;
+			$result.Name | Should Be $Name;
+			$result.Mail | Should Not Be $Mail;
+			$result.ExternalId | Should Be $ExternalId;
+		}
 
-# Copyright statement for this module
-Copyright = '(c) 2015 d-fens GmbH. Distributed under Apache 2.0 license.'
+		It "New-UserDuplicate-ShouldReturnNull" -Test {
+			# Arrange
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
+			$ExternalId = "{0}" -f [guid]::NewGuid();
+			$result1 = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId;
+			$result1 | Should Not Be $null;
+			
+			# Act
+			$result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId;
 
-# Description of the functionality provided by this module
-Description = 'PowerShell module for the Appclusive Framework and Middleware'
-
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
-
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
-
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
-
-# Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.5'
-
-# Minimum version of the common language runtime (CLR) required by this module
-# CLRVersion = ''
-
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
-
-# Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(
-	'biz.dfch.PS.System.Logging'
-	,
-	'biz.dfch.PS.System.Utilities'
-)
-
-# Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @(
-	'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'System.Net'
-	,
-	'System.Web'
-	,
-	'System.Web.Extensions'
-)
-
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = @(
-	'Import-Module.ps1'
-)
-
-# ModuleToProcess = @()
-
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
-
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
-
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-	'Enter-Server.ps1'
-	,
-	'New-KeyNameValue.ps1'
-	,
-	'Get-KeyNameValue.ps1'
-	,
-	'Set-KeyNameValue.ps1'
-	,
-	'Remove-KeyNameValue.ps1'
-	,
-	'New-ManagementCredential.ps1'
-	,
-	'Get-ManagementCredential.ps1'
-	,
-	'Set-ManagementCredential.ps1'
-	,
-	'Remove-ManagementCredential.ps1'
-	,
-	'Remove-Entity.ps1'
-	,
-	'Get-ModuleVariable.ps1'
-	,
-	'Get-Time.ps1'
-	,
-	'Test-Status.ps1'
-	,
-	'Get-Job.ps1'
-	,
-	'New-User.ps1'
-	,
-	'Get-User.ps1'
-	,
-	'Set-User.ps1'
-	,
-	'Get-ManagementUri.ps1'
-	,
-	'Get-EntityKind.ps1'
-)
-
-# Functions to export from this module
-FunctionsToExport = '*'
-
-# Cmdlets to export from this module
-CmdletsToExport = '*'
-
-# Variables to export from this module
-VariablesToExport = '*'
-
-# Aliases to export from this module
-AliasesToExport = '*'
-
-# List of all modules packaged with this module.
-# ModuleList = @()
-
-# List of all files packaged with this module
-FileList = @(
-	'LICENSE'
-	,
-	'NOTICE'
-	,
-	'README.md'
-	,
-	'biz.dfch.PS.Appclusive.Client.dll'
-	,
-	'biz.dfch.PS.Appclusive.Client.xml'
-	,
-	'Microsoft.Data.Edm.dll'
-	,
-	'Microsoft.Data.OData.dll'
-	,
-	'Microsoft.Data.Services.Client.dll'
-	,
-	'System.Spatial.dll'
-	,
-	'Import-Module.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
-)
-
-# Private data to pass to the module specified in RootModule/ModuleToProcess
-PrivateData = @{
-	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
+			# Assert
+			$result | Should Be $null;
+		}
+	}
 }
 
-# HelpInfo URI of this module
-HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
-
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Apc'
-
-}
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUP7k+RAd9Hm8sgrxbdLBZNx4z
-# ZNigghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURDgubQ9kOQZ5V1Hyrjn/+Xm8
+# lvKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -289,26 +168,26 @@ DefaultCommandPrefix = 'Apc'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQlYUQYbVqnIzud
-# P5q0gp7OjyxDmzANBgkqhkiG9w0BAQEFAASCAQCjB1yaEcBmsSBK1EwfLAiKORAD
-# FBF1TlMknuB9uF1IkpnurVGP0j3UhT377chohoVTbs1ggHH0Ofrbw+1dPxgylzrE
-# ambx/0rD7zcywuB2/22nd1VrjqRK/PPq/A1yeKe6YdMDQfGuR+HCOlo5Xg2VQTwJ
-# 45BzzGMiTMCABDAPpDKSdbIHPfAoDmBGMxOA5JnWHdYxjI42w6S/TE7Ae62ZmUTS
-# hlPMx581aVeHICPfDRSMNJt4fDemrDGbl7EwrcAQqXnDvNlyPKd8QSE+RyF+00gt
-# g4twxfgKHHYy33PG+5s4lwfFSuUD/iV7F3UalUn3gRX7Y8tlRqfe6UqPSHTZoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRVlcTksNU3ltSF
+# vruY7O0Aee50ADANBgkqhkiG9w0BAQEFAASCAQB3Gc5nR3hz40D8DccfmHH71pHw
+# 6ei7wUvcHgAqW0aWhBujqWH70doun6umiIEPtn0BkWVuAwv4ix2eXSBt/eVLXIrt
+# sEZFVGqqOexncsu08KJBvZT0tFNITOQhj7Kg3uBYCsKeqtNOAfVzkUw0kfLOKIdg
+# ceRcQWpVU3l0Wm/sKuUK4q6cBYQwtEGL6y6KpsLAiY4KVueKFbuU/tY5IJnbX2y+
+# JT4haXUqo5LMdIFXk+ln8UXah99I1Ny5ctUSfjrGZQyvAcC15EUV14xHy3nxAuRg
+# xTFhiS67DpjlKHywSWqItvDEj8pCSD8FTCo25y6PkLPsFThG45BAqLBYqLO8oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA3MjIxMFowIwYJKoZIhvcNAQkEMRYEFAZw9eLcwZw+she51ST49+xxcrdx
+# MTIxNTA2NTIxOFowIwYJKoZIhvcNAQkEMRYEFBotZwKIfeavd8VUzz/IFssa7EC9
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAEfO3Pzb+qwRu4Rjl6
-# gOKVd+pMvDiNGvwcOyLJIVdUrJcHe4U7pGiE9Q5uOwCUCxkqlBhQsgSXjzKAXsh8
-# aXeaM8+osRSndbN4HmLwgm6+uAlbsq93AqA/U1BUSEWYmxl3vejQCxc0jpsCFov/
-# cckBcYGezB2qkkoq2BO8nx2ywQiAnhNraelAzhuuM+3xTAd2xLPBG1rmHwG6ONDG
-# w/MtW8SqCfkqIauIB7qhyo3Irl6smp1ggikoXoLLOo0ewDSAfLJQnKzV171SYpTS
-# xqOR6Tn24fdzMDlJVGXBnu/T+++2yspAT6QWAMyNDtbNK9gqNjv+2DziDu9o/D8E
-# jmNR
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCvFbQ5JzTUr9LpPeOF
+# eGG1sH5i3hQHhMufXSKqgjlLdFK0XLxp8UmliXEtdg7kxtOlWEhEFKnn7bU5dtE3
+# KVrNGbTYo6XFRfKVOUjhTYmps4l67E0aWntOVjkcMkUDTc0avSz9Lt6a1M9W8emn
+# pez78gcw0rfWLjEJguJedpqSetNas9oAhSreBc0POkJW3UxlfRxL5Ct1j7c36UFr
+# No+AtC2Ue0q0DjI1kOef6ISvvjHdlyrnT2VZFnUB8uvm3Fb4213G6o2tiCGgRp0I
+# Rg9JvbbU8DfSNMRV3Cvl+l9yZYCSQAjc9ijjzpW2JsrSIBW+G2S0vJL3xgSTTNX8
+# Smqz
 # SIG # End signature block

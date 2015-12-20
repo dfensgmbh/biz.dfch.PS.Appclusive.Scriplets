@@ -1,11 +1,11 @@
-function Get-Job {
+function Get-User {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the User entity set.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the User entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
@@ -24,72 +24,52 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id, Status, Name
+Get-User -ListAvailable -Select Name, Id, ExternalId, Mail
 
-  Id Status                                  Name
-  -- ------                                  ----
-1029 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1031 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1033 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1035 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1037 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1039 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   2 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   3 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   4 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   5 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   6 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+Name           Id ExternalId                           Mail
+----           -- ----------                           ----
+Administrator   2 5ab3f3cf-d37e-4714-807b-5bfe14a1e51c Administrator@appclusive.net
+User1           3 e67a2c50-b98b-4f25-be52-16ac1926234b User1@appclusive.net
 ...
 
-Retrieves the id, status and name of all Jobs.
+Retrieves the Name, Id, ExternalId and Mail property of all Users.
 
 
 .EXAMPLE
-Get-Job 1027
+Get-User 2
 
-Status              : InitialState
-ReferencedItemId    : 1027
-Token               :
-TenantId            : 00000000-0000-0000-0000-000000000000
-EntityKindId        : 2
-Parameters          :
-Condition           :
-ConditionParameters : {"ServiceId":"100054"}
-Error               :
-EndTime             :
-ParentId            : 1
-Id                  : 2
-Tid                 : 22222222-2222-2222-2222-222222222222
-Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-Description         : This is a node job
-CreatedById         : 1
-ModifiedById        : 1
-Created             : 01.12.2015 00:00:00 +01:00
-Modified            : 01.12.2015 00:00:00 +01:00
-RowVersion          : {0, 0, 0, 0...}
-EntityKind          :
-Parent              :
-Children            : {}
-Tenant              :
-CreatedBy           :
-ModifiedBy          :
+ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : AuthenticationFilter
+Mail         : Administrator@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : Administrator
+Description  : {"Tel":"+41-41-000 00 00"}
+CreatedById  : 1
+ModifiedById : 2
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
-Retrieves the Job object with Id 1027 and returns all properties of it.
+Retrieves the User object with Id 2 and returns all properties of it.
 
 
 .EXAMPLE
-Get-Job 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
+Get-User 2 -Select Description -ValueOnly -ConvertFromJson
 
-ServiceId
+Tel
 ---
-100054
++41-41-000 00 00
 
-Similar to the previous example, but only returns the 'ConditionParameters' property 
+Similar to the previous example, but only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id -First 3
+Get-User -ListAvailable -Select Id -First 3
 
 Id
 --
@@ -97,58 +77,40 @@ Id
  3
  4
 
-Retrieves the id of the first 3 Jobs.
+Retrieves the id of the first 3 Users.
 
 
 .EXAMPLE
-Get-Job 1027 -Select Name -ValueOnly
+Get-User 2 -Select Name -ValueOnly
 
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+Administrator
 
-Retrieves the name of the Job with Id 4005.
+Retrieves the name of the User with Id 2.
 
 
 .EXAMPLE
-Get-Job -ModifiedBy SYSTEM -Select Id, Name
+Get-User -ModifiedBy Administrator -Select Id, Name
 
 Id Name
 -- ----
- 1 Root Job
- 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 2 Administrator
+ 3 User1
 
-Retrieves id and name of all Jobs that have been modified by user 
-with name 'SYSTEM' (case insensitive substring match).
+Retrieves id and name of all Users that have been modified by user 
+with name 'Administrator' (case insensitive substring match).
 
 
 .EXAMPLE
-Get-Job AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
+Get-User SuperUser -Select Name -ValueOnly -DefaultValue 'Administrator'
 
-AppclusiveSchedulerNotAvailable
+Administrator
 
-Retrieves the 'Name' property of a Job with Name 'AppclusiveScheduler' 
-and AppclusiveSchedulerNotAvailable if the entity is not found.
+Retrieves the 'Name' property of a User with Name 'SuperUser' 
+and Administrator if the entity is not found.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
 
 
 .NOTES
@@ -161,7 +123,7 @@ See module manifest for required software versions and dependencies.
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/'
 	,
 	DefaultParameterSetName = 'list'
 )]
@@ -235,7 +197,7 @@ BEGIN
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'Jobs';
+	$EntitySetName = 'Users';
 	
 	# Parameter validation
 	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core])
@@ -307,7 +269,7 @@ try
 		} # if
 		if($CreatedBy) 
 		{ 
-			$CreatedById = Get-User $CreatedBy -Select Id -ValueOnly;
+			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
 			if ( !$CreatedById )
 			{
 				# User not found
@@ -317,8 +279,8 @@ try
 		} # if
 		if($ModifiedBy)
 		{ 
-			$ModifiedById = Get-User $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById ) 
+			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById )
 			{
 				# User not found
 				throw($gotoSuccess);
@@ -449,7 +411,7 @@ return $OutputParameter;
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH

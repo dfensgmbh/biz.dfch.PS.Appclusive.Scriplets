@@ -1,4 +1,73 @@
 function Set-ManagementCredential {
+<#
+.SYNOPSIS
+Sets or creates a ManagementCredential entry in Appclusive.
+
+
+.DESCRIPTION
+Sets or creates a ManagementCredential entry in Appclusive.
+
+By updating a ManagementCredential entry you can specify if you want to update the Name, Username, Password or any combination thereof.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-ManagementCredential myName myUserName myPassword -CreateIfNotExist
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new ManagementCredential entry if it does not exists.
+
+
+.EXAMPLE
+Set-ManagementCredential -Name myName -NewName myNewName -Username myNewUserName -Password myNewPassword
+
+Username          : myNewUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myNewName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Update an existing ManagementCredential with new name, username and password.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ManagementCredential/
+Set-ManagementCredential: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ManagementCredential/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
     SupportsShouldProcess = $false
 	,
@@ -30,7 +99,7 @@ Param
 	[Parameter(Mandatory = $false, Position = 2)]
 	[string] $Password
 	,
-	# Specifies to create a KNV if it does not exist
+	# Specifies to create a entity if it does not exist
 	[Parameter(Mandatory = $false)]
 	[Alias("c")]
 	[switch] $CreateIfNotExist = $false
@@ -76,7 +145,7 @@ try
 		throw($gotoError);
 	}
 
-	$FilterExpression = "Name eq '{0}'" -f $Name;
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
 	if(!$CreateIfNotExist -And !$entity) 
 	{
@@ -92,9 +161,9 @@ try
 		$entity.Name = $Name;
 		$entity.Created = [System.DateTimeOffset]::Now;
 		$entity.Modified = $entity.Created;
-		$entity.CreatedBy = $ENV:USERNAME;
-		$entity.ModifiedBy = $ENV:USERNAME;
-		$entity.Tid = "1";
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.Tid = [guid]::Empty.Guid;
 		$entity.EncryptedPassword = "crypttext";
 	}
 	if($PSBoundParameters.ContainsKey('Description'))

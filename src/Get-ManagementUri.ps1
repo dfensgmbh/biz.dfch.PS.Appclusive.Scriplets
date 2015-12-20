@@ -1,11 +1,11 @@
-function Get-Job {
+function Get-ManagementUri {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the ManagementUri entity set.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the ManagementUri entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
@@ -24,131 +24,97 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id, Status, Name
+Get-ManagementUri -ListAvailable -Select Name
 
-  Id Status                                  Name
-  -- ------                                  ----
-1029 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1031 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1033 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1035 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1037 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1039 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   2 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   3 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   4 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   5 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   6 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-...
+Name
+----
+myvCenter
+ActivitiClientUri
+ServiceBusClientUri
+WindowsAdminUri
 
-Retrieves the id, status and name of all Jobs.
+Retrieves the name of all ManagementUris.
 
 
 .EXAMPLE
-Get-Job 1027
+Get-ManagementUri 4
 
-Status              : InitialState
-ReferencedItemId    : 1027
-Token               :
-TenantId            : 00000000-0000-0000-0000-000000000000
-EntityKindId        : 2
-Parameters          :
-Condition           :
-ConditionParameters : {"ServiceId":"100054"}
-Error               :
-EndTime             :
-ParentId            : 1
-Id                  : 2
-Tid                 : 22222222-2222-2222-2222-222222222222
-Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-Description         : This is a node job
-CreatedById         : 1
-ModifiedById        : 1
-Created             : 01.12.2015 00:00:00 +01:00
-Modified            : 01.12.2015 00:00:00 +01:00
-RowVersion          : {0, 0, 0, 0...}
-EntityKind          :
-Parent              :
-Children            : {}
-Tenant              :
-CreatedBy           :
-ModifiedBy          :
+Type                   : json
+Value                  : {"ConnectionString":"Endpoint=sb://activiti.example.com/ServiceBusDefaultNamespace;SharedAccessKeyN
+                         ame={0};SharedAccessKey={1}=;TransportType=Amqp"}
+ManagementCredentialId : 5
+Id                     : 4
+Tid                    : 22222222-2222-2222-2222-222222222222
+Name                   : ActivitiClientUri
+Description            : Connection String for Amqp messaging client
+CreatedById            : 1
+ModifiedById           : 1
+Created                : 15.12.2015 00:00:00 +01:00
+Modified               : 15.12.2015 00:00:00 +01:00
+RowVersion             : {0, 0, 0, 0...}
+ManagementCredential   :
+Tenant                 :
+CreatedBy              : SYSTEM
+ModifiedBy             : SYSTEM
 
-Retrieves the Job object with Id 1027 and returns all properties of it.
+Retrieves the ManagementUri object with Id 4 and returns all properties of it.
 
 
 .EXAMPLE
-Get-Job 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
+Get-ManagementUri ActivitiClientUri -Select Value -ValueOnly -ConvertFromJson
 
-ServiceId
----
-100054
+ConnectionString
+----------------
+Endpoint=sb://win-8a036g6jvpj/ServiceBusDefaultNamespace;SharedAccessKeyName={0};SharedAccessKey={1}=;TransportType=Amqp
 
-Similar to the previous example, but only returns the 'ConditionParameters' property 
+Retrieves the ManagementUri 'ActivitiClientUri' and only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id -First 3
+Get-ManagementUri -ListAvailable -Select Name, Id -First 3
 
-Id
---
- 2
- 3
- 4
+Name                    Id
+----                    --
+myvCenter               4
+ActivitiClientUri       5
+ServiceBusClientUri     8
 
-Retrieves the id of the first 3 Jobs.
-
-
-.EXAMPLE
-Get-Job 1027 -Select Name -ValueOnly
-
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-
-Retrieves the name of the Job with Id 4005.
+Retrieves the name and id of the first 3 ManagementUris.
 
 
 .EXAMPLE
-Get-Job -ModifiedBy SYSTEM -Select Id, Name
+Get-ManagementUri 8 -Select Name -ValueOnly
+
+ServiceBusClientUri
+
+Retrieves the name of the ManagementUri with Id 8.
+
+
+.EXAMPLE
+Get-ManagementUri -ModifiedBy SYSTEM -Select Id, Name
 
 Id Name
 -- ----
- 1 Root Job
- 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 4 myvCenter
+ 5 ActivitiClientUri
+ 8 ServiceBusClientAcct
 
-Retrieves id and name of all Jobs that have been modified by user 
+Retrieves id and name of all Users that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
-Get-Job AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
+Get-ManagementUri HttpProxy -Select Value -ValueOnly -DefaultValue 'http://proxy:8080'
 
-AppclusiveSchedulerNotAvailable
+http://proxy:8080
 
-Retrieves the 'Name' property of a Job with Name 'AppclusiveScheduler' 
-and AppclusiveSchedulerNotAvailable if the entity is not found.
+Retrieves the 'Value' property of a ManagementUri with Name 'HttpProxy' 
+and http://proxy:8080 if the entity is not found.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementUri/
 
 
 .NOTES
@@ -159,19 +125,18 @@ See module manifest for required software versions and dependencies.
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
-    ConfirmImpact = 'Low'
+    ConfirmImpact = "Low"
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementUri/'
 	,
 	DefaultParameterSetName = 'list'
 )]
 PARAM 
 (
-	# Specifies the id of the entity
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
-	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[Alias("n")]
 	[string] $Name
@@ -190,7 +155,7 @@ PARAM
 	,
 	# Specifies to return only values without header information. 
 	# This parameter takes precendes over the 'Select' parameter.
-	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
+	[ValidateScript( { if(1 -ge $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias("HideTableHeaders")]
@@ -235,7 +200,7 @@ BEGIN
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'Jobs';
+	$EntitySetName = 'ManagementUris';
 	
 	# Parameter validation
 	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core])
@@ -248,6 +213,10 @@ BEGIN
 	if($Select) 
 	{
 		$Select = $Select | Select -Unique;
+	}
+	elseif ($ValueOnly)
+	{
+		$Select = 'Value';
 	}
 }
 # BEGIN
@@ -307,7 +276,7 @@ try
 		} # if
 		if($CreatedBy) 
 		{ 
-			$CreatedById = Get-User $CreatedBy -Select Id -ValueOnly;
+			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
 			if ( !$CreatedById )
 			{
 				# User not found
@@ -317,8 +286,8 @@ try
 		} # if
 		if($ModifiedBy)
 		{ 
-			$ModifiedById = Get-User $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById ) 
+			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById )
 			{
 				# User not found
 				throw($gotoSuccess);
@@ -449,7 +418,7 @@ return $OutputParameter;
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ManagementUri; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -470,8 +439,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmoS0K7jnR3r80fzQCPn3DIPt
-# oEugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUey7VPJaKPOQ6OgL+3NUKCY4k
+# 3ySgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -570,26 +539,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT21c1Vj33X014q
-# 4ZS1Wm4rcrhzczANBgkqhkiG9w0BAQEFAASCAQCwaVbADHW4A8bUFTp1SJuMOUVy
-# bmlGK5rhxc9giLbq6GUSuuZw335gG04BVK3dHPCtTfOjaKwt72iFO7d+uIFIbKUm
-# ex7elRBIxWlOsOsDlfD6ir03YEUEoUSKb+9M1f7aEqHHKNN8N6mtBuyJADLsfAcJ
-# dJK96NTOkVsxPtOE0EkZ5RgVnY+8Cumkku+xBmTzVfxt0YFsfELa/EaQ5ZwviKMY
-# GztROVKOwzDL3kLAZZ9xhY+uoV6+X2uS8SZhWbG6O1an4aDoRzgqRKLi0nHTpcV+
-# tZxqR06nTGOfX30MTHaaL0iBCPbCo0JNnXgnTU5Dt9rXGUn8aPm7w1uMz5ccoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS7c6k5VubwWsyk
+# 1c3bt2xxJt/LbDANBgkqhkiG9w0BAQEFAASCAQCExwihhCSB3rekKKcrRd/8iaCy
+# w6EvqHZJ1zrA2AVMAl3wuV/6nXpktLRVtjulAnG/r49EjEs5XBWkFdrRBFS11pcf
+# p2xgKG+Y1oDEaxl99jCTGuGMX3P3FRnDDATAZWd6DeF6Lv/xoljj0oaUpI41kEmG
+# S1gxv9GlmcINdPIzEJo0AuTlkP+4O5UoP+Dw7U1NnDQVkejzjV/zTjlKAH6iSxcH
+# SLOaY82WMhXGFPP0okYrUb4xzRWe1f2U4VvkB6xeLxROTnyGG/AAhWm7s6QEPb+c
+# spsj2HJ+194dyRWhaWt2WLnHG1JOQmvJ/k28SgrTqw6cD496XrICPuz4oKp2oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIxNFowIwYJKoZIhvcNAQkEMRYEFPdooNv8TbvHRUkQd7wzKSk+4nx7
+# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFG4JSmcZUnvr53azwg8nu4Vng6R4
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAqROS3xSNPw9Y5u9BE
-# CYrk6NuqBgIAXVotN2/saiI6IxnCYY5qBXP0Hn/72hWS41Jj1u24rm0xE6aNT8Ls
-# k8jx0f2JuNQYUoarn5yM8DoNRHPI2dCXqV4Vtwii7nCIrMsIFmTb4YHwbAT2+9tC
-# vJpoKGCgk+jSZo2nEJC5ZHp8vcEpRfMruwdgnK6h+3VSW8mAFWa4EsTx8HU7kVrX
-# /moHotfmvFMlG5nLr+/VANBVF6PhhKMDm75CkDJrDexS+ZKxVrfSWqIIPvWB6Chs
-# n5w+xRRHm/3+Du4B4j7o9RxQoDY8LK5H0amKcMJNRUbwx9Nv4EJ6WB9m7ROvvG9c
-# 2867
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA96JQoW2U8v8omsE7f
+# M7EQUG81UkzPcHMbK2T6N8//EC8BCNgZp8vQ7y8P1W/NUeURq+2dou24/0u/G/kP
+# rK6VykBod6avQFgdPQV4UzxUo3cdEAocT3vhW26kzFBZ1dT36z+J0LNdTVfRU878
+# BRF6Y8S8XzQz8Gu7Za+hplavCH0A9jEqL9EvrW+LPZczGqPBflncepaJmgrzgh5D
+# VexOCfRO7dkUbUK1WeiL+DvpmBMBSFUnwGtooD/0XOsC4yZJmL2pVgQJBlUxobtI
+# x98S3ztMRF5skVz18sBg4OBjMPabd7RSAPfWctl846WkkCKtjLUMuE2P33VDSsbp
+# mFHj
 # SIG # End signature block

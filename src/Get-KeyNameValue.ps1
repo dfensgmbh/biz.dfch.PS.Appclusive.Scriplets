@@ -331,8 +331,8 @@ BEGIN
 		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $PSCmdlet;
 		$PSCmdlet.ThrowTerminatingError($e);
 	}
-} 
-# END
+}
+# BEGIN
 
 PROCESS 
 {

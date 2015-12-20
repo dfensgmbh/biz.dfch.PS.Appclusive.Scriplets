@@ -1,194 +1,129 @@
-function Get-ManagementCredential {
+function Set-User {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the ManagementCredential entity set.
+Sets or creates a User entry in Appclusive.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the ManagementCredential entity set.
+Sets or creates a User entry in Appclusive.
 
-You can retrieve one ore more entities from the entity set by specifying 
-Id, Name or other properties.
-
-
-.INPUTS
-The Cmdlet can either return all available entities or filter entities on 
-specified conditions.
-See PARAMETERS section on possible inputs.
+By updating a User entry you can specify if you want to update the Name, Mail, ExternalId or any combination thereof.
 
 
 .OUTPUTS
-default | json | json-pretty | xml | xml-pretty | PSCredential
-
-In addition output can be filtered on specified properties.
+default
 
 
 .EXAMPLE
-Get-ManagementCredential -ListAvailable -Select Name
+Set-User myName myMail myExternalId -CreateIfNotExist
 
-Name
-----
-myvCenter
-ActivitiClientAcct
-ServiceBusClientAcct
-WindowsAdminAcct
+ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : Internal
+Mail         : myMail@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : myName
+Description  : 
+CreatedById  : 1
+ModifiedById : 1
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
-Retrieves the name of all ManagementCredentials.
-
-
-.EXAMPLE
-Get-ManagementCredential 4
-
-Username          : Administrator
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myvCenter
-Description       : Description of myvCenter
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
-
-Retrieves the ManagementCredential object with Id 4 and returns all properties of it.
+Create a new User entry if it does not exists.
 
 
 .EXAMPLE
-Get-ManagementCredential myvCenter -Select Description -ValueOnly -ConvertFromJson
+Set-User -Name myName -NewName myNewName -Mail myNewMail@appclusive.net -ExternalId [guid]'28af9d74-388b-46f2-90d6-a1545d89d16f'
 
-Description of myvCenter
+ExternalId   : 28af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : Internal
+Mail         : myNewMail@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : myNewName
+Description  : myDescription
+CreatedById  : 1
+ModifiedById : 1
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
-Retrieves the ManagementCredential 'myvCenter' and only returns the 'Description' property 
-of it. In addition the contents of the property will be converted from JSON.
-
-
-.EXAMPLE
-Get-ManagementCredential -ListAvailable -Select Name, Id -First 3
-
-Name                    Id
-----                    --
-myvCenter               4
-ActivitiClientAcct      3
-ServiceBusClientAcct    8
-
-Retrieves the name and id of the first 3 ManagementCredentials.
-
-
-.EXAMPLE
-Get-ManagementCredential 8 -Select Name -ValueOnly
-
-ServiceBusClientAcct
-
-Retrieves the name of the ManagementCredential with Id 8.
-
-
-.EXAMPLE
-Get-ManagementCredential -ModifiedBy SYSTEM -Select Id, Name
-
-Id Name
--- ----
- 4 myvCenter
- 8 ServiceBusClientAcct
-
-Retrieves id and name of all Users that have been modified by user 
-with name 'SYSTEM' (case insensitive substring match).
-
-
-.EXAMPLE
-Get-ManagementCredential AppclusiveScheduler -Select Value -ValueOnly -DefaultValue 42
-
-42
-
-Retrieves the 'Value' property of a ManagementCredential with Name 'AppclusiveScheduler' 
-and 42 if the entity is not found.
+Update an existing User with new name, Mail and ExternalId.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementCredential/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-User/
+Set-User: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-User/
 
 
 .NOTES
-See module manifest for required software versions and dependencies.
+See module manifest for dependencies and further requirements.
 
 
 #>
 [CmdletBinding(
-    SupportsShouldProcess = $true
+    SupportsShouldProcess = $false
 	,
-    ConfirmImpact = "Low"
+    ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementCredential/'
-	,
-	DefaultParameterSetName = 'list'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-User/'
 )]
-PARAM 
+Param 
 (
-	# Specifies an reference object of the entity
-	[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'pipe')]
-	[biz.dfch.CS.Appclusive.Api.Core.ManagementUri] $InputObject
-	,
-	# Specifies the id of the entity
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
-	[int] $Id
-	,
-	# Specifies the name of the entity
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
+	# Specifies the name to modify
+	[Parameter(Mandatory = $true, Position = 0)]
 	[Alias("n")]
 	[string] $Name
 	,
-	# Filter by creator
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[string] $CreatedBy
-	,
-	# Filter by modifier
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[string] $ModifiedBy
-	,
-	# Specify the attributes of the entity to return
+	# Specifies the new name name
 	[Parameter(Mandatory = $false)]
-	[string[]] $Select = @()
+	[string] $NewName
 	,
-	# Specifies to return only values without header information. 
-	# This parameter takes precendes over the 'Select' parameter.
-	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias("HideTableHeaders")]
-	[switch] $ValueOnly
-	,
-	# This value is only returned if the regular search would have returned no results
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("default")]
-	$DefaultValue
-	,
-	# Specifies to deserialize JSON payloads
-	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias("Convert")]
-	[switch] $ConvertFromJson
-	,
-	# Limits the output to the specified number of entries
+	# Specifies the description
 	[Parameter(Mandatory = $false)]
-	[Alias("top")]
-	[int] $First
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the key to modify
+	[Parameter(Mandatory = $false, Position = 1)]
+	[string] $Mail
+	,
+	# Specifies the new name name
+	[Parameter(Mandatory = $false, Position = 2)]
+	[guid] $ExternalId = [guid]::NewGuid()
+	,
+	# Specifies the externalType for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalType = 'Internal'
+	,
+	# Specifies the tenant id for this entity
+	[Parameter(Mandatory = $false)]
+	[guid] $Tid = [guid]::Empty.Guid
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("x")]
+	[switch] $NoUpdateIfExist = $false
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias("Services")]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
-	# Indicates to return all file information
-	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
-	[switch] $ListAvailable = $false
-	,
 	# Specifies the return format of the Cmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty', 'PSCredential')]
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
 	[alias("ReturnFormat")]
 	[string] $As = 'default'
@@ -196,24 +131,11 @@ PARAM
 
 BEGIN 
 {
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-	
-	$EntitySetName = 'ManagementCredentials';
-	
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core])
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		$PSCmdlet.ThrowTerminatingError($e);
-	} # if
-	
-	if($Select) 
-	{
-		$Select = $Select | Select -Unique;
-	}
+
+$datBegin = [datetime]::Now;
+[string] $fn = $MyInvocation.MyCommand.Name;
+Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
 }
 # BEGIN
 
@@ -224,150 +146,73 @@ PROCESS
 [Boolean] $fReturn = $false;
 # Return values are always and only returned via OutputParameter.
 $OutputParameter = $null;
+$AddedEntity = $null;
 
 try 
 {
 	# Parameter validation
-	
-	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
+	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
+	{
+		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
+		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
+		throw($gotoError);
+	}
+
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	if(!$CreateIfNotExist -And !$entity) 
+	{
+		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
+	}
+	if(!$entity) 
+	{
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.User;
+		$svc.Core.AddToUsers($entity);
+		$AddedEntity = $entity;
+		$entity.Name = $Name;
+		$entity.Mail = $Mail;
+		$entity.ExternalId = $ExternalId;
+		$entity.ExternalType = $ExternalType;
+		$entity.Tid = $Tid;
+		
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.CreatedBy = Get-User ($env:USERNAME) -DefaultValue (Get-User 'SYSTEM');
+		$entity.CreatedById = $entity.CreatedBy.Id;
+		$entity.Modified = $entity.Created;
+		$entity.ModifiedBy = $entity.CreatedBy;
+		$entity.ModifiedById = $entity.CreatedById;
+		
+	}
+	elseif ($NoUpdateIfExist)
 	{
 		throw($gotoSuccess);
 	}
 	
-	if($PSCmdlet.ParameterSetName -eq 'pipe') 
+	if($PSBoundParameters.ContainsKey('Description'))
 	{
-		# Get ValueFromPipeline
-		foreach($Object in $InputObject)
-		{
-			if($PSCmdlet.ShouldProcess($Object) -and $Object.ManagementCredentialId)
-			{
-				$LimitedParameters = $PSBoundParameters;
-				$LimitedParameters.Remove("InputObject") | Out-Null;
-				return Get-ManagementCredential -Id $Object.ManagementCredentialId @LimitedParameters;
-			}
-		}
-		throw($gotoSuccess);
+		$entity.Description = $Description;
 	}
-
-	if($PSCmdlet.ParameterSetName -eq 'list') 
+	if($PSBoundParameters.ContainsKey('Mail'))
 	{
-		if($Select) 
-		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select -Property $Select;
-			}
-		}
-		else 
-		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-			}
-		}
-	} 
-	else 
+		$entity.Mail = $Mail;
+	}
+	if($PSBoundParameters.ContainsKey('ExternalId'))
 	{
-		$Exp = @();
-		if($PSCmdlet.ParameterSetName -eq 'id')
-		{
-			$Exp += ("Id eq {0}" -f $Id);
-		} # if
-		if($Name) 
-		{ 
-			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
-		} # if
-		if($CreatedBy) 
-		{ 
-			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
-			if ( !$CreatedById )
-			{
-				# User not found
-				throw($gotoSuccess);
-			}
-			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
-		} # if
-		if($ModifiedBy)
-		{ 
-			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById )
-			{
-				# User not found
-				throw($gotoSuccess);
-			}			
-			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
-		} # if
-		$FilterExpression = [String]::Join(' and ', $Exp);
-	
-		if($Select) 
-		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
-			}
-		}
-		else 
-		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
-			}
-		} # if
-		if(1 -eq $Select.Count -And $ValueOnly)
-		{
-			$Response = $Response.$Select;
-		} # if
-		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
-		{
-			$Response = $DefaultValue;
-		} # if
-		if($ValueOnly -And $ConvertFromJson)
-		{
-			$ResponseTemp = New-Object System.Collections.ArrayList;
-			foreach($item in $Response)
-			{
-				try
-				{
-					$null = $ResponseTemp.Add((ConvertFrom-Json -InputObject $item));
-				}
-				catch
-				{
-					$null = $ResponseTemp.Add($item);
-				}
-			}
-			$Response = $ResponseTemp.ToArray();
-		} # if
-	} # if ParameterSetName
+		$entity.ExternalId = $ExternalId;
+	}
+	if($NewName) { $entity.Name = $NewName; }
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
 
-	$r = $Response;
+	$r = $entity;
 	switch($As) 
 	{
 		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
 		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
 		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
 		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		'PSCredential' 
-		{ 
-			$Password = $r.Password | ConvertTo-SecureString -asPlainText -Force;
-			$Credential = New-Object System.Management.Automation.PSCredential($r.Username, $password);
-			$OutputParameter = $Credential; 
-		}
 		Default { $OutputParameter = $r; }
 	}
 	$fReturn = $true;
@@ -410,6 +255,8 @@ catch
 		}
 		$fReturn = $false;
 		$OutputParameter = $null;
+		
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
 	}
 }
 finally 
@@ -433,9 +280,8 @@ return $OutputParameter;
 }
 # END
 
-} # function
-
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ManagementCredential; } 
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-User; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -456,8 +302,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ManagementCrede
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUey7VPJaKPOQ6OgL+3NUKCY4k
-# 3ySgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUD7Vb4uINQkGreS0eh56HIM63
+# nqGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -556,26 +402,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ManagementCrede
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS7c6k5VubwWsyk
-# 1c3bt2xxJt/LbDANBgkqhkiG9w0BAQEFAASCAQCExwihhCSB3rekKKcrRd/8iaCy
-# w6EvqHZJ1zrA2AVMAl3wuV/6nXpktLRVtjulAnG/r49EjEs5XBWkFdrRBFS11pcf
-# p2xgKG+Y1oDEaxl99jCTGuGMX3P3FRnDDATAZWd6DeF6Lv/xoljj0oaUpI41kEmG
-# S1gxv9GlmcINdPIzEJo0AuTlkP+4O5UoP+Dw7U1NnDQVkejzjV/zTjlKAH6iSxcH
-# SLOaY82WMhXGFPP0okYrUb4xzRWe1f2U4VvkB6xeLxROTnyGG/AAhWm7s6QEPb+c
-# spsj2HJ+194dyRWhaWt2WLnHG1JOQmvJ/k28SgrTqw6cD496XrICPuz4oKp2oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRNNn5BI0bOAoKL
+# MqEaBRaUzL1k/jANBgkqhkiG9w0BAQEFAASCAQCFmfMbm4LWviEbNx9+/E7VgS6p
+# QW+ZS+gFspNZioTdqrPjMgsKvfdWFhrbLBvZjMd/Nhg5y9r+Ttyn+HR/MjIXq5Ng
+# 2BzzIDSn6gyvL2Pa2dVMMXXcagr7TFB3dstmRfj60f+pTMTyQqxTeTj7MYtpOutN
+# HHWve8TFSha/r04kgaBnp8k7acOqdGuCWre7ISP3WaFHlxVHsNKfo9+G/p0R5qCt
+# Xe3qwXhXzscKGDnUuhmzdZHeVESENj/aA1BSdRndbgIp/WzIVMBTUNGWWKt+NkR7
+# YCy8s3XtszgAEk7V7uc6k9wZpcg+bhSmJNNfbt9U2C3IitclzOLtOqfKBU9AoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFG4JSmcZUnvr53azwg8nu4Vng6R4
+# MTAyODE0MjAyNFowIwYJKoZIhvcNAQkEMRYEFNOPBuBJQS1lnO3oaHJmqAT80QSf
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA96JQoW2U8v8omsE7f
-# M7EQUG81UkzPcHMbK2T6N8//EC8BCNgZp8vQ7y8P1W/NUeURq+2dou24/0u/G/kP
-# rK6VykBod6avQFgdPQV4UzxUo3cdEAocT3vhW26kzFBZ1dT36z+J0LNdTVfRU878
-# BRF6Y8S8XzQz8Gu7Za+hplavCH0A9jEqL9EvrW+LPZczGqPBflncepaJmgrzgh5D
-# VexOCfRO7dkUbUK1WeiL+DvpmBMBSFUnwGtooD/0XOsC4yZJmL2pVgQJBlUxobtI
-# x98S3ztMRF5skVz18sBg4OBjMPabd7RSAPfWctl846WkkCKtjLUMuE2P33VDSsbp
-# mFHj
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBZwXmvOMaSvk99y80o
+# lPNJ4R8n5j+Vbscl/SGBxW/AT6AcV3UBy6ER4Yawc4XIs+BgMIlwm8wrjNLZVfg+
+# qPiTTK52R7w0wmkEBULKpXYuLqgG2ToOYHLskdkBAj/8TDvGcCODVLeLJ0CVuNfY
+# CXuZkMbPqhivJG4RzO6f2KCfBry6aiROE0vuscq4LbP1K7CWDx7w5KtOE6wOXphC
+# o4tWQzGEkl8ZzVZxSFD2AcFO9HesgGSsvJcBTNbNSRP3hSw/yl5H6/eIf2BcSGlm
+# WhDtqP40M8WNpNccwkQMzvf61YgDy+0aTKG/CxC0Ys5ReV7PrlnIfqY3YgbS2Z8O
+# CyoH
 # SIG # End signature block

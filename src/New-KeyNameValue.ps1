@@ -11,7 +11,7 @@ You must specify all three parameters 'Key', 'Name' and 'Value'. If the entry al
 
 
 .OUTPUTS
-default | json | json-pretty | xml | xml-pretty | PSCredential | Clear
+default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
 New-KeyNameValue myKey myName myValue
