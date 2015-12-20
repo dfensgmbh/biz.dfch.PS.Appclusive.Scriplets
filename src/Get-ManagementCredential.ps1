@@ -194,7 +194,7 @@ PARAM
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
@@ -215,9 +215,9 @@ BEGIN
 		$Select = $Select | Select -Unique;
 	}
 }
-# BEGIN
+# Begin
 
-PROCESS 
+Process 
 {
 
 # Default test variable for checking function response codes.
@@ -419,9 +419,9 @@ finally
 }
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 
 $datEnd = [datetime]::Now;
@@ -431,7 +431,7 @@ Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: 
 return $OutputParameter;
 
 }
-# END
+# End
 
 } # function
 

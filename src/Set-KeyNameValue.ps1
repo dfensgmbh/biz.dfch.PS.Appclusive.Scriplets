@@ -142,7 +142,7 @@ Param
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
 
 $datBegin = [datetime]::Now;
@@ -150,9 +150,9 @@ $datBegin = [datetime]::Now;
 Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
 }
-# BEGIN
+# Begin
 
-PROCESS 
+Process 
 {
 
 # Default test variable for checking function response codes.
@@ -282,9 +282,9 @@ finally
 }
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 
 $datEnd = [datetime]::Now;
@@ -294,7 +294,7 @@ Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: 
 return $OutputParameter;
 
 }
-# END
+# End
 
 }
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-KeyNameValue; } 

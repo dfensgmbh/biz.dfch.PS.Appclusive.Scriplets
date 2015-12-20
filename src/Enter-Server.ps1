@@ -64,15 +64,15 @@ Param
 	$Credential = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Credential
 )
 
-BEGIN 
+Begin 
 {
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
 }
-# BEGIN 
+# Begin 
 
-PROCESS 
+Process 
 {
 
 [boolean] $fReturn = $false;
@@ -161,14 +161,14 @@ finally
 return $OutputParameter;
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 }
-# END
+# End
 
 } # function
 

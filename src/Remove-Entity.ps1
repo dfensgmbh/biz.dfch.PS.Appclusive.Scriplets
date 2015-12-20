@@ -103,7 +103,7 @@ PARAM
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
@@ -147,9 +147,9 @@ BEGIN
 	}
 	$r = @();
 }
-# BEGIN
+# Begin
 
-PROCESS 
+Process 
 {
 
 # Default test variable for checking function response codes.
@@ -260,9 +260,9 @@ finally
 }
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 	if(0 -eq $r.Count)
 	{
@@ -287,7 +287,7 @@ END
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
 }
-# END
+# End
 
 } # function
 
