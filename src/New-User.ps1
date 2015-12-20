@@ -101,7 +101,7 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 )
 

@@ -125,7 +125,7 @@ See module manifest for required software versions and dependencies.
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
-    ConfirmImpact = "Low"
+    ConfirmImpact = 'Low'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementUri/'
 	,
@@ -138,7 +138,7 @@ PARAM
 	[int] $Id
 	,
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Filter by creator
@@ -158,29 +158,29 @@ PARAM
 	[ValidateScript( { if(1 -ge $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias("HideTableHeaders")]
+	[Alias('HideTableHeaders')]
 	[switch] $ValueOnly
 	,
 	# This value is only returned if the regular search would have returned no results
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("default")]
+	[Alias('default')]
 	$DefaultValue
 	,
 	# Specifies to deserialize JSON payloads
 	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias("Convert")]
+	[Alias('Convert')]
 	[switch] $ConvertFromJson
 	,
 	# Limits the output to the specified number of entries
 	[Parameter(Mandatory = $false)]
-	[Alias("top")]
+	[Alias('top')]
 	[int] $First
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Indicates to return all file information
@@ -190,7 +190,7 @@ PARAM
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 

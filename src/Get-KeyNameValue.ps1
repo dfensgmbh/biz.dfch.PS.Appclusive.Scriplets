@@ -225,7 +225,7 @@ See module manifest for dependencies and further requirements.
 [CmdletBinding(
     SupportsShouldProcess = $false
 	,
-    ConfirmImpact = "Low"
+    ConfirmImpact = 'Low'
 	,
 	HelpURI='http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-KeyNameValue/'
 	,
@@ -240,7 +240,7 @@ PARAM
 	,
 	# Specifies the Name property of the entity.
 	[Parameter(Mandatory = $false, Position = 1, ParameterSetName = 'name')]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Specifies the Value property of the entity.
@@ -263,28 +263,28 @@ PARAM
 	# Specifies to return only values without header information. 
 	# This parameter takes precendes over the 'Select' parameter.
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("HideTableHeaders")]
+	[Alias('HideTableHeaders')]
 	[switch] $ValueOnly
 	,
 	# Specifies to deserialize JSON payloads
 	[ValidateSet('json')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("Convert")]
+	[Alias('Convert')]
 	[string] $ConvertFrom
 	,
 	# Limits the output to the specified number of entries
 	[Parameter(Mandatory = $false)]
-	[Alias("top")]
+	[Alias('top')]
 	[int] $First
 	,
 	# This value is only returned if the regular search would have returned no results
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("default")]
+	[Alias('default')]
 	$DefaultValue
 	,
 	# Specifies a references to the Appclusive endpoints
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies to return all existing KNV entities
@@ -294,7 +294,7 @@ PARAM
 	# Specifies the return format of the search
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty', 'object')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 

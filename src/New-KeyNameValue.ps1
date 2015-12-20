@@ -58,7 +58,7 @@ See module manifest for dependencies and further requirements.
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
-    ConfirmImpact = "Low"
+    ConfirmImpact = 'Low'
 	,
 	HelpURI='http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-KeyNameValue/'
 )]
@@ -73,7 +73,7 @@ Param
 	# Specifies the name to modify
 	[Parameter(Mandatory = $true, Position = 1)]
 	[ValidateNotNullOrEmpty()]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Specifies the value to modify
@@ -88,13 +88,13 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 

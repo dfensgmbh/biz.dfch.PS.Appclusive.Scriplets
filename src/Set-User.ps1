@@ -79,7 +79,7 @@ Param
 (
 	# Specifies the name to modify
 	[Parameter(Mandatory = $true, Position = 0)]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Specifies the new name name
@@ -119,13 +119,13 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 

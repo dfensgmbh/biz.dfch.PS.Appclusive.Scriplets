@@ -31,7 +31,7 @@ PARAM
 (
 	# Specifies a references to the Appclusive endpoints
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the service or container name of the entity to remove
