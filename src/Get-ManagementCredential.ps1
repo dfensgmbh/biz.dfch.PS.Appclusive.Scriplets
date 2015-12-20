@@ -208,7 +208,7 @@ BEGIN
 		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
 		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
 		$PSCmdlet.ThrowTerminatingError($e);
-	} # if
+	}
 	
 	if($Select) 
 	{
@@ -280,11 +280,11 @@ try
 		if($PSCmdlet.ParameterSetName -eq 'id')
 		{
 			$Exp += ("Id eq {0}" -f $Id);
-		} # if
+		}
 		if($Name) 
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
-		} # if
+		}
 		if($CreatedBy) 
 		{ 
 			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
@@ -294,7 +294,7 @@ try
 				throw($gotoSuccess);
 			}
 			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
-		} # if
+		}
 		if($ModifiedBy)
 		{ 
 			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
@@ -304,7 +304,7 @@ try
 				throw($gotoSuccess);
 			}			
 			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
-		} # if
+		}
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
 		if($Select) 
@@ -328,15 +328,15 @@ try
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 			}
-		} # if
+		}
 		if(1 -eq $Select.Count -And $ValueOnly)
 		{
 			$Response = $Response.$Select;
-		} # if
+		}
 		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
 		{
 			$Response = $DefaultValue;
-		} # if
+		}
 		if($ValueOnly -And $ConvertFromJson)
 		{
 			$ResponseTemp = New-Object System.Collections.ArrayList;
@@ -352,8 +352,8 @@ try
 				}
 			}
 			$Response = $ResponseTemp.ToArray();
-		} # if
-	} # if ParameterSetName
+		}
+	}
 
 	$r = $Response;
 	switch($As) 

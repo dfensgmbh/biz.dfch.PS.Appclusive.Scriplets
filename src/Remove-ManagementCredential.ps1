@@ -50,7 +50,7 @@ try
 		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
 		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
 		throw($gotoError);
-	} # if
+	}
 
 	$FilterExpression = "Name eq '{0}'" -f $Name;
 	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;

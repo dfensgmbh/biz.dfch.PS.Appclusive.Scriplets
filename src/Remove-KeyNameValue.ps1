@@ -72,7 +72,7 @@ try
 		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
 		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
 		throw($gotoError);
-	} # if
+	}
 
 	$Exp = @();
 	if($Key) 
