@@ -211,14 +211,9 @@ Specifying 'object' as a return format overrides options like 'Select'.
 
 
 .LINK
-
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-KeyNameValue/
 
-
-
-
 .NOTES
-
 See module manifest for dependencies and further requirements.
 
 #>

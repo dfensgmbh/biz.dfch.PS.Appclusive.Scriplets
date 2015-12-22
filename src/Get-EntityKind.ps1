@@ -97,11 +97,11 @@ of it. In addition the contents of the property will be converted from JSON.
 .EXAMPLE
 Get-EntityKind -ListAvailable -Select Name, Id -First 3
 
-Name                                                                                                                 Id
-----                                                                                                                 --
-biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos                                                                     27
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Ace                                                                    3
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl                                                                    4
+Name                                               Id
+----                                               --
+biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos   27
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Ace  3
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl  4
 
 Retrieves the name and id of the first 3 EntityKinds.
 

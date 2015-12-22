@@ -3,25 +3,21 @@ function Get-ManagementCredential {
 .SYNOPSIS
 Retrieves one or more entities from the ManagementCredential entity set.
 
-
 .DESCRIPTION
 Retrieves one or more entities from the ManagementCredential entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
 
-
 .INPUTS
 The Cmdlet can either return all available entities or filter entities on 
 specified conditions.
 See PARAMETERS section on possible inputs.
 
-
 .OUTPUTS
 default | json | json-pretty | xml | xml-pretty | PSCredential
 
 In addition output can be filtered on specified properties.
-
 
 .EXAMPLE
 Get-ManagementCredential -ListAvailable -Select Name
@@ -57,7 +53,6 @@ ModifiedBy        : SYSTEM
 
 Retrieves the ManagementCredential object with Id 4 and returns all properties of it.
 
-
 .EXAMPLE
 Get-ManagementCredential myvCenter -Select Description -ValueOnly -ConvertFromJson
 
@@ -65,7 +60,6 @@ Description of myvCenter
 
 Retrieves the ManagementCredential 'myvCenter' and only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
-
 
 .EXAMPLE
 Get-ManagementCredential -ListAvailable -Select Name, Id -First 3
@@ -78,14 +72,12 @@ ServiceBusClientAcct    8
 
 Retrieves the name and id of the first 3 ManagementCredentials.
 
-
 .EXAMPLE
 Get-ManagementCredential 8 -Select Name -ValueOnly
 
 ServiceBusClientAcct
 
 Retrieves the name of the ManagementCredential with Id 8.
-
 
 .EXAMPLE
 Get-ManagementCredential -ModifiedBy SYSTEM -Select Id, Name
@@ -98,7 +90,6 @@ Id Name
 Retrieves id and name of all Users that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
 
-
 .EXAMPLE
 Get-ManagementCredential AppclusiveScheduler -Select Value -ValueOnly -DefaultValue 42
 
@@ -107,14 +98,11 @@ Get-ManagementCredential AppclusiveScheduler -Select Value -ValueOnly -DefaultVa
 Retrieves the 'Value' property of a ManagementCredential with Name 'AppclusiveScheduler' 
 and 42 if the entity is not found.
 
-
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementCredential/
 
-
 .NOTES
 See module manifest for required software versions and dependencies.
-
 
 #>
 [CmdletBinding(
@@ -224,6 +212,7 @@ Process
 	$OutputParameter = $null;
 
 	# Parameter validation
+	# N/A
 	
 	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 	
@@ -367,13 +356,11 @@ Process
 
 End 
 {
-
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
 	# Return values are always and only returned via OutputParameter.
 	return $OutputParameter;
-
 }
 # End
 

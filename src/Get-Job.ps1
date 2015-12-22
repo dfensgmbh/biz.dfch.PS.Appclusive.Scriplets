@@ -26,19 +26,19 @@ In addition output can be filtered on specified properties.
 .EXAMPLE
 Get-Job -ListAvailable -Select Id, Status, Name
 
-  Id Status                                  Name
-  -- ------                                  ----
-1029 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1031 Approved                                biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1033 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1035 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1037 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1039 Created                                 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   2 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   3 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   4 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   5 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   6 InitialState                            biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+  Id Status       Name
+  -- ------       ----
+1029 Approved     biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1031 Approved     biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1033 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1035 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1037 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+1039 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   2 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   3 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   4 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   5 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+   6 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 ...
 
 Retrieves the id, status and name of all Jobs.
