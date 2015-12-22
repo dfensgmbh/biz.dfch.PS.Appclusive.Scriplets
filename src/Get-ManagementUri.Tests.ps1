@@ -155,7 +155,7 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 			$User = 'User-that-does-not-exist';
 			
 			# Act
-			$result = Get-ManagementUri -CreatedBy $User;
+			$result = Get-ManagementUri -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Be $null;
@@ -166,7 +166,7 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-ManagementUri -CreatedBy $User;
+			$result = Get-ManagementUri -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
@@ -179,7 +179,7 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-ManagementUri -ModifiedBy $User;
+			$result = Get-ManagementUri -svc $svc -ModifiedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
