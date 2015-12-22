@@ -64,15 +64,15 @@ Param
 	$Credential = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Credential
 )
 
-BEGIN 
+Begin 
 {
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
 }
-# BEGIN 
+# Begin 
 
-PROCESS 
+Process 
 {
 
 [boolean] $fReturn = $false;
@@ -161,14 +161,14 @@ finally
 return $OutputParameter;
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 }
-# END
+# End
 
 } # function
 
@@ -195,8 +195,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUuvKa0vYlKHDaPMtVvIlCbROk
-# 3kGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMITtt8cOEfXqnI0FNHQYNyIX
+# IBCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +295,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS8hfx/6gQaToqt
-# r101g9V/Pt82SzANBgkqhkiG9w0BAQEFAASCAQAGrVVGYPKYM10WDDbYUP4d5BwV
-# LvNv8k2yxN3R8rsVNWLRpA85A/IToKChDi7EtNqwfUMG+ybrBUfWICxBT9j81eRt
-# wnoeUN6ncO0d5Y/bBcjvx8CCvYcErASPs7+JS5NnGVxt01LfBU/pigbcQKOq61tc
-# xgpAowhGLpQsu/qaxpYwo0NVILjaPLOyTOy2CatRGJQwMtPuG3iLhYnSd/4QkxoO
-# VY+lMhLHieq93oRcS2Z6A+s5jZHkbxTZJg8OR+SwQ5/u1WHXPrRx9TfuTexkIpSz
-# kOQBgDwLp4K7W/N8vmfvh3b/3pAuMXM2uJeGZ+enONBmXP9XS4foFi+aj64ZoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRlJEKoO8yv3riH
+# vOCiI6rUi2djKjANBgkqhkiG9w0BAQEFAASCAQAG7wUoTin8KtxGZwk6wDtA8XDx
+# AIT+GsKOMfBqio/i7m5YaoCn98g9oIu0+TEY3u0JN6Y3tfcZbGKm53YNWFtwWuhv
+# eWjqEcpxxEGaaGBdGsLxjcD1rFnqUIV/6fQsb9O6HX1EDNFKvQSJI6sZ9Ci8upyD
+# Xg0h2l37UwkPcHth5HLcdD2CGMEf4GzPgCVIwg+0S0cx719o+B2AubKSDUWcYNJ2
+# 4od3/g294blzo1radAN1/VmzE8EIsc/yQdqDfYFZoOQLinjDtxzF+Zsu9Qo6XNU9
+# gZsIf7J9Mh7u8GwYl6N8N+TQj6dDXOYaBghrOogX9mVDikzS8oF5wv/kQKC9oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIxM1owIwYJKoZIhvcNAQkEMRYEFLTfzyzPu1QlqumAgBYzNvZfn1QS
+# MTIyMDIyMzUwOVowIwYJKoZIhvcNAQkEMRYEFMzndWOIuHbREK92YCgTw0LXHnDJ
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAQ4pKwMDJ/ERbFwe2/
-# 1SfmjoWHDQVVqjglRfi6ncDQiNFalVnoF1MnvzdnNYwqLacxrTXAc3QTD1dWDHQZ
-# rHe6TEypdWzNrEo02/G3CFmJvy6/4Z8cFagO8tKAQE+pDrrDe/37LoC1tYkAf17u
-# B/ob33EHdggnYTwIEIdRlKd+ZVmTFuu9WyXSuquSIXMiQRK60Eu5l0thurrwHr2J
-# y9Y0pQh0UBPC8cZo4Wc9t1o2WMYdkgwjSYVrPT42cgLZlfRM2XDWljCTd1Myiwdj
-# 5vueD5Up4LWYo7VxxvqkojucY4zJr4kE0wBAek4KEcwEx8AlkWAZFUaYHshvMY3a
-# wlz9
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB9Wwy/voFbT467gxxU
+# +Eg88cg2+M98deJzTxBMsOmv63xButfe2LJvhP9JrrV9aCZxoYBA5vxs68HEImzN
+# WUTpIZ3o4cyjCYhzOBy1KTVqRhpbsWk37bdxtv1r1E5z5Rebjy6nQ/lF8kvBcV55
+# S++VBRrrAbDe95NGjRWk+XDSTR+w/RrGXmFf+Y1UYeLB9XZL2CxaBGtY0ExLnq8I
+# Axkdl0gEFGLDN0SaxvoVlOUQCIhrQXaSoxQgSoEDDu9LD5oT5pB3vGskk98mIIlC
+# 37f8e/wPBQHq+/q8IAI79tAIT2PDLsIh2o0tK5etSRsKWxMIGOoQoXOfdK+UFVcu
+# wyCr
 # SIG # End signature block

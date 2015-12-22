@@ -1,4 +1,73 @@
 function Set-ManagementCredential {
+<#
+.SYNOPSIS
+Sets or creates a ManagementCredential entry in Appclusive.
+
+
+.DESCRIPTION
+Sets or creates a ManagementCredential entry in Appclusive.
+
+By updating a ManagementCredential entry you can specify if you want to update the Name, Username, Password or any combination thereof.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-ManagementCredential myName myUserName myPassword -CreateIfNotExist
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new ManagementCredential entry if it does not exists.
+
+
+.EXAMPLE
+Set-ManagementCredential -Name myName -NewName myNewName -Username myNewUserName -Password myNewPassword
+
+Username          : myNewUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myNewName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Update an existing ManagementCredential with new name, username and password.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ManagementCredential/
+Set-ManagementCredential: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ManagementCredential/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
     SupportsShouldProcess = $false
 	,
@@ -10,7 +79,7 @@ Param
 (
 	# Specifies the name to modify
 	[Parameter(Mandatory = $true, Position = 0)]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Specifies the new name name
@@ -30,34 +99,37 @@ Param
 	[Parameter(Mandatory = $false, Position = 2)]
 	[string] $Password
 	,
-	# Specifies to create a KNV if it does not exist
+	# Specifies to create a entity if it does not exist
 	[Parameter(Mandatory = $false)]
 	[Alias("c")]
 	[switch] $CreateIfNotExist = $false
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
+	trap { Log-Exception $_; break; }
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
-# BEGIN
+# Begin
 
-PROCESS 
+Process 
 {
 
 # Default test variable for checking function response codes.
@@ -68,15 +140,7 @@ $AddedEntity = $null;
 
 try 
 {
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
-
-	$FilterExpression = "Name eq '{0}'" -f $Name;
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
 	if(!$CreateIfNotExist -And !$entity) 
 	{
@@ -92,9 +156,9 @@ try
 		$entity.Name = $Name;
 		$entity.Created = [System.DateTimeOffset]::Now;
 		$entity.Modified = $entity.Created;
-		$entity.CreatedBy = $ENV:USERNAME;
-		$entity.ModifiedBy = $ENV:USERNAME;
-		$entity.Tid = "1";
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.Tid = [guid]::Empty.Guid;
 		$entity.EncryptedPassword = "crypttext";
 	}
 	if($PSBoundParameters.ContainsKey('Description'))
@@ -114,14 +178,7 @@ try
 	$r = $svc.Core.SaveChanges();
 
 	$r = $entity;
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
+	$OutputParameter = Format-ResultAs $r $As;
 	$fReturn = $true;
 
 }
@@ -140,7 +197,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
@@ -173,9 +230,9 @@ finally
 }
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 
 $datEnd = [datetime]::Now;
@@ -185,7 +242,7 @@ Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: 
 return $OutputParameter;
 
 }
-# END
+# End
 
 }
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ManagementCredential; } 
@@ -209,8 +266,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ManagementCrede
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUD7Vb4uINQkGreS0eh56HIM63
-# nqGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
+# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -309,26 +366,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ManagementCrede
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRNNn5BI0bOAoKL
-# MqEaBRaUzL1k/jANBgkqhkiG9w0BAQEFAASCAQCFmfMbm4LWviEbNx9+/E7VgS6p
-# QW+ZS+gFspNZioTdqrPjMgsKvfdWFhrbLBvZjMd/Nhg5y9r+Ttyn+HR/MjIXq5Ng
-# 2BzzIDSn6gyvL2Pa2dVMMXXcagr7TFB3dstmRfj60f+pTMTyQqxTeTj7MYtpOutN
-# HHWve8TFSha/r04kgaBnp8k7acOqdGuCWre7ISP3WaFHlxVHsNKfo9+G/p0R5qCt
-# Xe3qwXhXzscKGDnUuhmzdZHeVESENj/aA1BSdRndbgIp/WzIVMBTUNGWWKt+NkR7
-# YCy8s3XtszgAEk7V7uc6k9wZpcg+bhSmJNNfbt9U2C3IitclzOLtOqfKBU9AoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
+# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
+# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
+# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
+# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
+# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
+# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAyNFowIwYJKoZIhvcNAQkEMRYEFNOPBuBJQS1lnO3oaHJmqAT80QSf
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBZwXmvOMaSvk99y80o
-# lPNJ4R8n5j+Vbscl/SGBxW/AT6AcV3UBy6ER4Yawc4XIs+BgMIlwm8wrjNLZVfg+
-# qPiTTK52R7w0wmkEBULKpXYuLqgG2ToOYHLskdkBAj/8TDvGcCODVLeLJ0CVuNfY
-# CXuZkMbPqhivJG4RzO6f2KCfBry6aiROE0vuscq4LbP1K7CWDx7w5KtOE6wOXphC
-# o4tWQzGEkl8ZzVZxSFD2AcFO9HesgGSsvJcBTNbNSRP3hSw/yl5H6/eIf2BcSGlm
-# WhDtqP40M8WNpNccwkQMzvf61YgDy+0aTKG/CxC0Ys5ReV7PrlnIfqY3YgbS2Z8O
-# CyoH
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
+# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
+# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
+# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
+# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
+# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
+# PLS1
 # SIG # End signature block

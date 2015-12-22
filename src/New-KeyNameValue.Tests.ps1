@@ -8,6 +8,7 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 	
 	. "$here\$sut"
 	. "$here\Set-KeyNameValue.ps1"
+	. "$here\Remove-KeyNameValue.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -31,6 +32,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 			$result.Key | Should Be $Key;
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "New-KeyNameValueWithDescription-ShouldReturnNewEntity" -Test {
@@ -51,6 +54,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "New-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
@@ -65,6 +70,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 
 			# Assert
 			$result | Should Be $null;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 	}
 }
@@ -88,8 +95,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUodtKW5HG9qWq+RHfJefa0kvb
-# 7wWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU3U1+nWiYVhCE1TBhVGbo+6ao
+# lASgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -188,26 +195,26 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTXEo4iWveO41Un
-# V/SP+ci1dvK/4jANBgkqhkiG9w0BAQEFAASCAQCyHsDarz4h0I5taBHaAOrLc/2E
-# UP/fmPHU58hT9xxjGJYI9zrmL7LT9SUY0pjboNJ9PpYMt1BWOCpD2YnQbxMMKZgV
-# kPUeTYILY0QgOYf5i80UqIHDMgsdrCdPXTH4EMm+VBd+PMAztTKctujZG3yXMh0A
-# LstJ5pvTOeZNIHub/6apDwI0QYTj7rgnxZHs+NhbUkUE3XHiTALyI3wOBScxDvUO
-# C6CYT1RmDCvvP0r3wOTYCQwQv5rim9xXX0S7hqlF33h6BM53JWuTRum2p9Iyjngb
-# //M6RN+JoTdfHr+QlngwJF9fKc1ENnmB+5xDWsrVIs/hSPeWh2Zfz+jTRzM1oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSSg1U6R9vZUOv4
+# huDuJGz8qCIlOjANBgkqhkiG9w0BAQEFAASCAQBs+q/S9jvWrY4+6j8zM5zmX0jQ
+# DWrF4j6b0ouPn4klguzM+N4WDxUg6tEJOXJzI3iVEr//z97GXazl+I5MN5i5JHcz
+# FNAXXGfV5vEH8BF9n40hC07uBig6Sv7VNaE8Iqx1HUMPVMLRGPP/0sF4T4zlw5h7
+# NNDOaX0rqremNj1Xa/GOSpk9m27eWyCpFXCwESYAm5dIirvbosJu8ntLWTgQ04ug
+# 0s7aBOC0u5FLwRQS4gU/UgBPKnvkw02KtrniKJpLk2XOCIEV3RJS/EZWy7QczNtt
+# WnVOL+g6HH+5VXerf1ak3DWWRRNy3e9de1jibPRxT9XlTkacUOVunIcExQuxoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIxN1owIwYJKoZIhvcNAQkEMRYEFOy6TpOHYMEx+Kt5pdk1UZ4m8ahd
+# MTIyMjExMTM0MVowIwYJKoZIhvcNAQkEMRYEFHBTxbW+h6PYuMKbo9gqpeLJzaZZ
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAUxB4vaOXCtt6f9MPC
-# d4fBEMcIz/PGqT9U3Z3nxVqSSxka0oB8sWJyVI/y15oofwUZucxZ1lwKGyaH8dUH
-# gW8h2YPfR/UmARQ7yNyPsQa51GQ2YU1l3FxgW/7aGmaIVDn9T39jafG/GYsbETTv
-# DkhRkUCIyMZsgnnxPER7zvz7lUWlKFYSAf0gjHZSccDu1ZY1JJwrVpSSPZLWPVLS
-# 3mxstJWRCdBlrYuwxlVI2S7jOG+r8FahpIpfC5T0eM9pxROaZHRqss/17ktC9h55
-# 5zgmEx9kgUnLmQkYFFXMM7GTO7XTqg6n6DC8368wZxxWKXhASWfNbMNuVorT8cGj
-# Dk0I
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBUy2OeBTkBgkPpPzOJ
+# bKA2sXw4+9QMY0enjtukn0Gin8VHDS/6BuG77KofZ0ydL4cf8dQySyGbc7gOe8/R
+# ITfojC6JvZKDRdj3F7FDcW2MfTqsz+0HXU8oGWsUVMUqIH81sXhggmnQev9BiNYr
+# xpo+fnF019Cfc74i1T6CRRFCuXA9JZ5jHcePD7GjP7gEu8ALbWAL0IDw6RF3dcaT
+# +jSlwj4YgeXNN63Zyq8BkonJIJtDi49tEM6CjqZJJjbVPFSVPtjhNo79T/PUaVI5
+# qR/NtMV8kkl4rqGCbKGdod7EjVErRvVlUXaIPXq4Lhd7uUeaLCDtT/QoXNom95Ag
+# H2Sz
 # SIG # End signature block

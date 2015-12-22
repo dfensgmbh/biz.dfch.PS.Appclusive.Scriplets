@@ -2,116 +2,189 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
+Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Get-User.ps1"
 	
-	Context "Push-ChangeTracker" {
+	$svc = Enter-ApcServer;
+
+	Context "Get-ManagementUri" {
 	
 		# Context wide constants
-		$biz_dfch_PS_Appclusive_Client = @{ };
-		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
-		
-		
-		BeforeEach {
-			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			
-			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
-		}
+		# N/A
 		
 		It "Warmup" -Test {
 			$true | Should Be $true;
 		}
-		
-		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
+
+		It "Get-ManagementUriListAvailable-ShouldReturnList" -Test {
 			# Arrange
-			$svc = Enter-ApcServer;
-
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Precondition failed';
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Connect to the server before using the Cmdlet';
-		}
-
-		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-
-			# Act and Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-
-		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
+			# N/A
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -ListAvailable;
+			$result = Get-ManagementUri -svc $svc -ListAvailable;
 
 			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 0;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
 
-		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
+		It "Get-ManagementUriListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			# N/A
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics -ListAvailable;
+			$result = Get-ManagementUri -svc $svc -ListAvailable -Select Name;
 
 			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 2;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+			$result[0].Name | Should Not Be $null;
+			$result[0].Id | Should Be $null;
+		}
+
+		It "Get-ManagementUri-ShouldReturnFirstEntity" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementUri] | Should Be $true;
 		}
 		
-		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
+		It "Get-ManagementUri-ShouldReturnFirstEntityById" -Test {
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			$ShowFirst = 1;
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+			$resultFirst = Get-ManagementUri -svc $svc -First $ShowFirst;
+			$Id = $resultFirst.Id;
+			$result = Get-ManagementUri -Id $Id -svc $svc;
 
 			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 1;
+			$result | Should Not Be $null;
+			$result | Should Be $resultFirst;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementUri] | Should Be $true;
+		}
+		
+		It "Get-ManagementUri-ShouldReturnFiveEntities" -Test {
+			# Arrange
+			$ShowFirst = 5;
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$ShowFirst -eq $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.ManagementUri] | Should Be $true;
 		}
 
-		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
+		It "Get-ManagementUriThatDoesNotExist-ShouldReturnNull" -Test {
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			$ManagementUriName = 'ManagementUri-that-does-not-exist';
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+			$result = Get-ManagementUri -svc $svc -Name $ManagementUriName;
 
 			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 2;
+			$result | Should Be $null;
+		}
+		
+		It "Get-ManagementUriThatDoesNotExist-ShouldReturnDefaultValue" -Test {
+			# Arrange
+			$ManagementUriName = 'ManagementUri-that-does-not-exist';
+			$DefaultValue = 'MyDefaultValue';
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -Name $ManagementUriName -DefaultValue $DefaultValue;
+
+			# Assert
+			$result | Should Be $DefaultValue;
+		}
+		
+		It "Get-ManagementUri-ShouldReturnXML" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -First $ShowFirst -As xml;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0,5) | Should Be '<?xml';
+		}
+		
+		It "Get-ManagementUri-ShouldReturnJSON" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -First $ShowFirst -As json;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0, 1) | Should Be '{';
+			$result.Substring($result.Length -1, 1) | Should Be '}';
+		}
+		
+		It "Get-ManagementUri-WithInvalidId-ShouldReturnException" -Test {
+			# Act
+			try 
+			{
+				$result = Get-ManagementUri -Id 'myManagementUri';
+				'throw exception' | Should Be $true;
+			} 
+			catch
+			{
+				# Assert
+			   	$result | Should Be $null;
+			}
+		}
+		
+		It "Get-ManagementUriByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$User = 'User-that-does-not-exist';
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Be $null;
+		}
+		
+		It "Get-ManagementUriByCreatedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-ManagementUriByModifiedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-ManagementUri -svc $svc -ModifiedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
 	}
 }
@@ -135,8 +208,8 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUor5wRGXIIOpGUghO0aRP/Vxv
-# TpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU4YttZ53AesrRs6jmsn+2td0D
+# Ye+gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -235,26 +308,26 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQnysMMzV1vYMJb
-# LFk9f580qhdrjTANBgkqhkiG9w0BAQEFAASCAQCJwqllhWKKlTFRWTvU5qgFQq6/
-# v8+QLDxmyGW8sscJ26V9vecsezHkL7mbon70DgYPkOgLKQZlWoeqevXGERkH9UPh
-# D6DDtNLFFgl4RVSVY91lftCsQZQS84H3xmHy3cFsniiL7o12WVH0hxTN9fIICuYJ
-# p52zGYh+DiQIgH3RPlfW7YzGb/cDlrn479GhTREUjEWRvXGmj037V6DlKyu7Is9n
-# qRz3DbsD/4X5LVamexQdv+PnUeKHo/30Cy7Atm8i43D0aB2tfbS6W5OMqhcTMXYE
-# vxx/U7xEtJewgj+AdEImZ5hgJOQ4GEuDG71d10uCcE9qqQogHZVUr12NqqvEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRLTIvg4GYzyoY/
+# PHFcf2bOS/9A3TANBgkqhkiG9w0BAQEFAASCAQCkc3yGyNdUZbZi8Gc+dySNhp/r
+# hh2BwRE3pQoj27wvG54tqnwOOFiMOhPZBRyudX3rL3WQpjoDU6YkIjmNuP1MUHCb
+# BMsoiqee7fEcg/IBfNN2ert9A1u2AKH3AbDauwUi7ri+rZeVS9HfiHG8zB7YWv9h
+# MjGB+kh1J0MQFZf8Qyus2fhIbsGPOkNqAiB+MgdZ+2WQTrrRiakJT0KXWf1qn30N
+# Xid8kiL1cbmDEpMp7O6aZzsA230XGd1gvHkrwwIfS+fiVF4v4o5RDL2hTvYndRCr
+# TKqFcdqbjsdEWlMpu82Lg2i1hg6kxfCmJCslmfng32tIcJLQ++/07V7WMfKhoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NFowIwYJKoZIhvcNAQkEMRYEFN8rBPqbm0mtUENt27iCXSHUDMfl
+# MTIyMjExMTM0MFowIwYJKoZIhvcNAQkEMRYEFBYNckqS+20xcOKr7mbvQPzzbCsx
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBz1kqSqunXuJ+sS5Hl
-# nbf0oCOVL1TFEY517itucHTQa14DuhuhAPnzMNCf3HpF5mLyhcUbeCmm6YHtCcNg
-# xnOCmlXwFdp6CjM8Sod2faCLp8BMYWAAp4MkpUSod8XV1csoosj74gPAUeJu68lE
-# s7BiCg8fcRKDubuwIJ9kO14Dw6M+Cnzry0as563EnlsgrixK4oVvd5fo6Stdx0ov
-# GoHCy0SQCtn95CDvim9DFnGAHrB+GpMMo1s6ASvZaVFRxMMaF1WMEk/DsrOVG+HN
-# QYt56qcu4E+sb86mDlfXlveY2rND6RKMmlOFnSXPvrjouT6ZHBUEFyRBAAnji42M
-# akkB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCCWFkLOgiKtGbk52XW
+# MhbvY4RuOzjHvlzObFq0yL49DNWcBWTmayp6QpK+XX/F7/pW1g4/ODSV87k8Wrzi
+# 4T8BZMlhUo44DQE9rkD+AV4pl4ECOs4PHYpTb69mkBSbCO4OPH0vPRFYjbgNdMF6
+# lvKDmShQgYO4FJLv0l5a4wOrrXKG/dWRX+/mXwzeTDvjbFoKl7ojMEdfyaOhq8uX
+# vVQNVF+XcYPba0lxjiC4g+a2LxQxpNegtXNrso16qgYWdCKSLkfZQLsDV4UJ39Hj
+# 8gyHSnPwoHxdgLWdZ1CRgVqdnRn44DhLnT10cHWEgZT4FR/U7nORboLcUV/UjBt2
+# IpVw
 # SIG # End signature block

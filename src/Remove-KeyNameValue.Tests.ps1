@@ -7,6 +7,8 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\New-KeyNameValue.ps1"
+	. "$here\Set-KeyNameValue.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -69,12 +71,13 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 			$Value = "Value-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			{ $result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value; } | Should Throw 'Assertion failed: ($keyNameValueExists)';
 
 			# Assert
 			$result | Should Be $null;
 		}
 
+		# what is the purpose of this test?
 		It "Remove-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
@@ -82,8 +85,8 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result1 = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			{ $result1 = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value; } | Should Throw 'Assertion failed: ($keyNameValueExists)';
+			{ $result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value; } | Should Throw 'Assertion failed: ($keyNameValueExists)';
 
 			# Assert
 			$result | Should Be $null;
@@ -110,8 +113,8 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmCgDZBO3VxInKVlbGixzpxA3
-# jxWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUswMrRZCmfCguccrIzr6TVevn
+# I7ugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -210,26 +213,26 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRoCWQLKPoBgqoy
-# 0KPrQ+E1xjXNXDANBgkqhkiG9w0BAQEFAASCAQC2qa4PCYZSj1i2LlBGBR2cYHIk
-# nQbGQngzQqzqzlazXODcH8mtZgWR0znvaWm7b9hf1caDZ9p0v5s6MD/rBEHBQn6m
-# +2npgKnN/yTSH87HYn2PSwf50vkdiQUJ5GvPLBmpkf/iwua2Mn5sToQLYpEB6/4r
-# l/beTqaG9FqCElN8J7pfIRJmCY/wpUoII6Vi7OXp/PV/7q7otVq2/1J1E7hCTvfg
-# g1rIjm9W+cfhDlPsl5kE3xTS6EPi3w0+AsWPdErZZ3Y1DWzzg7NTaphQF1mqOkMy
-# Nw40/df0RMSRKaOw9nolfS+UC1m0QbSjrE613qbHLPb3d6ZBODEv/+Nsy2lyoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQP+5bni9eFwSUj
+# dMrB7Pu7OgcsWzANBgkqhkiG9w0BAQEFAASCAQBCUqBIhViKR2vK3aS9WgCGl/MP
+# qAihwFVFtP7Y0a7JnWeqYgcXZ5jgMH8GU81W9Iy2nV6WoWYvos6bRYO/NJNh+YFl
+# qhyWTuQxN9A+zZDynaUQaIF6NqAjRzMtVtn5T+Pgfk2IH5fxofm8p2mRNWkgks1N
+# ygSC7Umj0c+9aZ8VGH5+MJzu+ofzTHyUS7826tOkNwiS7QCAOXdACCv1tz5Pi2yE
+# /vALwjWwv6Ctig1pHP9DQhAA09WfxV5WeQ7BG9Yyp5Js4nKM6ITI/h8SK+Rb1hUs
+# Oa+1bFAIQ6A01KGxAdf6chHNDYOTtqbJ4Y28N9rVxeOT4o0hKUah3XxppEpKoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIyMVowIwYJKoZIhvcNAQkEMRYEFMzQKukAILs2h8hSyFsuhXDhCTmk
+# MTIyMjExMTM0NlowIwYJKoZIhvcNAQkEMRYEFKIlekstmiytAOynHsTlUxnDGiFn
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCBiGTTJwSu+aGS1YdE
-# jOSzSM1Z8wVB4MXTAeVaoy6twyTwzZGtSvCz9APgEhgrstrzcq169Eh28vFUg+rv
-# /H2CYkppF2GOC8rdbaFgbbudwLjiKRE61H/rFEES+wjM9elhz7Dpa4DVfH4tsG4g
-# mQe0BkAfm1zqzcOHQrijyZm5CQMLU26l4NEjjz7YJdwFlW8DC4kfEKnndJe1MWXt
-# wTlkHYJR139IT80GEfjXte9SSlI3wEFO0Fq9YmKpH1A7Vaiyxyk060LfRFsbgsFM
-# P8Vz5qiZ0hnRx3iDFFqWNRh0ygHDjawJFxwO7ftlNbo3RaEWXKZmdsQ5eEVHbod6
-# ldl+
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCDjchJBaX0X+C5daRO
+# 2MdmkHzFCEF3SPCjIOz+v0iTeEcwNpcr9knxe+0Su/SkADFf7+2gphO2NmbHzKhW
+# 1XzQfKzRq7WHYT7afxGyHrbxFYfNVYhwgOH50/P5NMMu+7eqA+VumHV4hAnBCZMB
+# ggf30Poiea1/0pBfLSu4zloCCl4lBTi1azqlwjpRHRrxhB8KF5U68V/zX9eFpXFf
+# vGnVPOkLhq7FKHQ9UtqucdQm/RQoTmXfnZYkIFfcL0t3jA417xpMefv16293ylnH
+# Uu1Jblx/cbtD/36TMatAverc5JjS1MHbhDcrCG+/aQS14M54V57mn9SOh0VYaLYE
+# FgXB
 # SIG # End signature block

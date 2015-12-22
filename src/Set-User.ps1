@@ -1,42 +1,237 @@
+function Set-User {
+<#
+.SYNOPSIS
+Sets or creates a User entry in Appclusive.
 
-function CreateEntityType($entityTypeName, $entityTypeDescription) 
+
+.DESCRIPTION
+Sets or creates a User entry in Appclusive.
+
+By updating a User entry you can specify if you want to update the Name, Mail, ExternalId or any combination thereof.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-User myName myMail myExternalId -CreateIfNotExist
+
+ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : Internal
+Mail         : myMail@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : myName
+Description  : 
+CreatedById  : 1
+ModifiedById : 1
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
+
+Create a new User entry if it does not exists.
+
+
+.EXAMPLE
+Set-User -Name myName -NewName myNewName -Mail myNewMail@appclusive.net -ExternalId [guid]'28af9d74-388b-46f2-90d6-a1545d89d16f'
+
+ExternalId   : 28af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : Internal
+Mail         : myNewMail@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : myNewName
+Description  : myDescription
+CreatedById  : 1
+ModifiedById : 1
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
+
+Update an existing User with new name, Mail and ExternalId.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-User/
+Set-User: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-User/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $false
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-User/'
+)]
+Param 
+(
+	# Specifies the name to modify
+	[Parameter(Mandatory = $true, Position = 0)]
+	[Alias('n')]
+	[string] $Name
+	,
+	# Specifies the new name name
+	[Parameter(Mandatory = $false)]
+	[string] $NewName
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the key to modify
+	[Parameter(Mandatory = $false, Position = 1)]
+	[string] $Mail
+	,
+	# Specifies the new name name
+	[Parameter(Mandatory = $false, Position = 2)]
+	[guid] $ExternalId = [guid]::NewGuid()
+	,
+	# Specifies the externalType for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalType = 'Internal'
+	,
+	# Specifies the tenant id for this entity
+	[Parameter(Mandatory = $false)]
+	[guid] $Tid = [guid]::Empty.Guid
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("x")]
+	[switch] $NoUpdateIfExist = $false
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
+)
+
+Begin 
 {
-	$entityType = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityType;
-	$entityType.Version = "1";
-	$entityType.Parameters = '{}';
-	$entityType.Tid = '11111111-1111-1111-1111-111111111111';
-	$entityType.Name = $entityTypeName;
-	$entityType.Description = $entityTypeDescription;
-	$entityType.CreatedBy = $ENV:USERNAME;
-	$entityType.ModifiedBy = $entityType.CreatedBy;
-	$entityType.Created = [DateTimeOffset]::Now;
-	$entityType.Modified = $entityType.Created;
-	$entityType.Id = 0;
-	return $entityType;
+	trap { Log-Exception $_; break; }
+
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
+# Begin
 
+Process 
+{
+	trap { Log-Exception $_; break; }
 
-#
-# Copyright 2015 d-fens GmbH
-#
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+	$AddedEntity = $null;
+
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	Contract-Assert ($CreateIfNotExist -Or $entity) "Entity does not exist. Use '-CreateIfNotExist' to create the resource"
+
+	if(!$entity) 
+	{
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.User;
+		$svc.Core.AddToUsers($entity);
+		$AddedEntity = $entity;
+		$entity.Name = $Name;
+		$entity.Mail = $Mail;
+		$entity.ExternalId = $ExternalId;
+		$entity.ExternalType = $ExternalType;
+		$entity.Tid = $Tid;
+		
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+	}
+	elseif ($NoUpdateIfExist)
+	{
+		return;
+	}
+	
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$entity.Description = $Description;
+	}
+	if($PSBoundParameters.ContainsKey('Mail'))
+	{
+		$entity.Mail = $Mail;
+	}
+	if($PSBoundParameters.ContainsKey('ExternalId'))
+	{
+		$entity.ExternalId = $ExternalId;
+	}
+	if($NewName) { $entity.Name = $NewName; }
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
+
+	$r = $entity;
+	$OutputParameter = Format-ResultAs $r $As;
+	$fReturn = $true;
+}
+# Process
+
+End 
+{
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
+}
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-User; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUxYSSGDBuauk589wRQa9mOsDb
-# /UugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUXp+7y21xhEPI//LgPI2gNrls
+# +OKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -135,26 +330,26 @@ function CreateEntityType($entityTypeName, $entityTypeDescription)
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTBhDiDGg1+2tXG
-# W1CaMajnolVNcTANBgkqhkiG9w0BAQEFAASCAQA6IqoJGL0LejPPGy2/JnswJApo
-# KXoFpFPM3cpSDUc24OFMfMRnwnCVWrjSuFVsRXMVKaj0Rs+P83zHxqqla8WGB9Vk
-# bvcCVT0R4ixP84y9xk92oSZLc4alfLEOULqfqTbeK7yKVDpsNO5WoaarXu7pGAEZ
-# OMA1XvWC1srJyTeg/KxVYAEFZULJ9kjwhO3oghLBqDl7bP+C7A5e+ndmOYPJowUk
-# AN0ubOEZb81WVCb0oq/Kav/N2v2szxENN/Y0cix5Xx9qjRwOd750yRDs673W9K8P
-# GMvuOX6TOqLpR3TxYMk2c6Qkd+YkvzjWoppRAniWJtCNcPDzMMZdZ0Mdys6noYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRqIs9ri9N1EQlc
+# 1SLGRTiltF0R2jANBgkqhkiG9w0BAQEFAASCAQBEb7AvRipO7SJM4JzA0o26FYef
+# Q18UMB8YkI63XkK8n6WpXF2qtdpBFUo+oaxAKVognQ4IH6jA1ogu/wOxYiRv+UnB
+# 1I7ZMwQqIWytmsRpTo5VF5xXkzYm43RCvdA3jcd3agJ/1I+Bi5/cKbVJHfNvsUue
+# yFWHNRxSzgOgGkNxhZcZeVenlNeSiPe14YIjI94tuSKjwVFsDDKMvVg5WeLrOGn6
+# GfCdwnO2zPeDfoNQogV+nAsfVYCvKvEA53RZrwwpkzrLKbJzIqdnvw2DxXN+KRBe
+# UAxqcc0Q2VDjXKxYR+4+mmg3RfG8hDGCI4bgbgvkZrL8FzEzoMn2W1968RaLoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA1MVowIwYJKoZIhvcNAQkEMRYEFJWHSVx2J2n0ni0D6yrsSY4/6sWy
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFCz9AaZldeI9DcwPyLVU+dJ7OSby
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCbcKXeI4z6LLz7dV3E
-# zxllTTpeuo+4f4Xm/hyU8eQgwFKVLXpmsvfwnFUxMvPe6XzMEcazaiEu9LT4TVh1
-# 6+tkoU2ZM1bmuCp6RyaprY+2r+QefS39blUWYHc9weJpriSomHvIRrWoQBT1O6SV
-# ujJXdC/G8mxQVsTFg9zAaitjMh9CguOlSyj5Ob0bYZNCqqX9I4ZbzU2PNZIfpjwY
-# Ts8LVXP9Nu5URIWPwxpSs1NBmsvPZUG5Y1Tt+uVBg9+z4ncSKA8ccTLkn99Qfaij
-# Wob5T8zlCvaVtSEjlIMtOeXkDz6bG41bPzcsLwkOkaHXFjooFVuBL8nDisRWYla8
-# qhRm
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBw3MmstIA/73Yg7VMv
+# 7rxPpftYwR6rZOeC63+srEe/lyYA3LVsuqg1IsNTNJdoL02Wft9XFGe3S0iKvsb8
+# YxQbLADAnIFqkq9hgWswAC0qVmmPQNIlpe4KoNQS92XAcnG7qnDN8PyIdqbnRZ49
+# VSQ58WqO0bCiE1V6B3l2HAdFv17u23Fik38j56p8IwI3viTzRJUgH7+NIvJ3OysB
+# WDpC1X1bXqiRVdMiXXrVQxmneMx89eCp45FAJRb6P80sjdyZPN3IsveDvf5F4nHf
+# RusMoZeW7grurnyqwPIbv652RUZgPR9vN/pfyPiaJTv364XUW4xMImyjYbd3neuL
+# Ac6L
 # SIG # End signature block

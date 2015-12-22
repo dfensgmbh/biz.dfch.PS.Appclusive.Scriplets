@@ -1,142 +1,179 @@
+function New-User {
+<#
+.SYNOPSIS
+Creates a User entry in Appclusive.
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
+.DESCRIPTION
+Creates a User entry in Appclusive.
 
-	Mock Export-ModuleMember { return $null; }
-	
-	. "$here\$sut"
-	. "$here\Get-ModuleVariable.ps1"
-	
-	Context "Push-ChangeTracker" {
-	
-		# Context wide constants
-		$biz_dfch_PS_Appclusive_Client = @{ };
-		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
-		
-		
-		BeforeEach {
-			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			
-			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
-		}
-		
-		It "Warmup" -Test {
-			$true | Should Be $true;
-		}
-		
-		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
+You must specify both parameters 'Name' and 'Mail'. If the entry already exists no update of the existing entry is performed.
 
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Precondition failed';
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Connect to the server before using the Cmdlet';
-		}
 
-		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
+.OUTPUTS
+[biz.dfch.CS.Appclusive.Api.Core.User]
 
-			# Act and Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
 
-		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -ListAvailable;
+.EXAMPLE
+New-User myName myName@appclusive.net
 
-			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 0;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
+ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : Internal
+Mail         : myName@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : myName
+Description  : 
+CreatedById  : 1
+ModifiedById : 1
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
-		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics -ListAvailable;
+Create a new User entry if it not already exists.
 
-			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 2;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-		
-		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
 
-			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 1;
-		}
+.EXAMPLE
+New-User -Name myName -Mail myName@appclusive.net -ExternalId [guid]'27af9d74-388b-46f2-90d6-a1545d89d16f' -Description myDescription
 
-		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
+ExternalType : Internal
+Mail         : myName@appclusive.net
+Id           : 2
+Tid          : 22222222-2222-2222-2222-222222222222
+Name         : myName
+Description  : myDescription
+CreatedById  : 1
+ModifiedById : 1
+Created      : 15.12.2015 00:00:00 +01:00
+Modified     : 17.12.2015 00:00:00 +01:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
-			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 2;
-		}
-	}
+Create a new User entry if it not already exists.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-User/
+Set-KeyNameValue: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-User/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $true
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-User/'
+)]
+Param 
+(
+	# Specifies the name for this entity
+	[Parameter(Mandatory = $true, Position = 0)]
+	[ValidateNotNullOrEmpty()]
+	[string] $Name
+	,
+	# Specifies the key for this entity
+	[Parameter(Mandatory = $true, Position = 1)]
+	[ValidateNotNullOrEmpty()]
+	[string] $Mail
+	,
+	# Specifies the externalId for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalId
+	,
+	# Specifies the externalType for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalType
+	,
+	# Specifies the description for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $Description
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+)
+
+Begin 
+{
+	trap { Log-Exception $_; break; }
+
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
+# Begin
 
-#
-# Copyright 2015 d-fens GmbH
-#
+Process
+{
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
+	$UserContents = @($Name);
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	Contract-Requires (!$entity) 'Entity does already exist'
+
+	if($PSCmdlet.ShouldProcess($UserContents))
+	{
+		$r = Set-User -Name $Name -Mail $Mail -ExternalId $ExternalId -ExternalType $ExternalType -Description $Description -CreateIfNotExist:$true -svc $svc;
+		$OutputParameter = $r;
+	}
+	$fReturn = $true;
+}
+# Process
+
+End 
+{
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
+}
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-User; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUor5wRGXIIOpGUghO0aRP/Vxv
-# TpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPxN00cczeqRdm+UPzl1YxJ2h
+# zhmgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -235,26 +272,26 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQnysMMzV1vYMJb
-# LFk9f580qhdrjTANBgkqhkiG9w0BAQEFAASCAQCJwqllhWKKlTFRWTvU5qgFQq6/
-# v8+QLDxmyGW8sscJ26V9vecsezHkL7mbon70DgYPkOgLKQZlWoeqevXGERkH9UPh
-# D6DDtNLFFgl4RVSVY91lftCsQZQS84H3xmHy3cFsniiL7o12WVH0hxTN9fIICuYJ
-# p52zGYh+DiQIgH3RPlfW7YzGb/cDlrn479GhTREUjEWRvXGmj037V6DlKyu7Is9n
-# qRz3DbsD/4X5LVamexQdv+PnUeKHo/30Cy7Atm8i43D0aB2tfbS6W5OMqhcTMXYE
-# vxx/U7xEtJewgj+AdEImZ5hgJOQ4GEuDG71d10uCcE9qqQogHZVUr12NqqvEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT8PoEMnSQUm5YG
+# xfbYMu73BQ+j5DANBgkqhkiG9w0BAQEFAASCAQCyErh+AXM+mfmQxvokM70ZbUtw
+# EkqNqMfAygmTDdHbZbX8FPD09KViGOB2FtzRnRZMYjmUar2JECBwXyHvKp74g/aD
+# Q2kw/o1GY+d1QWXeeDdNynuDXJYFpxe5KWDpjHawpWgkpQ0y8pJzOyETmSlPhllX
+# Ee5vpdJZHs6KnLiVBvlR1dAGCg42KVvvDF8nqIrrwvQz7RVdCiLk3J6URYlUNlMc
+# GkF0ftbkQ7Yf2hImnCVIosKoCHJ7fmsebg9K0OV9gqac71egBH37SVUGUjElUjWp
+# qMtFShzESqwqLgxt96YimRgAx0eBu8XWXd38fz+NbOaKzc71c/NYWnN2IwF2oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NFowIwYJKoZIhvcNAQkEMRYEFN8rBPqbm0mtUENt27iCXSHUDMfl
+# MTIyMjExMTM0M1owIwYJKoZIhvcNAQkEMRYEFEybZ3FWIbHCnOKhs7JXZ9nP9xwP
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBz1kqSqunXuJ+sS5Hl
-# nbf0oCOVL1TFEY517itucHTQa14DuhuhAPnzMNCf3HpF5mLyhcUbeCmm6YHtCcNg
-# xnOCmlXwFdp6CjM8Sod2faCLp8BMYWAAp4MkpUSod8XV1csoosj74gPAUeJu68lE
-# s7BiCg8fcRKDubuwIJ9kO14Dw6M+Cnzry0as563EnlsgrixK4oVvd5fo6Stdx0ov
-# GoHCy0SQCtn95CDvim9DFnGAHrB+GpMMo1s6ASvZaVFRxMMaF1WMEk/DsrOVG+HN
-# QYt56qcu4E+sb86mDlfXlveY2rND6RKMmlOFnSXPvrjouT6ZHBUEFyRBAAnji42M
-# akkB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB8g/I0klL5Vm15Qx/W
+# lJkTAcNiemXG2viSoH7r1tdB8EbO2QZ5i9xS7TQkUH36SFFoAws1HoodVGAvFCux
+# c0isq3omMr4SLXBA7LgU5VLfyr7LFrhOg9wW2QwdvZDPJnugD4XnT6TOY7z9x9wW
+# cnOZEu4orRKIFy7dG+J0fYg2f3+14ubjlQWv3eGCAMX8G9h+tqDic7mc3HTgSTLo
+# Ogshanh3I5JZZ/Qi+mQNOYkBobX+zfSyhswWLtyC6m+wS6g80Z8Z3wncedFsiu8X
+# 6U1h5iIaD4lleS9I6E3IF+B176oQGNNpSe3zNdLqL1WoCYIkblppwrvjpo8WXJwi
+# X6Fj
 # SIG # End signature block

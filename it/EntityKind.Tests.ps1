@@ -1,117 +1,165 @@
-
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
+{
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
+}
+
+Describe -Tags "EntityKind.Tests" "EntityKind.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Get-ModuleVariable.ps1"
 	
-	Context "Push-ChangeTracker" {
-	
-		# Context wide constants
-		$biz_dfch_PS_Appclusive_Client = @{ };
-		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
-		
+	Context "#CLOUDTCL-1879-EntityKindTests" {
 		
 		BeforeEach {
-			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			
-			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-ApcServer;
 		}
 		
-		It "Warmup" -Test {
-			$true | Should Be $true;
+		It "GetEntityKindsCreatedBySeed" -Test {
+			# # Arrange
+			
+			# # Act
+			# $entityKinds = $svc.Core.EntityKinds;
+			
+			# # Assert	
+			# $entityKinds | Should Not Be $null;
+			# $entityKinds.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order" | Should be $true;
+			# $entityKinds.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval" | Should be $true;
+			# $entityKinds.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default" | Should be $true;
 		}
 		
-		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Precondition failed';
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Connect to the server before using the Cmdlet';
-		}
-
-		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-
-			# Act and Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-
-		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -ListAvailable;
-
-			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 0;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-
-		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics -ListAvailable;
-
-			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 2;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+		It "CreateAndDeleteEntityKind-Succeeds" -Test {
+			try
+			{
+				# Arrange
+				$entityKindName = "TestForPesterRun"
+				$Version = [Guid]::NewGuid().Guid;
+				$entityKindDescription = "Test Description For Pester Run"
+				
+				# Act
+				$entityKind = CreateEntityKind -entityKindName $entityKindName -entityKindDescription $entityKindDescription
+				$entityKind.Version = $Version;
+				$svc.Core.AddToEntityKinds($entityKind)
+				$result = $svc.Core.SaveChanges();
+				
+				$entityKindCreated = $svc.Core.EntityKinds.AddQueryOption('$filter', "Id eq "+$entityKind.Id+"")
+				
+				# Assert	
+				$result.StatusCode | Should Be 201;			
+				$entityKindCreated | Should Not Be $null;
+				$entityKindCreated.Name | Should Be $entityKindName
+				$entityKindCreated.Description | Should Be $entityKindDescription
+			}
+			finally
+			{
+				if (!$entityKind -eq $false)
+				{
+					#Cleanup
+					$svc.Core.DeleteObject($entityKind);
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+			}
 		}
 		
-		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
+		It "CreateEntityKindTwiceWithSameNameAndVersion-Fail" -Test {
+
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			$entityKindName = "TestForPesterRun-{0}" -f [Guid]::NewGuid().Guid;
+			$entityKindDescription = "Test Description For Pester Run"
+			$entityKindDescription2 = "Second Entity With same Name same Version"
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+			$processingFirstEntityKindFailed = $false;
+			try
+			{
+				$entityKind = CreateEntityKind -entityKindName $entityKindName -entityKindDescription $entityKindDescription;
+				$svc.Core.AddToEntityKinds($entityKind);
+				$result = $svc.Core.SaveChanges();
+				Remove-ApcEntity $entityKind -Confirm:$false;
+			}
+			catch
+			{
+				$processingFirstEntityKindFailed = $true;
+			}
 
 			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 1;
+			$processingFirstEntityKindFailed | Should Be $false;
+			$result.StatusCode | Should Be 201;
+			$entityKindCreated | Should Not Be $null;
+			$entityKindCreated.Name | Should Be $entityKindName;
+			$entityKindCreated.Description | Should Be $entityKindDescription;
+			
+			# Act
+			$processingDuplicateEntityKindFailed = $false;
+			try 
+			{
+				$entityKind2 = CreateEntityKind -entityKindName $entityKindName -entityKindDescription $entityKindDescription2;
+				$svc.Core.AddToEntityKinds($entityKind2);
+				$result2 = $svc.Core.SaveChanges();
+				Remove-ApcEntity $entityKind2 -Confirm:$false;
+			}
+			catch
+			{
+				$processingDuplicateEntityKindFailed = $true;
+			}
+			
+			# Assert
+			$processingDuplicateEntityKindFailed | Should Be $true;
 		}
+		
+		It "SetEntityKindNameDescriptionVersionParameter-Succeeds" -Test {
+			try
+			{
+				# Arrange
+				$entityKindName = "TestForPesterRun"
+				$entityKindDescription = "Test Description For Pester Run"
+				
+				$entityKindUpdateName = "NameUpdated";
+				$entityKindUpdateDescription = "DescriptionUpdated";
+				$entityKindUpdateParameter = "ParameterUpdated";
+				$entityKindUpdateVersion = 2;
+				
+				$entityKind = CreateEntityKind -entityKindName $entityKindName -entityKindDescription $entityKindDescription
+				$svc.Core.AddToEntityKinds($entityKind)
+				$result = $svc.Core.SaveChanges();
 
-		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+				#Act
+				$entityKind.Name = $entityKindUpdateName;
+				$entityKind.Description = $entityKindUpdateDescription;
+				$entityKind.Parameters = $entityKindUpdateParameter;
+				$entityKind.Version = $entityKindUpdateVersion;
 
-			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 2;
+				$svc.Core.UpdateObject($entityKind);
+				$result = $svc.Core.SaveChanges();
+				
+				$entityKindUpdated = $svc.Core.EntityKinds.AddQueryOption('$filter', "Id eq "+$entityKind.Id+"")
+				
+				# Assert	
+				$result.StatusCode | Should Be 204;			
+				$entityKindUpdated.Name | Should Be $entityKindUpdateName;
+				$entityKindUpdated.Description | Should Be $entityKindUpdateDescription;
+				$entityKindUpdated.Parameters | Should Be $entityKindUpdateParameter;
+				$entityKindUpdated.Version | Should Be $entityKindUpdateVersion;
+			}
+			finally
+			{
+				if (!$entityKind -eq $false)
+				{
+					#Cleanup
+					$svc.Core.DeleteObject($entityKind);
+					$result = $svc.Core.SaveChanges();
+					$result.StatusCode | Should Be 204;
+				}
+			}
 		}
 	}
 }
@@ -135,8 +183,8 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUor5wRGXIIOpGUghO0aRP/Vxv
-# TpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU32rQlGk1M5H53Q8n1QjdI5A8
+# EiKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -235,26 +283,26 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQnysMMzV1vYMJb
-# LFk9f580qhdrjTANBgkqhkiG9w0BAQEFAASCAQCJwqllhWKKlTFRWTvU5qgFQq6/
-# v8+QLDxmyGW8sscJ26V9vecsezHkL7mbon70DgYPkOgLKQZlWoeqevXGERkH9UPh
-# D6DDtNLFFgl4RVSVY91lftCsQZQS84H3xmHy3cFsniiL7o12WVH0hxTN9fIICuYJ
-# p52zGYh+DiQIgH3RPlfW7YzGb/cDlrn479GhTREUjEWRvXGmj037V6DlKyu7Is9n
-# qRz3DbsD/4X5LVamexQdv+PnUeKHo/30Cy7Atm8i43D0aB2tfbS6W5OMqhcTMXYE
-# vxx/U7xEtJewgj+AdEImZ5hgJOQ4GEuDG71d10uCcE9qqQogHZVUr12NqqvEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT/NGsVvLvazGpb
+# hzqb8AwAcpOQcTANBgkqhkiG9w0BAQEFAASCAQBk4XNzL0lxNX/QW8GkdZyZ5jgo
+# O/KAjFDBW2xUYhWgXOCcjIuY5F2fQg/D9a0HV/QHY1I1YAEoOr9lxBHJaMV9aWlP
+# j2gBii7/u42nTfcKa1k8TIbgYpQzkngRHDKzCzewGtPUtQql2ukj45HPtNO46yQn
+# thwb/ooE7yvQPyXhNPcQNhvsSMrrtuKZKqXok0pRukmZrJ3htCKvoAPlFNwv8wn1
+# 4LsbiBDvCjk/wO7oWnLlqqCUuqrvXkcnl5EgomBHDBXOgiFZX4VdwW26aOt83zbk
+# Ibz0j4AATQvQlP0Z73PcclryXBBdK3Yv9vmh7n2fsOOm8gmTBJx7vv9aT5zGoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NFowIwYJKoZIhvcNAQkEMRYEFN8rBPqbm0mtUENt27iCXSHUDMfl
+# MTIyMjExMTM1NVowIwYJKoZIhvcNAQkEMRYEFA60esJUiCpHUQUoE81sUKbaod6+
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBz1kqSqunXuJ+sS5Hl
-# nbf0oCOVL1TFEY517itucHTQa14DuhuhAPnzMNCf3HpF5mLyhcUbeCmm6YHtCcNg
-# xnOCmlXwFdp6CjM8Sod2faCLp8BMYWAAp4MkpUSod8XV1csoosj74gPAUeJu68lE
-# s7BiCg8fcRKDubuwIJ9kO14Dw6M+Cnzry0as563EnlsgrixK4oVvd5fo6Stdx0ov
-# GoHCy0SQCtn95CDvim9DFnGAHrB+GpMMo1s6ASvZaVFRxMMaF1WMEk/DsrOVG+HN
-# QYt56qcu4E+sb86mDlfXlveY2rND6RKMmlOFnSXPvrjouT6ZHBUEFyRBAAnji42M
-# akkB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBLDHvd7BVGS+INrU2j
+# Rl7MsBMtL6IS6IpUJwdi8gsj70R9ee7iP+W9ubZFbFjWBdrNEBx58jAPZMIgUhkM
+# TMN9fmx75scE6NohLUb4NRMiU/YINjLGCAaTctj1+djzRonIetQr2uc4YfEIar2l
+# eKEi1Omxv19l0Vp1WYZkGSOx2THyA83s8eqY97sI5/xz58Oc7ZjCMPmGj0sO3oh8
+# hnkLec3DzoUDRqK3ZMFc6s6KD3rlWtwz3ZMtaMMrpiDWgPTznpexyXkVOthPuDwK
+# 1N8d3omnEtuy25Y2QhdGH3Z8DfQlKQw62ZNChHM8Hv7hBSQ98bMZAFPJkztpmMlv
+# 7o9L
 # SIG # End signature block

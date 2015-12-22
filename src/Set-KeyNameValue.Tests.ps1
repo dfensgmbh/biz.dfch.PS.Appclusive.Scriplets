@@ -8,6 +8,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 	
 	. "$here\$sut"
 	. "$here\New-KeyNameValue.ps1"
+	. "$here\Remove-KeyNameValue.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -33,6 +34,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithoutCreateIfNotExist-ShouldReturnNull" -Test {
@@ -72,6 +75,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $Description;
+
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewName-ShouldReturnUpdatedEntity" -Test {
@@ -97,6 +102,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $NewName;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $NewName -Value $Value -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewKey-ShouldReturnUpdatedEntity" -Test {
@@ -122,6 +129,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+
+			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewKeyNameValue-ShouldReturnUpdatedEntity" -Test {
@@ -147,6 +156,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $NewName;
 			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $Description;
+			
+			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $NewName -Value $NewValue -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewKeyNameValueDescription-ShouldReturnUpdatedEntity" -Test {
@@ -173,9 +184,11 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $NewName;
 			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $NewDescription;
-		}
 
-		It "Set-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
+			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $NewName -Value $NewValue -Confirm:$false;
+			}
+
+		It "Set-KeyNameValueWithDuplicate-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
@@ -186,11 +199,12 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$resultCreated2 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue;
 			
 			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -NewValue $NewValue;
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue -NewValue $Value;
 
 			# Assert
-			# this raises an error and must be fixed in the controller
-			$result | Should Be $null;
+			$result.Value | Should Be $Value;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 	}
 }
@@ -214,8 +228,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUy0pTiqs7vGiLC/zWytzYwjU9
-# 9yygghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUuuC4zasRm00VUq6YaZXHHl9M
+# MUGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -314,26 +328,26 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRnCJo6hH9LRnLZ
-# SWIt6AvG2dh9DjANBgkqhkiG9w0BAQEFAASCAQAekcnrTv3AnEhN/Zfx/P+SsXt6
-# LLH9q40U1YcgEXsbn/BOlMlZRFODOyCN9ISL68Kh7jIHs4LTVEhclVVLnZESXbfl
-# Nf56P3bBp5B+ZoQnDQWOK5jN+5J63yV1fFDlVTHmSM8fXEzPYEZiBMIbvnVhDNAl
-# HrBLxJlW/ZYuHA0NRr9Q6hefplzydUegmFAFYA90cdweRlPsxRrRo55oIw3dDVL1
-# yGgOAZs3mCj10SAroo5PkjuR0sXMBff3vXJCoZyQ2OVuyqPPco4z6jC6qhkW/Xcu
-# IXac+WcrmT7r7U+0pT7Vn7nqT1oSQCLDEQr/9GQIvSGNCeP35DcZ1gMowW+SoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR6PYD0AG3JOKYT
+# bQUGf5nJ8A7jOTANBgkqhkiG9w0BAQEFAASCAQCnR+b1Eeih0RKa5c4BAaH4pGcz
+# 4z2nnfDVE59/7EArgCn8xamcsgnihImoyNd8enCCQrQQVcmVDS6xxw2jRYVVwJEG
+# JLcPHre1bDpeskoyuWI9yQDVtKQP1ru7q+71Zti2NWZlEVnTGXYWtUIng8vy3uWl
+# BC39rR/Hlp5wBuiLr4/fbXTZPg/YheoIX4ziIvcJ7ERTXjt4Au2MB+dV91KKhgnu
+# YQpCszciHoNCyLsKpDSVvmtY3M4/SxDKkrCbG0GXiBPCbCgxpzfYwfcdWnY/itsr
+# NMg2GS3QFGQrC3lwTtE/tVQYQV/wX22VgiQLOkHn7xr0JvJ9bC25vawIxijHoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA3MTU1N1owIwYJKoZIhvcNAQkEMRYEFANxRbfqqxB8biR6vYpFFNSFJiSg
+# MTIyMjExMTM0N1owIwYJKoZIhvcNAQkEMRYEFP0ex4Y+LTpiKVshVELhAzTQrsGi
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCjWfBAiRP+ENyjApCH
-# mNoXER7dPP2H9kQA5MTYZp3co/FFh1BgIQjfv0nWBcDewn+zPizZvYmMImwYuWm8
-# 3+81yq7Tpud2wQUpAJJwfZFx9YpWjviwvpNOuV/Le3BlXBJz2XcFze9TJ6UNbcxq
-# 2GhMNIrSX8OZmH4HL62lswPo0QiKzcPLnzur1bw9wBCdI8kER5pgiMX9YfEg6CMH
-# 2sob3lFWhQXcRylr0/oPvqKUcn6YB37ppk0CtApjLClMrwOPr21hmH8o35onr6fU
-# Vq/sg2S4AOsFfiS9TrHXXDl26Rt+kosv/+hl7GfEaGxiODSzHEjlqZ8mA9OmPFdc
-# xsWn
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCP7fs0IRpzxim288lM
+# IYt3iVKxl5N+26GfGXdab1f/yqEdAjsAbnHmMPCU16P9pYESJFV9s4liRAXrWVuy
+# a3WfUVvGzMKcnVlh4YAjwRqR6YvAcxpzAIgohWxn46FXzU3TRmAx7dNu3kgseQK4
+# Kd8LEsAKVeymXqxpLMmpYTudZEOm9JY6RC6cbMIZwCRolkzvXVku4pVIILCK4Hy9
+# ufFu50ltMj4WxuWTSXN4U/W6z70YsBEiaPlSstDbclXUhepfu6NqUy/L6XjrJec4
+# l9ksQcOC6/cFzzGtZirjfrOCKjEojrK+3mD3Dcs7k4UVuw/TYSgQAFmRTp/kc3rc
+# IdQs
 # SIG # End signature block

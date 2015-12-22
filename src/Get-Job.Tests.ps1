@@ -2,116 +2,201 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
+function Stop-Pester($message = "Unrepresentative, because no entities existing.")
+{
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
+}
+
+
+Describe -Tags "Get-Job" "Get-Job" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Get-User.ps1"
 	
-	Context "Push-ChangeTracker" {
+	$svc = Enter-ApcServer;
+
+	Context "Get-Job" {
 	
 		# Context wide constants
-		$biz_dfch_PS_Appclusive_Client = @{ };
-		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
-		
-		
-		BeforeEach {
-			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			
-			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
-		}
+		# N/A
 		
 		It "Warmup" -Test {
 			$true | Should Be $true;
 		}
-		
-		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
+
+		It "Get-JobListAvailable-ShouldReturnList" -Test {
 			# Arrange
-			$svc = Enter-ApcServer;
-
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Precondition failed';
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Connect to the server before using the Cmdlet';
-		}
-
-		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-
-			# Act and Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-
-		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
+			# N/A
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -ListAvailable;
+			$result = Get-Job -svc $svc -ListAvailable;
+			if ( $result.Count -eq 0 )
+			{
+				Stop-Pester
+			}
 
 			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 0;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
 
-		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
+		It "Get-JobListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			# N/A
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics -ListAvailable;
+			$result = Get-Job -svc $svc -ListAvailable -Select Name;
 
 			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 2;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+			$result[0].Name | Should Not Be $null;
+			$result[0].Id | Should Be $null;
+		}
+
+		It "Get-Job-ShouldReturnFirstEntity" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Job -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Job] | Should Be $true;
 		}
 		
-		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
+		It "Get-Job-ShouldReturnFirstEntityById" -Test {
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			$ShowFirst = 1;
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+			$resultFirst = Get-Job -svc $svc -First $ShowFirst;
+			$Id = $resultFirst.Id;
+			$result = Get-Job -Id $Id -svc $svc;
 
 			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 1;
+			$result | Should Not Be $null;
+			$result | Should Be $resultFirst;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Job] | Should Be $true;
+		}
+		
+		It "Get-Job-ShouldReturnFiveEntities" -Test {
+			# Arrange
+			$ShowFirst = 5;
+			
+			# Act
+			$result = Get-Job -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$ShowFirst -eq $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.Job] | Should Be $true;
 		}
 
-		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
+		It "Get-JobThatDoesNotExist-ShouldReturnNull" -Test {
 			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
+			$JobName = 'Job-that-does-not-exist';
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
+			$result = Get-Job -svc $svc -Name $JobName;
 
 			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 2;
+			$result | Should Be $null;
+		}
+		
+		It "Get-JobThatDoesNotExist-ShouldReturnDefaultValue" -Test {
+			# Arrange
+			$JobName = 'Job-that-does-not-exist';
+			$DefaultValue = 'MyDefaultValue';
+			
+			# Act
+			$result = Get-Job -svc $svc -Name $JobName -DefaultValue $DefaultValue;
+
+			# Assert
+			$result | Should Be $DefaultValue;
+		}
+		
+		It "Get-Job-ShouldReturnXML" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Job -svc $svc -First $ShowFirst -As xml;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0,5) | Should Be '<?xml';
+		}
+		
+		It "Get-Job-ShouldReturnJSON" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Job -svc $svc -First $ShowFirst -As json;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0, 1) | Should Be '{';
+			$result.Substring($result.Length -1, 1) | Should Be '}';
+		}
+		
+		It "Get-Job-WithInvalidId-ShouldReturnException" -Test {
+			# Act
+			try 
+			{
+				$result = Get-Job -Id 'myJob';
+				'throw exception' | Should Be $true;
+			} 
+			catch
+			{
+				# Assert
+			   	$result | Should Be $null;
+			}
+		}
+		
+		It "Get-JobByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$User = 'User-that-does-not-exist';
+			
+			# Act
+			$result = Get-Job -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Be $null;
+		}
+		
+		It "Get-JobByCreatedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-Job -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-JobByModifiedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-Job -svc $svc -ModifiedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
 	}
 }
@@ -135,8 +220,8 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUor5wRGXIIOpGUghO0aRP/Vxv
-# TpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwO2svMPPdLM5ZzS9w6dvXMDs
+# 9sugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -235,26 +320,26 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQnysMMzV1vYMJb
-# LFk9f580qhdrjTANBgkqhkiG9w0BAQEFAASCAQCJwqllhWKKlTFRWTvU5qgFQq6/
-# v8+QLDxmyGW8sscJ26V9vecsezHkL7mbon70DgYPkOgLKQZlWoeqevXGERkH9UPh
-# D6DDtNLFFgl4RVSVY91lftCsQZQS84H3xmHy3cFsniiL7o12WVH0hxTN9fIICuYJ
-# p52zGYh+DiQIgH3RPlfW7YzGb/cDlrn479GhTREUjEWRvXGmj037V6DlKyu7Is9n
-# qRz3DbsD/4X5LVamexQdv+PnUeKHo/30Cy7Atm8i43D0aB2tfbS6W5OMqhcTMXYE
-# vxx/U7xEtJewgj+AdEImZ5hgJOQ4GEuDG71d10uCcE9qqQogHZVUr12NqqvEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQza3FSu9WAhrUM
+# 230/skRZkw6U8TANBgkqhkiG9w0BAQEFAASCAQDEYeJwjyKwN5Lm0tl4RxJt3/pi
+# XoFqchhGrhRLfwF0q+Jyh4mpEautAYQymYKVB/K/6Wu+8aJwOKIm8Dvn/7+64wuB
+# f5+PJuTuxfJ+rL/y21swCqEZtqkDEhOacQewzVu0R/yMoOO5zBEPyu0F9unw53Ec
+# /kBblDYj5eCumfuPdn/CQDyUlDpXoBGY0G6DC7HbBHg7mEVIVUQYxF4PpVDaZbDa
+# vCOgK19n5nfSBvxlOoSTWrqiv3mHkQW3RqLBP97ow5ttufCOYSjQplQTYOX1TiM/
+# bv/KCzDS9jUvuAPyLO27cK2vD7rQdSbxHpCbQTQPc6y1i6JVwFriiCokcxn0oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NFowIwYJKoZIhvcNAQkEMRYEFN8rBPqbm0mtUENt27iCXSHUDMfl
+# MTIyMjExMTMzN1owIwYJKoZIhvcNAQkEMRYEFHnfXBikoiOsmg0q/69NscGlwykk
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBz1kqSqunXuJ+sS5Hl
-# nbf0oCOVL1TFEY517itucHTQa14DuhuhAPnzMNCf3HpF5mLyhcUbeCmm6YHtCcNg
-# xnOCmlXwFdp6CjM8Sod2faCLp8BMYWAAp4MkpUSod8XV1csoosj74gPAUeJu68lE
-# s7BiCg8fcRKDubuwIJ9kO14Dw6M+Cnzry0as563EnlsgrixK4oVvd5fo6Stdx0ov
-# GoHCy0SQCtn95CDvim9DFnGAHrB+GpMMo1s6ASvZaVFRxMMaF1WMEk/DsrOVG+HN
-# QYt56qcu4E+sb86mDlfXlveY2rND6RKMmlOFnSXPvrjouT6ZHBUEFyRBAAnji42M
-# akkB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBhQMKWsQP83Ljc+evV
+# 04wa1pzHVwVvY2JiHrmKIBofwqWubYA73l2uRjpMIOLlBap4nHvYTKvy/9nxHu/w
+# 3wS66pLasikxVHKWZrNQmU4XXoXC3Qkhl3DyeaK9KLmljUXN8wq6f4UcTNR3khRU
+# W5adbe64l7LN6KRHGKJ8d0l6Zmur0NuW2b3qsQYvbNExi7EvmQFQeYs/nkwPmueq
+# 6MbOLSmDni4tJfyG2tHbNUJlLwwoTR1Rx4ZZWB35kD2CwAlTY9tNMdzhuCIXBRJ+
+# DO1sZdZUUb4d2840G2vv25HBKMsevWt8OwCmp94eW3qKn+awmINEzPsfsoKTlVkM
+# PCOK
 # SIG # End signature block

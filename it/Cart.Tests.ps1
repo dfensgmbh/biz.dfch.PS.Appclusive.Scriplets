@@ -234,7 +234,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 		}
 		
 		It "AddAndRemoveItemToCart" -Test {
@@ -343,7 +343,7 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 			$cartItems[0].Id | Should Be $cartItem.Id;
 			$cartItems[0].Quantity | Should Be 1;
 			
-			$svc = Enter-AppclusiveServer;
+			$svc = Enter-ApcServer;
 			
 			# Create second cartItem
 			$cartItem2 = CreateCartItem -catItem $catItem;
@@ -395,8 +395,8 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU3SsRnSv0ZiD8fn6g2SSNpGLP
-# 61agghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0Oom00kFfWvICCbZeerey+SP
+# oGSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -495,26 +495,26 @@ Describe -Tags "Cart.Tests" "Cart.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRa1pPYPLq38F/6
-# JehYJajkgkyGgTANBgkqhkiG9w0BAQEFAASCAQB23rvBMfBaqOwpgfWu2YLe+zhe
-# 6PX7hfdQ7mfxDrMQPFmnuiVwyRrK1ag3s+nKl0Sy1f/cgsS9o0DfUMVwt40yqSlD
-# uPdFqhpI6s1DbSlUmHCBi5QLThO/avMSebHilhfakvpM25Q3qHrQV5CrFTf4PXLf
-# mPaOe5WrmsrtieoQm7HnAXcmuM9Voe8kypOh8I19gVqCPbPDTZADtgZphDYRa1sv
-# qDPaqw2ztXmtFWE3KzveBqEBcHBrivyDnQawj9DIRxo/WcDEjnaSpAfPfP7UcIpb
-# sZk70fOyMAcczFGa61wWOuAb2e85JH3+dqe3GjQGcAcE+BsWf5hQf/lkegu2oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRn7O+W+TDYCYQy
+# f4HJtVSt40JEmTANBgkqhkiG9w0BAQEFAASCAQBIbvFu/qJyVcifC2EWU+T+MHn/
+# RMc13o6EX0hy/pqqRVtLQzV++W9fkj6NSxUX/QQeWxBPxZS5d52Nwu3wktVMkcT/
+# 4Vtye/6Icd4D6hoLFP+4/0ciolrrdR9ybq7/qJ3XdHNx3JAg8JFrktP71eNNnxGA
+# AZrCCo6/882VLguF74kiq+mU74oP2L+5oIq7Kjb1wWt4uIC6q3GSthyWQ+wX8cA0
+# xF6bCieZaaqe+dmSfokZQczaJ5NuwFTI0iGeutOaqg5NQHyjErbTgYVUvKKEUqMT
+# jeuvn0PbYg5DdMAoeivsQJ2ttrM7Q9TNbiEKb1IK2tDdo9NfKsNvq0V0YSheoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA0OVowIwYJKoZIhvcNAQkEMRYEFNVaQnofNp8kSBVzI/BjJXLaEB8i
+# MTIyMjExMTM1M1owIwYJKoZIhvcNAQkEMRYEFI40XIdVzCiw/ron+SBynXPVu73K
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBSZ7IA0XxwgMK4+ySn
-# /g+SZzUkMqnvow9yjYgPUMadTkYDXOewPT0IbZkXaEJGYliPM+mUH/BAaso0D2ZP
-# 3U3xiugGVsnQA1m4D61foksrKWRl9P2eW/q4OG/MHMIDOsMIkojLWBQtmLvEkePU
-# ljJ5KAAR+fXDaeXhLq3eB78NUmsa44oT/FBUNH8nShvkx5hn0s3m6ey+ZY4TRWCp
-# iHDeqIWooT5V3OCOgmZ8jNdJuwttC0gQyr96NfmvNVWgEgzW333qTiP+ey21wv74
-# JezyaVbv3biYAsFYXijMCT88hV7HlpjAf2z8FyoHWDaYtCoNwQSVr6IRSbA1fDdM
-# 5gnH
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCopgsACfw8HD+DbWb8
+# 8GrAbMRvQ7sil2bvXR7M54+0GlU66faETqawZVQ7JikYhAVgWzn0mEWGPug3NRSz
+# n2AC1JWgePzT9+QJ7/bCsfNO1syFq7k/RqmUT0tMrZI5D6tNhTrGL4mQmhE1s6EP
+# rph9L6nXr6czGWqMTyJOyZNssJa+2ovJpWIHhCGf2n1Qhb0fmHEZ9gwgycs7ZA2X
+# s4YLDmE5fQDkFFQVDQ9ZApOdVYd8jTsFuCGqJo8p+1ii8NziErAZxTnvpPDXYwXn
+# 1010uhjlxuIFbvjbyzKhFi0T1UOldePegV9OEgs7m25kMJx7aATjVv9GHGvkAw3D
+# ReNp
 # SIG # End signature block

@@ -1,171 +1,190 @@
+
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
-{
-	$msg = $message;
-	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
-	$PSCmdlet.ThrowTerminatingError($e);
-}
-
-Describe -Tags "EntityType.Tests" "EntityType.Tests" {
+Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-User.ps1"
 	
-	Context "#CLOUDTCL-1879-EntityTypeTests" {
+	$svc = Enter-ApcServer;
+
+	Context "Get-EntityKind" {
+	
+		# Context wide constants
+		# N/A
 		
-		BeforeEach {
-			$moduleName = 'biz.dfch.PS.Appclusive.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			$svc = Enter-ApcServer;
+		It "Warmup" -Test {
+			$true | Should Be $true;
 		}
-		
-		It "GetEntityTypesCreatedBySeed" -Test {
+
+		It "Get-EntityKindListAvailable-ShouldReturnList" -Test {
 			# Arrange
+			# N/A
 			
 			# Act
-			$entityTypes = $svc.Core.EntityTypes;
+			$result = Get-EntityKind -svc $svc -ListAvailable;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+
+		It "Get-EntityKindListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+			# Arrange
+			# N/A
 			
-			# Assert	
-			$entityTypes | Should Not Be $null;
-			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order" | Should be $true;
-			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval" | Should be $true;
-			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default" | Should be $true;
+			# Act
+			$result = Get-EntityKind -svc $svc -ListAvailable -Select Name;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+			$result[0].Name | Should Not Be $null;
+			$result[0].Id | Should Be $null;
+		}
+
+		It "Get-EntityKind-ShouldReturnFirstEntity" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.EntityKind] | Should Be $true;
 		}
 		
-		It "CreateAndDeleteEntityType-Succeeds" -Test {
-			try
-			{
-				# Arrange
-				$entityTypeName = "TestForPesterRun"
-				$entityTypeDescription = "Test Description For Pester Run"
-				
-				# Act
-				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription
-				$svc.Core.AddToEntityTypes($entityType)
-				$result = $svc.Core.SaveChanges();
-				
-				$entityTypeCreated = $svc.Core.EntityTypes.AddQueryOption('$filter', "Id eq "+$entityType.Id+"")
-				
-				# Assert	
-				$result.StatusCode | Should Be 201;			
-				$entityTypeCreated | Should Not Be $null;
-				$entityTypeCreated.Name | Should Be $entityTypeName
-				$entityTypeCreated.Description | Should Be $entityTypeDescription
-			}
-			finally
-			{
-				if (!$entityType -eq $false)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-			}
+		It "Get-EntityKind-ShouldReturnFirstEntityById" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-EntityKind -svc $svc -First $ShowFirst;
+			$Id = $resultFirst.Id;
+			$result = Get-EntityKind -svc $svc -Id $Id;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $resultFirst;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.EntityKind] | Should Be $true;
 		}
 		
-		It "CreateEntityTypeTwiceWithSameNameAndVersion-Fail" -Test {
-			try
+		It "Get-EntityKind-ShouldReturnFiveEntities" -Test {
+			# Arrange
+			$ShowFirst = 5;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$ShowFirst -eq $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.EntityKind] | Should Be $true;
+		}
+
+		It "Get-EntityKindThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$EntityKindName = 'EntityKind-that-does-not-exist';
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -Name $EntityKindName;
+
+			# Assert
+			$result | Should Be $null;
+		}
+		
+		It "Get-EntityKindThatDoesNotExist-ShouldReturnDefaultValue" -Test {
+			# Arrange
+			$EntityKindName = 'EntityKind-that-does-not-exist';
+			$DefaultValue = 'MyDefaultValue';
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -Name $EntityKindName -DefaultValue $DefaultValue;
+
+			# Assert
+			$result | Should Be $DefaultValue;
+		}
+		
+		It "Get-EntityKind-ShouldReturnXML" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -First $ShowFirst -As xml;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0,5) | Should Be '<?xml';
+		}
+		
+		It "Get-EntityKind-ShouldReturnJSON" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -First $ShowFirst -As json;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0, 1) | Should Be '{';
+			$result.Substring($result.Length -1, 1) | Should Be '}';
+		}
+		
+		It "Get-EntityKind-WithInvalidId-ShouldReturnException" -Test {
+			# Act
+			try 
 			{
-				# Arrange
-				$entityTypeName = "TestForPesterRun"
-				$entityTypeDescription = "Test Description For Pester Run"
-				$entityTypeDescription2 = "Second Entity With same Name same Version"
-				
-				# Act
-				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription;
-				$svc.Core.AddToEntityTypes($entityType);
-				$result = $svc.Core.SaveChanges();
-				
-				$entityType2 = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription2;
-				$svc.Core.AddToEntityTypes($entityType2);
-				
-				try 
-				{
-					$result2 = $svc.Core.SaveChanges();
-				}
-				catch
-				{
-					$exception = $error[0];
-					write-host "error " + $error[0];
-				}
-				
-				write-host $exception;
+				$result = Get-EntityKind -svc $svc -Id 'myEntityKind';
+				'throw exception' | Should Be $true;
+			} 
+			catch
+			{
 				# Assert
-				$exception | Should Not Be $null;
-				$result.StatusCode | Should Be 201;			
-				$entityTypeCreated | Should Not Be $null;
-				$entityTypeCreated.Name | Should Be $entityTypeName
-				$entityTypeCreated.Description | Should Be $entityTypeDescription
-			}
-			finally
-			{
-				if (!$entityType -eq $false)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-				
-				if (!$exception)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType2);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
+			   	$result | Should Be $null;
 			}
 		}
 		
-		It "SetEntityTypeNameDescriptionVersionParameter-Succeeds" -Test {
-			try
-			{
-				# Arrange
-				$entityTypeName = "TestForPesterRun"
-				$entityTypeDescription = "Test Description For Pester Run"
-				
-				$entityTypeUpdateName = "NameUpdated";
-				$entityTypeUpdateDescription = "DescriptionUpdated";
-				$entityTypeUpdateParameter = "ParameterUpdated";
-				$entityTypeUpdateVersion = 2;
-				
-				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription
-				$svc.Core.AddToEntityTypes($entityType)
-				$result = $svc.Core.SaveChanges();
+		It "Get-EntityKindByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$User = 'User-that-does-not-exist';
+			
+			# Act
+			$result = Get-EntityKind -CreatedBy $User -svc $svc;
 
-				#Act
-				$entityType.Name = $entityTypeUpdateName;
-				$entityType.Description = $entityTypeUpdateDescription;
-				$entityType.Parameters = $entityTypeUpdateParameter;
-				$entityType.Version = $entityTypeUpdateVersion;
+			# Assert
+		   	$result | Should Be $null;
+		}
+		
+		It "Get-EntityKindByCreatedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -CreatedBy $User;
 
-				$svc.Core.UpdateObject($entityType);
-				$result = $svc.Core.SaveChanges();
-				
-				$entityTypeUpdated = $svc.Core.EntityTypes.AddQueryOption('$filter', "Id eq "+$entityType.Id+"")
-				
-				# Assert	
-				$result.StatusCode | Should Be 204;			
-				$entityTypeUpdated.Name | Should Be $entityTypeUpdateName;
-				$entityTypeUpdated.Description | Should Be $entityTypeUpdateDescription;
-				$entityTypeUpdated.Parameters | Should Be $entityTypeUpdateParameter;
-				$entityTypeUpdated.Version | Should Be $entityTypeUpdateVersion;
-			}
-			finally
-			{
-				if (!$entityType -eq $false)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-			}
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-EntityKindByModifiedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ModifiedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
 	}
 }
@@ -189,8 +208,8 @@ Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZX5w8Xw+udMvWl6nNjqlG7YQ
-# 2tugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiV2wmC2IJR3g1FdzQP6KOMqu
+# eS2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -289,26 +308,26 @@ Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTw3JlKeHQiw2lA
-# 2iJee4jfe1ok0zANBgkqhkiG9w0BAQEFAASCAQDBSK+A2XFr+NaI3FLcxOBVbQU/
-# aMfGJGwzAABNVWoanByc8XE6MuZ+5yXdvdeXZITHAFxrwRe7R2N6+5EcjQGWAzJi
-# HyKTZ2T5tFXBi9qJPTTKytbdYtMOJeWClr9v15iHJcOjaba4IWFxcX7n3k7fspI2
-# +ePobEIdGl7kSNMNEd8e3GgIN2EUUu6xkOPycP0Alw4oMsd+E+RV2qJyGn6ukIoW
-# +WoPCtFySmIH9vI7xP5F7T0nl1csaJtj00eSu7qREwUdefszhqDyadKmDCLus1bS
-# dSnSktG5UuVndbfFJXlssxRC4cPsvtedToZteJ08p/FWbvOZ9tQMESSZkklmoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRhC0qaPrCRpokT
+# 5cJfMr9YfdhIxjANBgkqhkiG9w0BAQEFAASCAQBIZ7xbCkJdVny6rMQ9+3WQUP+6
+# 7texB0kcl2b0sTiyV8qbFutrfkosRBjUat+Ajm9CxnJQhIdW5zkJrfojh+/2UpGu
+# d1NKzxCwnad3Qq62IOPTRlNOS1EJF+p3LDPfO6rVtuOvK3U0YEd1qfHrFjQCXIlx
+# +us3Du//qrGYYm7BZdloJLm3WWf8D829tps62qAkSPP+b2Pe5pMQW3kzygiBhnyG
+# z2YQoU4JBgaJNorPmRbf2d/1sqOvsH6mEMlrteJrTSlKiGkI4rMVWbu+Qrn+8VGX
+# lxQ5HyHDvXu5HlWYZDGNpz/Nf7VzDc/m4LoxvezKp1yl0wncW9WjL86XOnjMoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA0NlowIwYJKoZIhvcNAQkEMRYEFPKGbdv4mF14VLiWolIKpcIGtFoF
+# MTIyMjExMTMzNlowIwYJKoZIhvcNAQkEMRYEFOCUYx6NzZzcby+m/GAuXvqn1b1Z
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy7ufxDEu0kJPJ9whi
-# dhkVPCQP+gc13hOgcjAx+K8Nc+S6jofZa7dfZTI5eABZ7aDpULGQYMW8WnK8gCSL
-# HDOxHmuPOww5c7K/VBaF5Ttrt3ZO+WH8BWp1H3F7GSBJLOrzFF66AF7IhKKvmFoo
-# GegWpNuLJYAVfIy8DfkRIB9ttulWSuA7tT/4rgL5S+2rUHOi3H+GWPsBpUt+b1v/
-# koBcdbApcW/r8n6OtKqHP+PfZL9w/KYyYafr5UrlgRxSjKN+5v+viUfD3UsOrUxV
-# LetMozQxlYdZmyr3xU+exTAcaIyfvdukC/pDLMUsyJLii4ZaR5Zt9tJOzjJyxsFM
-# 034o
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAx8R+ue0RvKEuMC6FY
+# PKps3z61hbAwnNz46StZeU3wiTAh7169XIchZP0uY4XRRyIJwaPZAOOXr/zcMEEV
+# QWht7BmEk9s4u4IUjcLrFRttLWAmtFfkaWuSKkULv2LWPSlNVh2tXRi2KaXW0R2a
+# nHHFwJVVXpFqlJQKXNb8bSnfKswYGbx0vQOBMbjPGxH2y+fHsMbgEQ8j73Y2ihNy
+# qhzvvYv277h1IutdjJj6z8ABT8tOGEdDuM/n+1lZJRg1J1ZTJGW823+Tilp26Kcx
+# rehR7bExBKQhw0Vd+tbfdFrw+6HhBeo4LXeXW+vd6ukd3xwJzwlWV0Lzq6HUsWb5
+# 6Jvq
 # SIG # End signature block

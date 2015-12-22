@@ -7,6 +7,8 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\New-ManagementCredential.ps1"
+	. "$here\Set-ManagementCredential.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -37,7 +39,7 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Remove-ManagementCredential -svc $svc -Name $Name;
+			{ $result = Remove-ManagementCredential -svc $svc -Name $Name; } | Should Throw 'Assertion failed: ($objectFoundToBeRemoved)';
 
 			# Assert
 			$result | Should Be $null;
@@ -64,8 +66,8 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUE1mNBt2/+tnxOdW7K2wJuFxZ
-# /6ugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGgukar9xgX+VN+A0GQblkO6G
+# GKOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -164,26 +166,26 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQAuClior1fzXJx
-# fcKeRhf4tfBFyDANBgkqhkiG9w0BAQEFAASCAQDL6sl7/ekmHGzf038Ejf5jMKcu
-# JWrT1pYS7Snj//haJ8LWzjlWbfXpWftWRFqUQ+SO2Cpe4f1k/jXioeJND4DweEYo
-# xkLmEerR4vuYBao0E9E0N6cho6CIDm3OFekaEwRoXm/3twYuQz0eE9jJJPNrbgoo
-# 8sj2aQZkwrK8UfCtlshCsELJlNXZ4DfYRwn2S+LBc0lVG40pY9T4KzSAnBHGbxFR
-# oRyj6M/tfogbUY4osK+qQ+5BTMVlJzwLASZbip5Zr8qhHANloIz0Uqc5bdyAuBfP
-# 82BS5ZIcYA7yA71+o1cUE6M7n3Hp9lbH+JQhNkfaBy7h/8iRvE6mLu8YnWoboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT212pe9PS59ijF
+# 597jlGfqeLPfjDANBgkqhkiG9w0BAQEFAASCAQCaMPGoUV4Nibr2gEKIyEeMFWT0
+# 1aXXfLZwd+JAWVKm91TZuIZ//X4578+M0qNcgkwI96VvIjLbi9D9XNNgJ9mifiAt
+# +y1GVbaPTJ6v8m7HFVVu853TJKf7aKxlFVba3fyGrOgF4Hh/63PUVMPN22vm7Zad
+# tQ87NTgWSD9ZJu3rC7wmVl7bDMgDnBjpGd8mjPFFJ+r8dHJh9968gMrZskixWf55
+# cGnuCMqEmYsMw0GCBYXazcP6p0bPPwrl+9BEj5Fu1hwiKdFzqwygFPgoCcg8d1o4
+# gPulZJzwqPaHWReM6xRQxf3U3UKwzm9BtIcLtTO+hYXiMhlKjeCn9SosKR4poYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIyMVowIwYJKoZIhvcNAQkEMRYEFMh4h+l1EfZ9IO020gI2uvcXqgrv
+# MTIyMjExMTM0N1owIwYJKoZIhvcNAQkEMRYEFNeVjs4Ix4TPbgO0asyJfF7qaMOw
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB6E79twVjvEROo+aQf
-# Re0BUaDal+5JbcTZz8k9RqeofIlcDQNx0exkbt+qZ4d1cSYYgMeusTCWycy9TpBh
-# 71AzXYk90EEMfZq/9Vw6vOfjl8bu8PVIHFWJyHcZM+3QflhpCfwwXw0KAveHnY9h
-# zVh91y5NERhAu9p2tQ63Dw0S/ZAFqO7RMoGqlxU99K2eq8Vla1YT7UX56qB06I9d
-# UUftFAOnwpkWtzo9wCo4zQ1kciC9jH2XcBCyJFlntvPYM2a+BvdBnv6OaTd/kLJ5
-# xU9Gp+1IBAtkbgL8SeOncGjltAfkJCZouERQPD+3F8DsM6pq69A1QAYi43XOg4J6
-# 1OLz
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAV2mBJ3aYI0ui2bpd3
+# l/xzwNzB8IMwEs1vZbKBRxlhEDP4Jdbj9mDhI7Y92lxpEZF2bU7p/9Lwn+xHlAEi
+# ENPmvdaH19B/Tr7ZV+4grQib07ojivGXvexChDi6coFTQa90vmOa6SjPL9xWpPOd
+# r7fh7UvGaxarGvq8AwiMyZUwCGz9D93jbqFFeJoQ9cG7TYipzpnjNs/uFknpYnG1
+# lYfhrHTy7CtBfHWVxG5G9SDu+ERIf++8/3uKR9BI+jiT4nWygLhXTaMGBS3QU9Oz
+# CDn/R/rHgjK+c5c+SzZEyTFQ9L83dV1K70WQz3fCp5tNfEaEIPnST1chR8nm1Znl
+# gFgU
 # SIG # End signature block

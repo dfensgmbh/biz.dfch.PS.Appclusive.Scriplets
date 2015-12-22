@@ -3,78 +3,112 @@ function Get-ManagementCredential {
 .SYNOPSIS
 Retrieves one or more entities from the ManagementCredential entity set.
 
-
 .DESCRIPTION
 Retrieves one or more entities from the ManagementCredential entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
 
-
 .INPUTS
 The Cmdlet can either return all available entities or filter entities on 
 specified conditions.
 See PARAMETERS section on possible inputs.
 
-
 .OUTPUTS
-default | json | json-pretty | xml | xml-pretty
+default | json | json-pretty | xml | xml-pretty | PSCredential
 
 In addition output can be filtered on specified properties.
 
-
 .EXAMPLE
 Get-ManagementCredential -ListAvailable -Select Name
+
+Name
+----
+myvCenter
+ActivitiClientAcct
+ServiceBusClientAcct
+WindowsAdminAcct
 
 Retrieves the name of all ManagementCredentials.
 
 
 .EXAMPLE
-Get-ManagementCredential myvCenter -Select Description -ValueOnly -ConvertFrom-Json
+Get-ManagementCredential 4
+
+Username          : Administrator
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myvCenter
+Description       : Description of myvCenter
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Retrieves the ManagementCredential object with Id 4 and returns all properties of it.
+
+.EXAMPLE
+Get-ManagementCredential myvCenter -Select Description -ValueOnly -ConvertFromJson
+
+Description of myvCenter
 
 Retrieves the ManagementCredential 'myvCenter' and only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
 
+.EXAMPLE
+Get-ManagementCredential -ListAvailable -Select Name, Id -First 3
+
+Name                    Id
+----                    --
+myvCenter               4
+ActivitiClientAcct      3
+ServiceBusClientAcct    8
+
+Retrieves the name and id of the first 3 ManagementCredentials.
 
 .EXAMPLE
-Get-ManagementCredential -ListAvailable -Select Name -First 3
+Get-ManagementCredential 8 -Select Name -ValueOnly
 
-Retrieves the name of the first 3 ManagementCredentials.
+ServiceBusClientAcct
 
-
-.EXAMPLE
-Get-ManagementCredential 4005 -Select Name -ValueOnly
-
-Retrieves the name of the ManagementCredential with Id 4005.
-
+Retrieves the name of the ManagementCredential with Id 8.
 
 .EXAMPLE
-Get-ManagementCredential -ModifiedBy Administrator -Select Id, Name
+Get-ManagementCredential -ModifiedBy SYSTEM -Select Id, Name
 
-Retrieves Id and Name of all ManagementCredentials that have been modified by user 
-with name 'Administrator' (case insensitive substring match).
+Id Name
+-- ----
+ 4 myvCenter
+ 8 ServiceBusClientAcct
 
+Retrieves id and name of all Users that have been modified by user 
+with name 'SYSTEM' (case insensitive substring match).
 
 .EXAMPLE
 Get-ManagementCredential AppclusiveScheduler -Select Value -ValueOnly -DefaultValue 42
 
+42
+
 Retrieves the 'Value' property of a ManagementCredential with Name 'AppclusiveScheduler' 
 and 42 if the entity is not found.
-
 
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementCredential/
 
-
 .NOTES
 See module manifest for required software versions and dependencies.
-
 
 #>
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
-    ConfirmImpact = "Low"
+    ConfirmImpact = 'Low'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ManagementCredential/'
 	,
@@ -82,12 +116,17 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Specifies the name of the entity
+	# Specifies an reference object of the entity
+	[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'pipe')]
+	[biz.dfch.CS.Appclusive.Api.Core.ManagementUri] $InputObject
+	,
+	# Specifies the id of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Filter by creator
@@ -106,28 +145,30 @@ PARAM
 	# This parameter takes precendes over the 'Select' parameter.
 	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("HideTableHeaders")]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[Alias('HideTableHeaders')]
 	[switch] $ValueOnly
 	,
 	# This value is only returned if the regular search would have returned no results
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("default")]
+	[Alias('default')]
 	$DefaultValue
 	,
 	# Specifies to deserialize JSON payloads
 	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias("Convert")]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[Alias('Convert')]
 	[switch] $ConvertFromJson
 	,
 	# Limits the output to the specified number of entries
 	[Parameter(Mandatory = $false)]
-	[Alias("top")]
+	[Alias('top')]
 	[int] $First
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Indicates to return all file information
@@ -137,48 +178,54 @@ PARAM
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty', 'PSCredential')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
+	trap { Log-Exception $_; break; }
+	
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	Log-Debug -fn $fn -msg ("CALL. ParameterSetName '{0}'." -f $PSCmdlet.ParameterSetName) -fac 1;
 	
 	$EntitySetName = 'ManagementCredentials';
 	
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		$PSCmdlet.ThrowTerminatingError($e);
-	} # if
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	if($Select) 
 	{
 		$Select = $Select | Select -Unique;
-		$SelectString = [String]::Join(',',$Select);
 	}
 }
-# BEGIN
+# Begin
 
-PROCESS 
+Process 
 {
+	trap { Log-Exception $_; break; }
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
 
-try 
-{
-	# Parameter validation
+	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 	
-	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
+	if($PSCmdlet.ParameterSetName -eq 'pipe') 
 	{
-		throw($gotoSuccess);
+		# Get ValueFromPipeline
+		foreach($Object in $InputObject)
+		{
+			if($PSCmdlet.ShouldProcess($Object) -and $Object.ManagementCredentialId)
+			{
+				$LimitedParameters = $PSBoundParameters;
+				$null = $LimitedParameters.Remove("InputObject");
+				return Get-ManagementCredential -Id $Object.ManagementCredentialId @LimitedParameters;
+			}
+		}
+		return;
 	}
 
 	if($PSCmdlet.ParameterSetName -eq 'list') 
@@ -217,12 +264,26 @@ try
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
 		}
-		if($CreatedBy) { 
-			$Exp += ("(substringof('{0}', tolower(CreatedBy)) eq true)" -f $CreatedBy.ToLower());
-		} # if
-		if($ModifiedBy) { 
-			$Exp += ("(substringof('{0}', tolower(ModifiedBy)) eq true)" -f $ModifiedBy.ToLower());
-		} # if
+		if($CreatedBy) 
+		{ 
+			$CreatedById = Get-User -svc $svc -Name $CreatedBy -Select Id -ValueOnly;
+			if ( !$CreatedById )
+			{
+				# User not found
+				return;
+			}
+			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
+		}
+		if($ModifiedBy)
+		{ 
+			$ModifiedById = Get-User -svc $svc -Name $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById )
+			{
+				# User not found
+				return;
+			}			
+			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
+		}
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
 		if($Select) 
@@ -247,14 +308,17 @@ try
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 			}
 		}
+		
 		if(1 -eq $Select.Count -And $ValueOnly)
 		{
 			$Response = $Response.$Select;
 		}
+		
 		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
 		{
 			$Response = $DefaultValue;
 		}
+		
 		if($ValueOnly -And $ConvertFromJson)
 		{
 			$ResponseTemp = New-Object System.Collections.ArrayList;
@@ -273,83 +337,29 @@ try
 		}
 	}
 
-	$r = $Response;
-	switch($As) 
+	if($As -eq 'PSCredential')
 	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		'PSCredential' 
-		{ 
-			$Password = $r.Password | ConvertTo-SecureString -asPlainText -Force;
-			$Credential = New-Object System.Management.Automation.PSCredential($r.Username, $password);
-			$OutputParameter = $Credential; 
-		}
-		Default { $OutputParameter = $r; }
+		$password = $Response.Password | ConvertTo-SecureString -asPlainText -Force;
+		$credential = New-Object System.Management.Automation.PSCredential($Response.Username, $password);
+		$OutputParameter = $credential; 
+	}
+	else
+	{
+		$OutputParameter = Format-ResultAs $Response $As
 	}
 	$fReturn = $true;
-
 }
-catch 
+# Process
+
+End 
 {
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
-
-}
-# PROCESS
-
-END 
-{
-
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-
-}
-# END
+# End
 
 } # function
 
@@ -374,8 +384,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ManagementCrede
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUey7VPJaKPOQ6OgL+3NUKCY4k
-# 3ySgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQTO/POU2xhHtDpncZ9hodNTy
+# /HmgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -474,26 +484,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ManagementCrede
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS7c6k5VubwWsyk
-# 1c3bt2xxJt/LbDANBgkqhkiG9w0BAQEFAASCAQCExwihhCSB3rekKKcrRd/8iaCy
-# w6EvqHZJ1zrA2AVMAl3wuV/6nXpktLRVtjulAnG/r49EjEs5XBWkFdrRBFS11pcf
-# p2xgKG+Y1oDEaxl99jCTGuGMX3P3FRnDDATAZWd6DeF6Lv/xoljj0oaUpI41kEmG
-# S1gxv9GlmcINdPIzEJo0AuTlkP+4O5UoP+Dw7U1NnDQVkejzjV/zTjlKAH6iSxcH
-# SLOaY82WMhXGFPP0okYrUb4xzRWe1f2U4VvkB6xeLxROTnyGG/AAhWm7s6QEPb+c
-# spsj2HJ+194dyRWhaWt2WLnHG1JOQmvJ/k28SgrTqw6cD496XrICPuz4oKp2oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQLc//UW4FfC1TB
+# jeGHm8mc9LXSHDANBgkqhkiG9w0BAQEFAASCAQBSCCO25klHIzulptrr3BImZKB3
+# +LlX91Yaj598E5pivZvy/JbCghgHAVAGkwEOCF/ju5qBbkiTljqkONcrw2gK7cct
+# EpSZNP55RFfn2udXe0r6/C6Qi9a4RR0NN1fUJIvn4dHahJmDCD4CHktO1bDQuCDa
+# 0IQ0wxgKdCmZMLQK4hjhSipsCmP8lykwQuBy/AY7tuhayixtK3Eo219hQZbMQyCO
+# QyE0CQouTuCRrJUdqFSBeEBCRW8L3vjUcdDK5ToZrv9yETxq4Rx0eMUqtPTyz5De
+# yRs04QcFP2dnbqyY7rERi2Np7ZsUUUPcABIHpMLWJ1j/OzZYBWTTpj98D7OioYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNFowIwYJKoZIhvcNAQkEMRYEFG4JSmcZUnvr53azwg8nu4Vng6R4
+# MTIyMjExMTMzOFowIwYJKoZIhvcNAQkEMRYEFIWQg/GQI8rVE9Ai/TvgsK2AwZ4p
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA96JQoW2U8v8omsE7f
-# M7EQUG81UkzPcHMbK2T6N8//EC8BCNgZp8vQ7y8P1W/NUeURq+2dou24/0u/G/kP
-# rK6VykBod6avQFgdPQV4UzxUo3cdEAocT3vhW26kzFBZ1dT36z+J0LNdTVfRU878
-# BRF6Y8S8XzQz8Gu7Za+hplavCH0A9jEqL9EvrW+LPZczGqPBflncepaJmgrzgh5D
-# VexOCfRO7dkUbUK1WeiL+DvpmBMBSFUnwGtooD/0XOsC4yZJmL2pVgQJBlUxobtI
-# x98S3ztMRF5skVz18sBg4OBjMPabd7RSAPfWctl846WkkCKtjLUMuE2P33VDSsbp
-# mFHj
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAbJ4WzlONypvknHocC
+# azBbGaGT74KvXdKUdaDe3fHx79soHafWq/aW+rLVXPEWYfWpdi1cs3g/Tnkrf55d
+# MZahL/hgZR1Ab/5OSywjriCSpUN/PaGCC4TLfF9xN7EVlRmuRdzkVOyWm3wBtJFI
+# 0Tnrce9ppg+VUjy2N2PqAG5yUc4+xow4tTbwm1kUbOdSxao/6NGwNdyXhKZzPXHV
+# r1URP3iXFYWQpi8+vdV74eu2Iucz9mtdhyCDCUMQ7rYJJzdoccCRfT91VozTbnZC
+# TU6kN2Bk3MNu9JZZlDA5scAfNqwt6cJYLIYi7+MFXY2nRmqn9AnvIzr98fR/t+f2
+# TWBl
 # SIG # End signature block

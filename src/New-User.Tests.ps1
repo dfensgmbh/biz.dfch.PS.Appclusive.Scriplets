@@ -2,116 +2,50 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
+Describe -Tags "New-User" "New-User" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Set-User.ps1"
 	
-	Context "Push-ChangeTracker" {
+	$svc = Enter-ApcServer;
+
+	Context "New-User" {
 	
 		# Context wide constants
-		$biz_dfch_PS_Appclusive_Client = @{ };
-		Mock Get-ModuleVariable { return $biz_dfch_PS_Appclusive_Client; }
-		
-		
-		BeforeEach {
-			Remove-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
-			Import-Module biz.dfch.PS.Appclusive.Client -ErrorAction:SilentlyContinue;
+		# N/A
+
+		# It "New-User-ShouldReturnNewEntity" -Test {
+			# # Arrange
+			# $Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			# $Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
+			# $ExternalId = "{0}" -f [guid]::NewGuid();
 			
-			$biz_dfch_PS_Appclusive_Client.DataContext = New-Object System.Collections.Stack;
-		}
-		
-		It "Warmup" -Test {
-			$true | Should Be $true;
-		}
-		
-		It "Push-ChangeTrackerUninitialised-ThrowsException" -Test {
+			# # Act
+			# $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId -ExternalType Internal;
+
+			# # Assert
+			# $result | Should Not Be $null;
+			# $result.Name | Should Be $Name;
+			# $result.Mail | Should Be $Mail;
+			# $result.ExternalId | Should Be $ExternalId;
+		# }
+
+		It "New-UserDuplicate-ShouldReturnNull" -Test {
 			# Arrange
-			$svc = Enter-ApcServer;
-
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Precondition failed';
-			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Connect to the server before using the Cmdlet';
-		}
-
-		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
-
-			# Act and Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-
-		It "Push-ChangeTrackerListAvailableWithZeroEntities-ReturnsHashtableWithZeroEntries" -Test {
-			# Arrange
-			$svc = Enter-ApcServer;
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
+			$ExternalId = "{0}" -f [guid]::NewGuid();
+			$result1 = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId -ExternalType Internal;
+			$result1 | Should Not Be $null;
 			
 			# Act
-			$result = Push-ChangeTracker -svc $svc -ListAvailable;
+			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Precondition failed'
+			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Entity does already exist'
 
 			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 0;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-
-		It "Push-ChangeTrackerListAvailableWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics -ListAvailable;
-
-			# Assert
-			$result -is [hashtable] | Should Be $true;
-			$result.ContainsKey('Entities') | Should Be $true;
-			$result.Entities.Count | Should Be 2;
-			$result.ContainsKey('Links') | Should Be $true;
-			$result.Links.Count | Should Be 0;
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 0;
-		}
-		
-		It "Push-ChangeTrackerWithTwoEntities-ReturnsHashtableWithTwoEntries" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-
-			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 1;
-		}
-
-		It "Push-ChangeTrackerTwoTimes-ReturnsStackSizeTwo" -Test {
-			# Arrange
-			$count = 2;
-			$svc = Enter-ApcServer;
-			$endpoints = $svc.Diagnostics.Endpoints | Select -First $count;
-			
-			# Act
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-			$result = Push-ChangeTracker -svc $svc -Service Diagnostics;
-
-			# Assert
-			Assert-MockCalled Get-ModuleVariable;
-			$biz_dfch_PS_Appclusive_Client.ContainsKey('DataContext') | Should Be $true;
-			$biz_dfch_PS_Appclusive_Client.DataContext.Count | Should Be 2;
+			$result | Should Be $null;
 		}
 	}
 }
@@ -135,8 +69,8 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUor5wRGXIIOpGUghO0aRP/Vxv
-# TpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUxB95p7EoHnvwaj7tJHGkN1xV
+# NiagghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -235,26 +169,26 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQnysMMzV1vYMJb
-# LFk9f580qhdrjTANBgkqhkiG9w0BAQEFAASCAQCJwqllhWKKlTFRWTvU5qgFQq6/
-# v8+QLDxmyGW8sscJ26V9vecsezHkL7mbon70DgYPkOgLKQZlWoeqevXGERkH9UPh
-# D6DDtNLFFgl4RVSVY91lftCsQZQS84H3xmHy3cFsniiL7o12WVH0hxTN9fIICuYJ
-# p52zGYh+DiQIgH3RPlfW7YzGb/cDlrn479GhTREUjEWRvXGmj037V6DlKyu7Is9n
-# qRz3DbsD/4X5LVamexQdv+PnUeKHo/30Cy7Atm8i43D0aB2tfbS6W5OMqhcTMXYE
-# vxx/U7xEtJewgj+AdEImZ5hgJOQ4GEuDG71d10uCcE9qqQogHZVUr12NqqvEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS18aT6A4qRgPxw
+# oHP1lNrdSh77KzANBgkqhkiG9w0BAQEFAASCAQAHVU7UHbPlSvPrbNVtJG2O9sG5
+# v/Fjfu5xe2mApVuWHzXlXeyWYji431bWWBihN2/BpPF3xQazJeJhdVTtHf1p0c0d
+# Me/8fJVctWUtZF/crq9FxldUGSe++E86w3E0ALPTR9MjjzrpZLPQo/gqOElGFbe1
+# Lre9u8YWVxE7N8sgEXeQB12kbAtPUqNscrgXi/LeM6LA5xu4V0Bup1IQpjAl6irl
+# yDXofSaYLqpHACOhzalCe7UohmH6wGb/zIyrwOW6kymxS4Z8YeKbaq4ggta+l74D
+# yn3HJEJpxCZ0GAwd02cBpP4GuSdHWkxHBVkcHa6eSowlGEmGgQLQgnnnZN2moYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NFowIwYJKoZIhvcNAQkEMRYEFN8rBPqbm0mtUENt27iCXSHUDMfl
+# MTIyMjExMTM0M1owIwYJKoZIhvcNAQkEMRYEFIjiP6zQ5OBx5VSgZZa96gznWWK9
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBz1kqSqunXuJ+sS5Hl
-# nbf0oCOVL1TFEY517itucHTQa14DuhuhAPnzMNCf3HpF5mLyhcUbeCmm6YHtCcNg
-# xnOCmlXwFdp6CjM8Sod2faCLp8BMYWAAp4MkpUSod8XV1csoosj74gPAUeJu68lE
-# s7BiCg8fcRKDubuwIJ9kO14Dw6M+Cnzry0as563EnlsgrixK4oVvd5fo6Stdx0ov
-# GoHCy0SQCtn95CDvim9DFnGAHrB+GpMMo1s6ASvZaVFRxMMaF1WMEk/DsrOVG+HN
-# QYt56qcu4E+sb86mDlfXlveY2rND6RKMmlOFnSXPvrjouT6ZHBUEFyRBAAnji42M
-# akkB
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBQwqSGPZWYGPUmRilV
+# BD4AxsfvL24xYfk5abTYqY5E83PN0XfVR6+T9Uso6m/d9IwXUaG/uvnBMOe/O5nh
+# KI0cH3dk7kSgauDeTd+osmZIZjq8qsAd0HHqSOpLD+lQOY5P3um6/300cFhvXy0K
+# kr9kOOzMgyuX/xJJVp8pP3PcwwPB7bKH+tOagd3vY/ikVQDTcIxm7KqVcYogXYZn
+# 0cqHiJ80+/eaSnYFvG76X4GSl3Jx6JtpW6LNwXltc0I7iLaiHXJmB7Y4JmSMLnK2
+# EhzcmzPWo7F843Px6VQvHRxi10BlrE933s5ipuxOjjNSfHobSZ1tf5O0RDT59lGZ
+# gLjE
 # SIG # End signature block

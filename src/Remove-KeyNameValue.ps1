@@ -36,43 +36,37 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cnmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
+	trap { Log-Exception $_; break; }
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
-}
-# BEGIN
-
-PROCESS 
-{
-
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
-
-try 
-{
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) {
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	} # if
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+}
+# Begin
+
+Process 
+{
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
 
 	$Exp = @();
 	if($Key) 
@@ -92,93 +86,35 @@ try
 	$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter',$FilterExpression);
 	$r = @();
 	
-	$objectFound = $false;
+	$keyNameValueExists = $false;
 	foreach($item in $knv) 
 	{
-		$objectFound = $true;
+		$keyNameValueExists = $true;
 		$itemString = '{0}/{1}/{2}' -f $item.Key, $item.Name, $item.Value;
 		if($PSCmdlet.ShouldProcess($itemString)) 
 		{
 			$r += ($item | Select -Property Key, Name, Value);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
+			Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
 			$svc.Core.DeleteObject($item);
 			$null = $svc.Core.SaveChanges();
 		}
 	}
-	if(!$objectFound)
-	{
-		$msg = "No object found that matches your criteria: '{0}'/'{1}'/'{2}'" -f $Key, $Name, $Value;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
+	Contract-Assert ($keyNameValueExists)
 
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
+	$OutputParameter = Format-ResultAs $r $As
 	$fReturn = $true;
 }
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
+# Process
 
-}
-# PROCESS
-
-END 
+End 
 {
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
 }
-# END
+# End
 
 }
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue; } 
@@ -202,8 +138,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0LOg0FgMFwCyl8Sz8EfyKy8L
-# QpSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5EafSiXZGc1aeQ0Uf7Xmp5Xj
+# TyWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -302,26 +238,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-KeyNameValue
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRp2GwzzwHVhjkR
-# 1Llbcv6vBpj+7TANBgkqhkiG9w0BAQEFAASCAQAv8vTi9Smrd4Crjiy/P9SmjxX1
-# qTECH+GZTaCh2GgX36RXPIFfWOI7Ro2fdSC8Bbut3gk8FMmNr7Ysl9cUENjH7AjW
-# oSkOfgou9Gi1f/0L2yoMH/8l3oczn8f20OvWpWMFVKt6geNzDrC3FeI6DQJdAZqG
-# F27i7VglOrumDrPjOM9CAxfE0ABiDfZtv7f1EaNjUxCviIQkwwT9QK6JO1Wb/u9u
-# krcxThRLEzK0/fHCKHv4Wk6HD9u0CtgEYrubN+kZu8ajIGsREBPwrXC8b0BdHmGr
-# 3FAv+otdbai/mpoFyEecqEsR6XmflgAgqi+2zDdr29s0AEPUty90IypGJ98xoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSLToLN9jl9bgEI
+# eRZBIuArHYcM1TANBgkqhkiG9w0BAQEFAASCAQA582oc7WiXtTquGZJ0T24yEpsA
+# BMjDaHMgLn+SI73+rNVtf1aeBNNCUka8ZX7ef+fGA2CkMpPZ9N79HkyH5XlHK1qv
+# 0RK5nPvtQrEGdX9PTW2n2fp9QxtW+YLjuKYvB+mVLT8EXnCZUpeRw4JWcSEkvQZr
+# w/WRbGyyGDyFiOgwFfZrm49a6seqhedM6VIfhGLBw5gQjPb2Z6Rw55LmaWYZ4XEl
+# s/CFNW61kLkQO5rrsXZ+EHsGIDZo+ls8roqRwkwm8sn7enqysk+xiqDxY5t/swUq
+# y29mvcnfadLr4qdiMA9sPCafyGlpsB+6tKMzpN4N6eQU+dxPy/j/QNKBQpJfoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxOFowIwYJKoZIhvcNAQkEMRYEFHwXADJDAJbAdfIifQDxDbpVkFI6
+# MTIyMjExMTM0NVowIwYJKoZIhvcNAQkEMRYEFHQOcp1XQQ2SKyzfmrZnvpokhQ0i
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB1wKJlCgB102NXO/nt
-# hVPhEu78zNbVsOQEkKdTkkogY+7Ye0H9E5rCoT5WUBPHSAyAp+bff80YhW6Scf5s
-# jvN2RIX/UqNVeDU6GNQkvEdlh3dyIgCnEppuOnM6L8avLRBMPW1OMq1ev8sy8JDd
-# NVNaIiJWQLKMihkjDdCFE99J0j4FXR9vHjei7m0Aq+fhBe3ZREqSFYA5S0yWncKp
-# zW26+9QZR/YZIaa72Lpw+5Heb2bUJahu4BCVDPk+Kfvraqg3lXc8WjwlG3I6Rp9U
-# iTBr1AlY9Qms6LNV9MgF5Q3isxorqahJ+9gDCaFD36RDuMLpUHtPLI1gNR3lJ+9j
-# fQjX
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAxt6yvw1pf7BgurjBw
+# rZq/fyLzqGB9GvYHYw0X7AQAERMHW+IzGobE5cjUQzMRrVD8OMsN7PolX48Ygen4
+# PIS1eOF6Q65gMlxIFSuS0RJZWkQBsi6ceZe3AB9hUoV2w7lJNAtc3Cj+Y11FlE+D
+# /gs5JmdnyS/v85S1CscHj1suFC9GEj2aXzufFcSyssdHdfmoubN7i8klDIcPkc4y
+# 1Jpmk1XOmq95IORHDjgv++N8us13RFC88kUb62uoRNANCok91DePRbTj8Jn8uyOK
+# NZx/s9bpqCGL1L/OKaBcNjYf7q7/a/+WvOaSPjoTbe8xddOJXnBPwTaSmvfwZ06x
+# r3m8
 # SIG # End signature block

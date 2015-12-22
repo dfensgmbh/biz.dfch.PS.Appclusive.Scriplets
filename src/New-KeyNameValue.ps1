@@ -11,7 +11,7 @@ You must specify all three parameters 'Key', 'Name' and 'Value'. If the entry al
 
 
 .OUTPUTS
-default | json | json-pretty | xml | xml-pretty | PSCredential | Clear
+default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
 New-KeyNameValue myKey myName myValue
@@ -58,7 +58,7 @@ See module manifest for dependencies and further requirements.
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
-    ConfirmImpact = "Low"
+    ConfirmImpact = 'Low'
 	,
 	HelpURI='http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-KeyNameValue/'
 )]
@@ -73,7 +73,7 @@ Param
 	# Specifies the name to modify
 	[Parameter(Mandatory = $true, Position = 1)]
 	[ValidateNotNullOrEmpty()]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Specifies the value to modify
@@ -88,27 +88,30 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
+	trap { Log-Exception $_; break; }
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
-# BEGIN
+# Begin
 
-PROCESS
+Process
 {
 
 # Default test variable for checking function response codes.
@@ -118,14 +121,6 @@ $OutputParameter = $null;
 
 try 
 {
-
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
 
 	$Exp = @();
 	$KeyNameValueContents = @();
@@ -189,7 +184,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
@@ -220,16 +215,16 @@ finally
 }
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 	# Return values are always and only returned via OutputParameter.
 	return $OutputParameter;
 }
-# END
+# End
 
 }
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-KeyNameValue; } 
@@ -253,8 +248,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-KeyNameValue; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUV4bT73l2WHmh4K2N5r4Kkxvx
-# dt2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrGS+r7CA42q1FvvF14tmAAa/
+# t32gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -353,26 +348,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-KeyNameValue; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRFv45uDDnR457K
-# zQbkANZY8v+QEzANBgkqhkiG9w0BAQEFAASCAQCmXgL/UVffpR7Z3Xs8oG3bKrCo
-# 9GHhwCWK95C6clhZOkG6UJhqOIDzTEtTWoFDKd4kiNRhc1LKxSjYi9eTrMeaOodB
-# UjuLUY0DyH79t/B9fMXFo2bPe6shBApY5BSkw6IE2PHTh9EWPjDAKzv5V3RO+Qs8
-# Qn2nH4oRv5ndiCInDRxyrV57biPf8Ay6V0epY7uOKbng0qM+a3rqq7mlTSmprkL+
-# 98QeSF99rsy+vTJ4c5lXPImej5G9LI3h5WOm646i5/2zau1xW0DSByroI3kigALm
-# SNl6e6ZSVD6UN2X0tb+CZXkNONP3l9qkuEZ7QitOA2QsKlCLSGORke8eBBx3oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS17DLMz48XrHuV
+# AVM5V3bN4s+0tTANBgkqhkiG9w0BAQEFAASCAQCS2sqdiJFUeW+nvYjD6id7M3Cc
+# L7EOjEVm4yLeVhoBMxrmJTKnNKkjMux27hdf18+qNlG0JyFmjMLXq9mztTOmQGe5
+# NuZJ1w4F38nqZNWuWCztOuZg8+TQcz+v7eTLpTCjKwJ3A6J9dkHyN2iQgwSpr5kM
+# PUWX9ucwUe0Ud9Sb47hESde/nHDIIPejdis3UKtqKGt98TNBkjVCB5TgFRYG4MmY
+# 2pje/sU4PIdPFR5re+u9zgD6/rhEqFD4Ld7WpitV277YpaGSvoGikYcuMVMu/1YA
+# CMqRPiAqDx0x2adi62vT99ZNRacimIsx5YAdJv24h/8ge8gJxugyMzACgXlQoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxNlowIwYJKoZIhvcNAQkEMRYEFLFebHvWSrNDN+KR544fwtCvhamr
+# MTIyMjExMTM0MVowIwYJKoZIhvcNAQkEMRYEFCdEgrrp7VGX4+HkpMubo6Ir7DAL
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCsir/V2/+4p8G4ik6W
-# d37XNVXPazmwox9/bjSFBdbYwagrgAVBqkjRjrdPtzqPglSZGOaDOuDM0+DZ/2WJ
-# Q0yZ77kfnNI/9n9x7lmqSPhWiuEJSks9GmDTI2LraVHmnIR/V95WdDDB8A2nwHzt
-# 2Xu9qLRSOW+zVZjK5KumtHxKZiJ2gt3xqxdQUh/ZuJCZN81+92dUjZVzaK9Lijy7
-# 6m76IqLrHj9y0mwWBucQkm/B7lEYt7oDptoUkcBGqrpR88djDtaCMe39/w1w6SYO
-# EwvNu91qDt6gU1n4xtp0CmIxzYXO0hTFPc/etm+Z3KFxHIYc6+imtGZzCJmcr4Ls
-# at/D
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBfnE1tWULuMNgh9o9W
+# GFKNTqJioVkJ+RUgY6TvUFQ2iOwD3SUtppye+SFFSg1Av6ezs0MLrSyM39nIrOXt
+# MJl0OqbJZwiYdUtozVp3C896cDi22Si2dSUxuQUo6MbSoJjGzdX9Z+Rah2a5sMTZ
+# 2qk61SK0Foj0pfNZHDUSql4AHWOHt2l2VJN0IYGEiB2Gvww0AFHbx8tU9j3Do9yG
+# bNGRm/EE+o7pjx6hpPE06hGyu8Si85zSfyOzCyaoxHhsgq7EJ8jXi/Kd4bo1PZYX
+# Rh2f9beyLlBNhlTtif98aMVOrX4MLqLWOuBDJVaWqoHnHV8AhAr98U74f46qfagR
+# 5LWL
 # SIG # End signature block

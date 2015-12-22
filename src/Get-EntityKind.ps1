@@ -1,11 +1,11 @@
-function Get-Job {
+function Get-EntityKind {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the EntityKind entity set.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the EntityKind entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
@@ -24,131 +24,124 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id, Status, Name
+Get-EntityKind -ListAvailable -Select Name
 
-  Id Status       Name
-  -- ------       ----
-1029 Approved     biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1031 Approved     biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1033 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1035 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1037 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1039 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   2 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   3 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   4 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   5 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   6 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-...
+Name
+----
+biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Ace
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Assoc
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.AuditTrail
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Cart
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.CartItem
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Catalogue
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.CatalogueItem
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.ContractMapping
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.CostCentre
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Customer
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.EntityKind
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Gate
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.ManagementCredential
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.ManagementUri
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.OrderItem
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Permission
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Product
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Role
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Tenant
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.User
 
-Retrieves the id, status and name of all Jobs.
-
-
-.EXAMPLE
-Get-Job 1027
-
-Status              : InitialState
-ReferencedItemId    : 1027
-Token               :
-TenantId            : 00000000-0000-0000-0000-000000000000
-EntityKindId        : 2
-Parameters          :
-Condition           :
-ConditionParameters : {"ServiceId":"100054"}
-Error               :
-EndTime             :
-ParentId            : 1
-Id                  : 2
-Tid                 : 22222222-2222-2222-2222-222222222222
-Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-Description         : This is a node job
-CreatedById         : 1
-ModifiedById        : 1
-Created             : 01.12.2015 00:00:00 +01:00
-Modified            : 01.12.2015 00:00:00 +01:00
-RowVersion          : {0, 0, 0, 0...}
-EntityKind          :
-Parent              :
-Children            : {}
-Tenant              :
-CreatedBy           :
-ModifiedBy          :
-
-Retrieves the Job object with Id 1027 and returns all properties of it.
+Retrieves the name of all EntityKinds.
 
 
 .EXAMPLE
-Get-Job 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
+Get-EntityKind 27
 
-ServiceId
----
-100054
+Version      : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
+Parameters   : {"InitialState-Create":"Created","Created-Run":"Running","Created-Delete":"Deleted","Running-Stop":"Stop
+               ped","Stopped-Decommission":"Decomissioned"}
+Id           : 27
+Tid          : 11111111-1111-1111-1111-111111111111
+Name         : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
+Description  : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
+CreatedById  : 1
+ModifiedById : 1
+Created      : 14.12.2015 00:00:00 +00:00
+Modified     : 14.12.2015 00:00:00 +00:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    : SYSTEM
+ModifiedBy   : SYSTEM
 
-Similar to the previous example, but only returns the 'ConditionParameters' property 
+Retrieves the EntityKind object with Id 27 and returns all properties of it.
+
+
+.EXAMPLE
+Get-EntityKind biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos -Select Parameters -ValueOnly -ConvertFromJson
+
+InitialState-Create  : Created
+Created-Run          : Running
+Created-Delete       : Deleted
+Running-Stop         : Stopped
+Stopped-Decommission : Decomissioned
+
+Retrieves the EntityKind 'ActivitiClientUri' and only returns the 'Description' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id -First 3
+Get-EntityKind -ListAvailable -Select Name, Id -First 3
 
-Id
---
- 2
- 3
- 4
+Name                                               Id
+----                                               --
+biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos   27
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Ace  3
+biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl  4
 
-Retrieves the id of the first 3 Jobs.
-
-
-.EXAMPLE
-Get-Job 1027 -Select Name -ValueOnly
-
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-
-Retrieves the name of the Job with Id 4005.
+Retrieves the name and id of the first 3 EntityKinds.
 
 
 .EXAMPLE
-Get-Job -ModifiedBy SYSTEM -Select Id, Name
+Get-EntityKind 27 -Select Name -ValueOnly
+
+biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
+
+Retrieves the name of the EntityKind with Id 27.
+
+
+.EXAMPLE
+Get-EntityKind -ModifiedBy SYSTEM -Select Id, Name
 
 Id Name
 -- ----
- 1 Root Job
- 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 1 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job
+ 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl
+ 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval
 
-Retrieves id and name of all Jobs that have been modified by user 
+Retrieves id and name of all Users that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
-Get-Job AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
+Get-EntityKind biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Msql -Select Parameters -ValueOnly -DefaultValue @{"InitialState-Create"="Created";"Created-Decommission"="Decomissioned"}
 
-AppclusiveSchedulerNotAvailable
+Name                           Value
+----                           -----
+InitialState-Create            Created
+Created-Decommission           Decomissioned
 
-Retrieves the 'Name' property of a Job with Name 'AppclusiveScheduler' 
-and AppclusiveSchedulerNotAvailable if the entity is not found.
+Retrieves the 'Parameters' property of a EntityKind with Name 'biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Msql' 
+and @{"InitialState-Create"="Created";"Created-Decommission"="Decomissioned"} if the entity is not found.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-EntityKind/
 
 
 .NOTES
@@ -161,17 +154,16 @@ See module manifest for required software versions and dependencies.
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-EntityKind/'
 	,
 	DefaultParameterSetName = 'list'
 )]
 PARAM 
 (
-	# Specifies the id of the entity
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
-	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[Alias('n')]
 	[string] $Name
@@ -190,7 +182,7 @@ PARAM
 	,
 	# Specifies to return only values without header information. 
 	# This parameter takes precendes over the 'Select' parameter.
-	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
+	[ValidateScript( { if(1 -ge $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias('HideTableHeaders')]
@@ -237,7 +229,7 @@ Begin
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'Jobs';
+	$EntitySetName = 'EntityKinds';
 	
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
@@ -245,6 +237,10 @@ Begin
 	if($Select) 
 	{
 		$Select = $Select | Select -Unique;
+	}
+	elseif ($ValueOnly)
+	{
+		$Select = 'Parameters';
 	}
 }
 # Begin
@@ -298,7 +294,7 @@ Process
 		}
 		if($CreatedBy) 
 		{ 
-			$CreatedById = Get-User -svc $svc $CreatedBy -Select Id -ValueOnly;
+			$CreatedById = Get-User -svc $svc -Name $CreatedBy -Select Id -ValueOnly;
 			if ( !$CreatedById )
 			{
 				# User not found
@@ -308,8 +304,8 @@ Process
 		}
 		if($ModifiedBy)
 		{ 
-			$ModifiedById = Get-User -svc $svc $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById ) 
+			$ModifiedById = Get-User -svc $svc -Name $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById )
 			{
 				# User not found
 				return;
@@ -386,7 +382,7 @@ return $OutputParameter;
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-EntityKind; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -407,8 +403,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURozod2VyhrZiVdczGYGXK7kZ
-# byqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUb20k6WJZ4iH3TDmeH2LJRZej
+# i/ugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -507,26 +503,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTbWMV/H0SbA3dn
-# KaXj/IIkuT9t6zANBgkqhkiG9w0BAQEFAASCAQCvA6kLvFWbq0bN+YfPoJ5zay+3
-# BI5m1E2oNTzmQTllF/d5s9REmzFEOU3v177w+YLtMsXop25jKE3sEXsB2C+vdBsa
-# G3gQZRNiehxQlgwoVL4cAEXqm8KewT9U4XG5Z71n0PxcnYNWEWhBmdKkEk8M2dCZ
-# RzqNWNLeJirTXg13A7SDdi/Q9ZGzR7i7GoncEaM+oqD7OQ4TcQC3u6k4Rgg0Q6db
-# /zzgdtdOSKyw5X7BjCVpXDDXfBWduxZhX7P1sLuiIZElmyPfd2zxdnWBr4TsKpWp
-# lN1S+6G9TylsG55mwGRaE8H4cGOBaxu4Tj4wXXrw668RcWH3MJYI/yajXh/UoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSusfMpcKwrwVbw
+# lwVdtiuSZ2IsajANBgkqhkiG9w0BAQEFAASCAQCRd8otyQgzx+4nZERVCXB8SEFh
+# 2Buml47XRvq5w62wisoBKMxwETlmmw7hZXE9gcS0pJsSpCUZB7R6alEgl5D67Ayi
+# XVNTJ77xPp/uL2mRuq3EFBGQgPvG4fnNRyyIjhU6s3cetTApl4Ap7TecK41Wob0s
+# oV8ZItDyssFypXvYLj28+zweT7PU4oDTDoGhC5JbNPLctoTkib5KTt/KcBCKRtMi
+# UlN3F/KovRfs1Obp9KTvUBcZKJtGilI3oMbMunCvA6WGkVGlcBFrlwi+LpemPWlx
+# YvuwlXlhyzBZbWiWuzqI+ZZIO90cg8lJ9yLqXZIQP5bMsJigHdvSvZu0phb/oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTMzN1owIwYJKoZIhvcNAQkEMRYEFJW6Gu7WQBdUOdGfw9u7O0nx45bQ
+# MTIyMjExMTMzNlowIwYJKoZIhvcNAQkEMRYEFJWxSFpAT8+A9BJLUHH+viBrDcTm
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCo32kezAutGFOjx4Bh
-# GwnCuUvjr4UifdLiXu3hV8oRpWdN3FgHVv9Mu5Or1AYVfani7yJk89qR9lqBcxoc
-# KFt5MAr23t0jac6ay5hdPu8oS8SHlY4wT0agUF/lNL3K/NoSMvqtZuHvQm/uysTs
-# JUIqbdBfPtnn6+Y84OY7+vifme1ZRcYip9WfZyUARODt15JHy/nasREIZZelD0hp
-# fPVKLpZmGOs1pLZ352cnMR9MK16DD7PJIzAXJB5MThPXm2eWpz6TJkF2eogSqfTl
-# QDbztI92polfzMGT6z0HxTV2PAKDeYGwoy3EKL+KpYWNXCmoI0R55XJqJmzKCmiR
-# Qjgw
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAQEqF4Z1UXmEs1565W
+# 0sGjNpdQDQUkUND18Yt4dC7sDtXj7mZcS8KZjULplns08g7UV6XKgZ3cmH384qQz
+# 4LmZ2MoV1wjrwSXqarIOrW+NNg5fMOOpJlkLc86IfPzRT7ypKKo25nvttg7d8WhR
+# 0izftbEr/u070Zn+xtEjdL4OcIB4PVvSsMlYYj7E0BgJKxV8QrLDnkurvvG+tba1
+# rT4J8mXpN2RtBJPb0xyIe2gcnxeQpjHbfm/o5p9NycYDqMd2xnkvsqxuILqRX1Xk
+# Amcgr53tr0gfijlQwzAAV1dnOsQbsIijQ8q7USkRJwTMQDNKx3jCqHxjRKwIHbku
+# Wb4m
 # SIG # End signature block

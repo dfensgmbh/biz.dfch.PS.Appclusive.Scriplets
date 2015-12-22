@@ -1,5 +1,7 @@
 $fn = $MyInvocation.MyCommand.Name;
 
+trap { Log-Exception $_; break; }
+
 Set-Variable gotoSuccess -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoSuccess';
 Set-Variable gotoError -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoError';
 Set-Variable gotoFailure -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoFailure';
@@ -43,6 +45,22 @@ if(Test-Path -Path $ManifestPathAndFile)
 
 (Get-Variable -Name $mvar).Value.Credential = [System.Net.CredentialCache]::DefaultCredentials;
 
+function Format-ResultAs([object] $Result, [string] $As)
+{
+	switch($As) 
+	{
+		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $Result).OuterXml; }
+		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $Result).OuterXml; }
+		'json' { $OutputParameter = ConvertTo-Json -InputObject $Result -Compress; }
+		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $Result; }
+		Default { $OutputParameter = $Result; }
+	}
+	return $OutputParameter;
+}
+
+Contract-Requires ((Get-Module biz.dfch.PS.System.Logging).Version -ge ([Version] '1.1.4'))
+Contract-Requires ((Get-Module biz.dfch.PS.System.Utilities).Version -ge ([Version] '1.0.9'))
+
 # 
 # Copyright 2014-2015 Ronald Rink, d-fens GmbH
 # 
@@ -62,8 +80,8 @@ if(Test-Path -Path $ManifestPathAndFile)
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6KUUhu6QCp5TUF07Zqd4RI1M
-# r+ygghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+XwYT7Ib9XCIbKpINN7kSmGo
+# I6igghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -162,26 +180,26 @@ if(Test-Path -Path $ManifestPathAndFile)
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRAfuZyhxvLJnhf
-# kLPmNG9/evlCMTANBgkqhkiG9w0BAQEFAASCAQC7hiSh076FWRoHjWdbB4tEVGS3
-# kpAo+Fvmql0zyq4cK2b7zoEVGHRnnWt9tcOcrERKUpSED1db8Vzpa8v/bWnKiaX4
-# FuolxYOBE/YMau5OXCs9S01IKQjdz2aK+FlClMAK8WkPaR1AX0ymmNYDjsX2vMr7
-# /TJ+YcUimZuKXNnkBroPQpOGA6JSC8t+bCbFgcInIDrgwDI/nqWz/dm6KY4ZiNWT
-# A3Zi8yhZ4xLxyxUa2cguToIGEeg1ToElkTjSuoacqGpxFIP+N10arf0N0AJ8pTmN
-# PKKQIpdWfWN7sdHGdsIuSXqNaK4nm8o8BZRULaeK11V0We/vLiNBeS++Vp+6oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT1SSAg6UUOdyLu
+# n/R+ZnX9xy3umTANBgkqhkiG9w0BAQEFAASCAQCdCK8H3rpaijZk5X4i/1M6A/Pb
+# kwmxq65jOhe3JoCJQsPeuMacUjpMtGNDQQBMGF+DpARjdHVsWthQ8m4uSOqd1yMD
+# S+tlk/FZ1tkPG8esU9QloI1NQGqlTz7P+nOzgUuxyd3UECEqHcFV7DzmkFJg5dLd
+# b83JBvNn8fq5cjMQ4GA9GU/6rvmwbtroRHbaGNDzzIAZwYcaRetbJH9JUGzTlcEA
+# /L18wW+AT0vBuDrkUWHwPhanKE51PcPNHSpHi3biE1JoAoVNuM6X06n6XJ5GpJJF
+# 8PyAPjqYopuLOqVFzWpV9rY0RQqamLfMMYNCu0eZ71T4rTg0WOWS90kFf2IMoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxMVowIwYJKoZIhvcNAQkEMRYEFPDXOsO6Ga2osNthXzsq8i2zUZOK
+# MTIyMjExMTMzNVowIwYJKoZIhvcNAQkEMRYEFCOZdjgBHDuFV1HqtlyIK5Z8+3P4
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAYK8khMbI7cB8nTP3Q
-# N9sFIJQzjKnbChsRlUutDrhC893UF9kLzqmwgH+PaoZC2vCYrVpj5QAtdrBkuKV9
-# bfJ2rwy5kTyx2AuVETH9j5Ol+3apGr9PLX5xm3usSGk6aPb/fRRh47rNsEpq1Zji
-# eSb1eKxO8uL3pgNFU6Sw1z9K7BhJLrl3yCrxkh8cBlsmmFfKDSXYNum7BGQo1t7T
-# RwItDLSEhm9/nlrEKRFJpCO8Ra88Piynt6zTjbewqERxyz1IGE8Hthi3P4yIIsw2
-# JJjQ2OxJaF8exNs/Xh9lfwFkB65lZNePZNbGNmVH72o+Dkhjup9NgF26wuvSHSjg
-# fXXP
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCnCy8Ejlf9x9EBqOYm
+# OrsJSDMfKGuqKSs+vhDj1HnMXejPxgQH2qIVqAxQrXnO0/OKWjsJCxNFWYXkeepT
+# NpfgRf/txCM2w54r/+ZqntXEF8BCv5hKcj3U/yxvrBOKGNN20BaLOKaCmJgo1aLh
+# hHwlswlGiAxvBvTmoU/Ss66d97QxBAXOgZkJDJeE40/05R5fQjW9zdSxt8eyIM81
+# uU6A+PWRdsO+g3iE1bquJN44Hk20ZwIQMhMr6rYOceP90OCzXWNXuBYJZkuRtqkO
+# RF5EXY1epwb8+UB5lTqT/j4TBKHtPcdiH/3xxB/3AxCHWjSMPkxgTo9u41pw5z8u
+# mfQU
 # SIG # End signature block

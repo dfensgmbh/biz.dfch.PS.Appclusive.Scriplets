@@ -19,9 +19,6 @@ By updating a K/N/V entry you can specify if you want to update the Key, Name, V
 default | json | json-pretty | xml | xml-pretty | PSCredential | Clear
 
 .EXAMPLE
-
-Create a new K/N/V entry if it does not exists.
-
 Set-KeyNameValue myKey myName myValue -CreateIfNotExist
 
 Id         : 3131
@@ -34,11 +31,10 @@ ModifiedBy : SERVER1\Administrator
 Modified   : 11/13/2014 11:08:46 PM +00:00
 RowVersion : {0, 0, 0, 0...}
 
+Create a new K/N/V entry if it does not exists.
+
 
 .EXAMPLE
-
-Update an existing K/N/V with new key and new value.
-
 Set-KeyNameValue myKey -NewKey myNewKey myName myValue -NewValue myNewValue
 
 Id         : 3131
@@ -51,12 +47,10 @@ ModifiedBy : SERVER1\Administrator
 Modified   : 11/13/2014 11:08:46 PM +00:00
 RowVersion : {0, 0, 0, 0...}
 
+Update an existing K/N/V with new key and new value.
+
 
 .EXAMPLE
-
-Update an existing K/N/V with new key and new value. Return format is json with pretty-print.
-
-
 Set-KeyNameValue myNewKey -NewKey myNewKey2 myName myNewValue -NewValue myNewValue2 -as json-pretty
 {
   "Id":  3131,
@@ -78,6 +72,8 @@ Set-KeyNameValue myNewKey -NewKey myNewKey2 myName myNewValue -NewValue myNewVal
 	17
     ]
 }
+
+Update an existing K/N/V with new key and new value. Return format is json with pretty-print.
 
 .LINK
 
@@ -109,7 +105,7 @@ Param
 	,
 	# Specifies the name to modify
 	[Parameter(Mandatory = $true, Position = 1)]
-	[Alias("n")]
+	[Alias('n')]
 	[string] $Name
 	,
 	# Specifies the new name name
@@ -136,27 +132,30 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias("ReturnFormat")]
+	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 
-BEGIN 
+Begin 
 {
+	trap { Log-Exception $_; break; }
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
-# BEGIN
+# Begin
 
-PROCESS 
+Process 
 {
 
 # Default test variable for checking function response codes.
@@ -167,14 +166,6 @@ $AddedEntity = $null;
 
 try 
 {
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
-
 	$Exp = @();
 	$KeyNameValueContents = @();
 	if($Key) 
@@ -227,14 +218,7 @@ try
 	$r = $svc.Core.SaveChanges();
 
 	$r = $knv;
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
+	$OutputParameter = Format-ResultAs $r $As;
 	$fReturn = $true;
 
 }
@@ -253,7 +237,7 @@ catch
 		
 		if($_.Exception -is [System.Net.WebException]) 
 		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
 			Log-Debug $fn $ErrorText -fac 3;
 		}
 		else 
@@ -286,9 +270,9 @@ finally
 }
 
 }
-# PROCESS
+# Process
 
-END 
+End 
 {
 
 $datEnd = [datetime]::Now;
@@ -298,7 +282,7 @@ Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: 
 return $OutputParameter;
 
 }
-# END
+# End
 
 }
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-KeyNameValue; } 
@@ -322,8 +306,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-KeyNameValue; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU9kBQdljpOpr0kUhC5YxJ6xg4
-# QYugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGb7Yi0MGOAwO15ROT7Aucjsx
+# bqegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -422,26 +406,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-KeyNameValue; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQRSZjYSbXpoy+P
-# ny9LXp5CXa2RyDANBgkqhkiG9w0BAQEFAASCAQDLXwNgoOeH/DBjUyB/X96Kztnh
-# e9Q6vVRDEdrjt/aTWFIHa/NL9NkOO5d4x7GOwG5HDAyoSGM0gcxk+DnjH9odEuab
-# +PlPmo1pKuty5q0qifwL6vQz9+6DF4vBjBXrpHRidvDjIsfsWpnu38DK2KcZpAfc
-# OescPFTcc0dwFFJjKqUywKHfoaR78l1u9P1FTvkoo0w4lfyNTmhSEIZtOz+5P9h1
-# RTUoZ7QHSexRebmwXTvUBhklsyZUymCRt87MwDUWA0XxSo0CFyNNQVtztF6DsmEX
-# R4ZYPq0kyLdssjiZiPqderLWK8p6WNKv4g/kOb6waQ2NAJkUNam8oe2hmvVEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQEE6Tj4vVA1ceu
+# //7J2KolmpWshjANBgkqhkiG9w0BAQEFAASCAQBwspcT66QbcU2KRw0XZSMGTeL8
+# HuMJ74i5Jxd+JfSfYq2eOqlLx8eU0/p/e0KTD+1T5uANdNckZ1g/3OxRNZGEHujt
+# 4A8dchv/7S2sG1bmfc4fL3ROwF/XepB+lP+iA/TW/AuVNxDJ0kimtFvOOjS8agiD
+# /B+PIzpzwtTSPodg5s416TYluvcHqmPPvQZFrwOZT7lD2jpXvz+/nAClvKHVanIc
+# 2RJhCYMxZg79AOr0vx0p4gJbvfR3NqCOB9KrZ+JHB6SN+3gnAdZQIxKqHKBt6RUB
+# naZTXEXIz9+B4nbeu/uV2z7enMQi8SPODoEio+Jmrg9VJYelw1iyB9O9qSzioYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIxNTA2NTIyMlowIwYJKoZIhvcNAQkEMRYEFO+Vaq1WAWZa0f6Eqqc+7QIWjWam
+# MTIyMjExMTM0N1owIwYJKoZIhvcNAQkEMRYEFI9rQCZ++CIpVNjAqfDdxktScZ7v
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAHbovtl4W8m6vPfIzM
-# YSdv7RUxd9KIVZHEmmjvp3dVsI87JzYw8jbYJTrX+Cqfvo+ygFiTmas6N7ccyHIC
-# x8RsgKnkiuUTOIqhv9Ct0YgZGTOxb5I8X32lKfGWKM7qjEz1ub+g1uvrWKDyNS99
-# m1L1rekLM8qNnGXKU6t2+Am0Iix6Ktoflg6T0nSbtPwfB57TIqi+ahDkC0R6VYQI
-# llZ1UBuwEYVOf6RY+L/VoZHuxoS0o+Apw//nPBdt+uwvF39pc2nwN4nD6u728aIP
-# wPM7ZwkvmQIOPr9EWVed0D3s8XpGFbFNlgTaUCjbGXzolrzZOgcE4oG/KMzK/WMH
-# RKqi
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQABwdkZuVE/Mp5BsOu6
+# m/2ZbUULBXJXFnA4Z4v1Fi98T2+EUzS6KoDdTgtQ7FhU0Py66Ef+W4/+vBzlYbfQ
+# rXDqqbyzCtdBGjqqp//TPFgam3cJJtqOblLA8YGmVTnE3fbAfr7SzY/wwoU8Q1B3
+# 0IsdHvrY75KhMUMhr4M22HpDAp/djq9ISupcLGZhKHIsKd4IOyamfVB8exgFw6b5
+# va3NoquPu0gN7Y3t9nubvhtuDvpPP5/EZdOF9B7xsz1ENi9Of/auxu64afxs2vNr
+# kAiTuu68pVQYqNtv81kw4U+sV/HctWDsxRj7CoOQFmdQbyFmoCdF+eOoH2nmEb4p
+# TI0X
 # SIG # End signature block

@@ -1,4 +1,73 @@
 function New-ManagementCredential {
+<#
+.SYNOPSIS
+Creates a ManagementCredential entry in Appclusive.
+
+
+.DESCRIPTION
+Creates a ManagementCredential entry in Appclusive.
+
+You must specify all three parameters 'Name', 'Username' and 'Password'. If the entry already exists no update of the existing entry is performed.
+
+
+.OUTPUTS
+[biz.dfch.CS.Appclusive.Api.Core.ManagementCredential]
+
+
+.EXAMPLE
+New-ManagementCredential myName myUserName myPassword
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new ManagementCredential entry if it not already exists.
+
+
+.EXAMPLE
+New-ManagementCredential -Name myName -Username myUserName -Password myPassword -Description myDescription
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : myDescription
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new ManagementCredential entry if it not already exists.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ManagementCredential/
+Set-ManagementCredential: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ManagementCredential/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
     SupportsShouldProcess = $true
 	,
@@ -29,112 +98,55 @@ Param
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 )
 
-BEGIN 
+Begin 
 {
+	trap { Log-Exception $_; break; }
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
-}
-# BEGIN
-
-PROCESS
-{
-
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
-
-try 
-{
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+}
+# Begin
 
-	$FilterExpression = "Name eq '{0}'" -f $Name;
+Process
+{
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
+	$ManagementCredentialContents = @($Name);
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	if($entity) 
-	{
-		$msg = "Name: Parameter validation FAILED. Entity does already exist: '{0}'." -f $Name;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ResourceExists -o $entity;
-		throw($gotoError);
-	}
+	
+	Contract-Assert (!$entity) 'Entity does already exist'
+
 	if($PSCmdlet.ShouldProcess($ManagementCredentialContents))
 	{
 		$r = Set-ManagementCredential -Name $Name -Username $Username -Password $Password -Description $Description -CreateIfNotExist:$true -svc $svc;
 		$OutputParameter = $r;
 	}
 	$fReturn = $true;
+}
+# Process
 
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-
-}
-# PROCESS
-
-END 
+End 
 {
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 	# Return values are always and only returned via OutputParameter.
 	return $OutputParameter;
 }
-# END
+# End
 
 }
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-ManagementCredential; } 
@@ -158,8 +170,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-ManagementCrede
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtbcad0bnIJrLjTNCbjRQQSHn
-# aF2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5QNRIWVEOKWwgsRQOK10Vepl
+# FkOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -258,26 +270,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-ManagementCrede
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSmymHB8sfCEawP
-# LYmvePo0yq1pkjANBgkqhkiG9w0BAQEFAASCAQC8Djv/vvqJ1v46qM6Z2tAS/gWN
-# Ja7Tj0GsQW47x6poPyP5zqlwOUdQQW+5LFCoc9g0WYrn4tdyV7kV/IgN+XltvyVJ
-# Om99vIV8iOgcUPS757SRNp5lyFbVCwQeARIH6R/ihaFU77kdTo+xKi37hlkfqYub
-# O6P8AAM+knTzdROiE279jihaW315gki53ApL375rBHn7qHs1EO/+N3ltgzWcDYIU
-# xEhTFpPwfOsGXU59mjIFo81016zegIRcefYCTJAyWUh+tClnd0zqVrHN9YyKJ9ud
-# y/vGqk+VAgTPLTiRiZ1S3Dhh3yNJp3P+8G6PvgPci5Wooidh4ZAASqvPWUJVoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSh014niF1UCcWc
+# Xg3f3k2TvizqfzANBgkqhkiG9w0BAQEFAASCAQCy6F4Ur2yME0JDTgFeyaiEltLK
+# plvoFa0TkSmFbj4ngm5fNgqWmfi8GPnmc1kzEpl6Gi3vRDDtTNzZsafSy9ysYyWU
+# 27TDvWQU928JMNkVzdS8aIfn/7nydtdBXZ1TVeZbZVc1r7XtqQQEFPxgb6YYrWm7
+# qS0d9G1XiEWPLapiAbHshLoEGSkTZBRAuYi+MrkDct3V1U9zyWpuyIufYyfokRXe
+# PQIa/+XfL/r0rUOQEGEPCJLPL669I4KrZSBbBFT5jYgu2ub68DFDuu/67J8y0bDy
+# T0ePz37i6ddq0kTjnV1XsvcpjhcdMiEWmMxPAfMo9gMz8c3gKD7LwoRyhmMRoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjAxN1owIwYJKoZIhvcNAQkEMRYEFNROpt7ID3hSayzxAWegBo6SxIf6
+# MTIyMjExMTM0MlowIwYJKoZIhvcNAQkEMRYEFJzgNfxCoaKRJ8Z5YSemxNMyi3rd
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA5Rgtgg//KQTp/hoKs
-# Hx9t2eYi6GidWbB/lxsdaQPXvrXcjl4dDUlyTUy0LANgey1MQkJhTD7Y3LYn953q
-# W7hAqZoWUnNMyev4YhiaPjK06SLtjcL7kFzanwQYuX7UnRd9jYK8oAlOKgkYw2JN
-# w6ZAkHxVeBaL/MT+fXqrTw2c1eKiUHMFt8cFU6TFl4Gt2KG8zSJEEIF4cQaz2wtr
-# a7EntWAfgrxt/hYRdVun9w7BGB7uyn5TTDBQ5vlzcuWdSB3iYQCyZjUSGwDJrNiy
-# eEhkCK+jbr2dnLBLxgBverXbzZLS+6QciPHDJxR2msbSYD28kOLyJKp9PDg183Z3
-# W6PP
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQABURxhXkNRYwJORbq0
+# KeA85JdrBr86kpp4BjdgtB3rFRa/Wa1NU4jDrvt1Ecw8ATa9BYxhdUVJoiZFaQ1v
+# 3gspQaWom97860KIqGgVtwNAsPpUws4c7PbmEIKtIB48tXu5g4+5tb5pO213ww8L
+# QYsttP49AeoBikIJEIuZwALjqbhL8iqLJoo+xEkyIpVnx/MIx779WyiF6VUyvq96
+# L1ED8LUyc2coHEhDdbIX/Y3Pth4f4DrtqW4D1OkEnZ70/k6sIy6mM/r2j/Y4sVdl
+# PuWaNrXS+63ASgu4hMimW+x0xSncnO2RATuUjw9TSQjIivmvIO0sN+jcGIJfPrMU
+# zbJX
 # SIG # End signature block

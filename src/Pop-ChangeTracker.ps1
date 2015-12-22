@@ -18,7 +18,8 @@ Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Push-ChangeTracker
 
 .NOTES
 See module manifest for required software versions and dependencies.
-#>[CmdletBinding(
+#>
+[CmdletBinding(
     SupportsShouldProcess = $true
 	,
     ConfirmImpact = 'Medium'
@@ -34,7 +35,7 @@ Param
 	,
 	# Specifies a references to the Appclusive endpoints
 	[Parameter(Mandatory = $false)]
-	[Alias("Services")]
+	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the service or container name of the entity to remove
@@ -49,6 +50,7 @@ Param
 	[Parameter(Mandatory = $false)]
 	[Object[]] $Exclude
 )
+	trap { Log-Exception $_; break; }
 
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
@@ -58,45 +60,18 @@ Param
 	Log-Debug -fn $fn -msg ("CALL. DataContext stack size '{0}'." -f $ModuleVar.DataContext.Count) -fac 1;
 	
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	$EntitySetName = 'Entities';
-	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
-	{
-		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
-	$EntitySetName = 'Links';
-	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
-	{
-		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	Contract-Requires (!!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Entities' is not a valid entity set in specified Service"
 
-	if($DataContext -isnot [hashtable]) 
-	{
-		$msg = "DataContext: Parameter validation FAILED. Context must be a hashtable.";
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $DataContext;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	$EntitySetName = 'Links';
+	Contract-Requires (!!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Links' is not a valid entity set in specified Service"
+
+	Contract-Requires ($DataContext -is [hashtable]) 
+
+	Contract-Requires ($svc.$Service.GetType().BaseType.FullName -eq 'System.Data.Services.Client.DataServiceContext') 
 	$m = $svc.$Service;
-	if($m -isnot [System.Data.Services.Client.DataServiceContext]) 
-	{
-		$msg = "Service: Parameter validation FAILED. Service must be a DataServiceContext.";
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $Service;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
 
 	$fReturn = $false;
 	$OutputParameter = $null;
@@ -180,8 +155,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Pop-ChangeTracker; 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUOZ/hEVQql8u27cstAnoAJUIk
-# ipOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU2x4THR6W/QJJ1blAbHtr3zu6
+# lKCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -280,26 +255,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Pop-ChangeTracker; 
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS6N1GqUjdq0Nvs
-# rmv9eIfu9FJn5jANBgkqhkiG9w0BAQEFAASCAQDKncb+lnSf94QjBpz2TOTwmSSu
-# 0eKFYLH9ALw4tVGYs6UecNnzXIP3diXXx7Nvr5UONKhQwhQnhtKQTYrBLtx1/A+e
-# 4H1Qrd7dEEfyI7AnEaiLfkDTyE4l/rQ9psoHaGc1wtXBHC+NGXw5I4E99dDEw+Ns
-# 0FoeAcHjy7fCdVoSPvOl1QZkzkQu4RoWN1WyFrqYHtNIMcuYpBBvGeG0jDVD0DWO
-# UmtcSZrqqiDLS8M4WawwZ4lJVUwlXqpiZbCk+EzQSh2RY3kqLw6RRRfmUFsgji1y
-# wydFVzGH2IFC1EnW9v6Ct2wt5jD47LCK48CJNdlgDB/LP1oy3wL2pnHU7eAKoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT7uj+TWoBYfxvI
+# F384oARM4HJMMTANBgkqhkiG9w0BAQEFAASCAQBAqkuxvvB9HDaIwFw2FzUzjLgE
+# SK+wvWZUe6pItI2bj1cK8Xrhbgi5QEWHUeKYQjpmtCksklOKnHbJWtn6yD/z+J6k
+# sherbmwQbgR7wz0xKQtXh3/1AsrRBWbFpG0seVyJ+E9+jt209xEfyQPyaOjFOT7i
+# NJe9tLA9Q+u5CQ+scR9nb4KTer3tCpO0tHdHAKTUIjdJ+7Fn0eiNMyQ8YqntFO1C
+# NcM/pgaK1z57TxvF95D+ZDprFgz7M8GWjsfaW57dkD6BPpHC9VslfjVWN2O3f0Ww
+# bt2XBE4XIZ7OO3C0EJUaAOGLY4ngoh9KHQfgVvpTxdEAo5VkSsFR3pz8TgeXoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTEwNzExNTU0MFowIwYJKoZIhvcNAQkEMRYEFPR1f+Gij1GkW67fCkOHBHh8qexT
+# MTIyMjExMTM0M1owIwYJKoZIhvcNAQkEMRYEFCiAX+xk9CZOD6RnYbdlLgXzAKp8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBBZyP2HBTtUNZpQUCc
-# 7ivr9uK2OF/vXpHJDoQsM9wsQbdzPJrBhnJRTc406ZHexZKT5sssYtZ/Dp/dRcVl
-# FG3R+eDLDUKoMHy2NVGcauihKgvE06fqG3R6uiZJnOF3vPSOLbjn1HcsWjApGa0H
-# TUPemTHLZAVKfU63OU4FxSnFFuakJnLLTsq/mYU+zyuDW82UyXRNWNeH0pHSyuGK
-# +K74b5VlWanL8D+mKBAoZ3yy7vdpVUpdaqI+DZ4ryQb/fPkuDrc+c7ogvpHVCqQp
-# 9AiZJSsgtuLXeAz0bxFgbx7y2ZAMWNTW/OYnuLFlx4mp/grUDZTwsOOIT1AgwIC/
-# gOVK
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQACMgUeIUxNsvteUfm/
+# /maCVsSoJx8+99MNSTUOH39R6qRuzsj2zrMHbyQcTiLlr9nYfib3rWZtWumIP56X
+# I4pru9cTRHJ7nrXf4qipYK7AB8CO00FMRQOMhY6upcOFm8ESoWIuWdQKDLp8NZlB
+# pM7YBI/RXBgAWL2AVRhnS9gv3dnou8ZWlJf9hQ4SthirKwp8LTH/g/6iehFyY3GD
+# 5yr/AV4OzjVNbFQkPnyDx1k3aQhG9myVoopFmkcZzBB5wYvxT5wllps+BhdA9NtP
+# U9Uixg+q4sQaelyz06pjNqIvz+5EWLDUyO7nqMATl2kc7eNeeZaSvpthUBslP3NI
+# liWE
 # SIG # End signature block
