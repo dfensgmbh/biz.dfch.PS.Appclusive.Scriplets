@@ -7,6 +7,8 @@ Describe -Tags "New-ManagementCredential" "New-ManagementCredential" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Set-ManagementCredential.ps1"
+	. "$here\Remove-ManagementCredential.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -30,9 +32,11 @@ Describe -Tags "New-ManagementCredential" "New-ManagementCredential" {
 			$result.Username | Should Be $Username;
 			$result.Password | Should Not Be $Password;
 			$result.Password -eq $result.EncryptedPassword | Should Be $true;
+			
+			Remove-ManagementCredential -svc $svc -Name $Name -Confirm:$false;
 		}
 
-		It "New-ManagementCredentialDuplicate-ShouldReturnNull" -Test {
+		It "New-ManagementCredentialDuplicate-ShouldThrow" -Test {
 			# Arrange
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
@@ -41,10 +45,13 @@ Describe -Tags "New-ManagementCredential" "New-ManagementCredential" {
 			$result1 | Should Not Be $null;
 			
 			# Act
-			$result = New-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password;
+			{ $result = New-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Assertion failed';
+			{ $result = New-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Entity does already exists';
 
 			# Assert
 			$result | Should Be $null;
+			
+			Remove-ManagementCredential -svc $svc -Name $Name -Confirm:$false;
 		}
 	}
 }
