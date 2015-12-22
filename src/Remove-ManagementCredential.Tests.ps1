@@ -7,6 +7,8 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\New-ManagementCredential.ps1"
+	. "$here\Set-ManagementCredential.ps1"
 	
 	$svc = Enter-ApcServer;
 
