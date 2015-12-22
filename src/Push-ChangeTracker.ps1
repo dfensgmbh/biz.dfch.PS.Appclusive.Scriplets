@@ -62,21 +62,10 @@ PARAM
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	$EntitySetName = 'Entities';
-	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
-	{
-		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	Contract-Requires (!!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Entities' is not a valid entity set in specified Service"
+
 	$EntitySetName = 'Links';
-	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
-	{
-		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	Contract-Requires (!!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Links' is not a valid entity set in specified Service"
 
 	$m = $svc.$Service;
 	$fReturn = $false;

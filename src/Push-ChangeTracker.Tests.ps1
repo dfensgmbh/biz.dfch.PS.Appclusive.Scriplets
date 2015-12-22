@@ -31,17 +31,8 @@ Describe -Tags "Push-ChangeTracker" "Push-ChangeTracker" {
 			# Arrange
 			$svc = Enter-ApcServer;
 
-			try
-			{
-				# Act
-				$result = Push-ChangeTracker -svc $null -ListAvailable;
-				'Test passed' | Should Be 'An expected error did not occur.';
-			}
-			catch
-			{
-				# Assert
-				$error[0].Exception.Message | Should Be 'ScriptHalted';
-			}
+			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Precondition failed';
+			{ $result = Push-ChangeTracker -svc $null -ListAvailable; } | Should Throw 'Connect to the server before using the Cmdlet';
 		}
 
 		It "Push-ChangeTrackerReinitialised-HasEmptyDataContext" -Test {
