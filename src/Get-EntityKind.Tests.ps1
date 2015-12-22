@@ -67,7 +67,7 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			# Act
 			$resultFirst = Get-EntityKind -svc $svc -First $ShowFirst;
 			$Id = $resultFirst.Id;
-			$result = Get-EntityKind -Id $Id -svc $svc;
+			$result = Get-EntityKind -svc $svc -Id $Id;
 
 			# Assert
 			$result | Should Not Be $null;
@@ -140,7 +140,7 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			# Act
 			try 
 			{
-				$result = Get-EntityKind -Id 'myEntityKind';
+				$result = Get-EntityKind -svc $svc -Id 'myEntityKind';
 				'throw exception' | Should Be $true;
 			} 
 			catch
@@ -155,7 +155,7 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			$User = 'User-that-does-not-exist';
 			
 			# Act
-			$result = Get-EntityKind -CreatedBy $User;
+			$result = Get-EntityKind -CreatedBy $User -svc $svc;
 
 			# Assert
 		   	$result | Should Be $null;
@@ -166,7 +166,7 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-EntityKind -CreatedBy $User;
+			$result = Get-EntityKind -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
@@ -179,7 +179,7 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-EntityKind -ModifiedBy $User;
+			$result = Get-EntityKind -svc $svc -ModifiedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
