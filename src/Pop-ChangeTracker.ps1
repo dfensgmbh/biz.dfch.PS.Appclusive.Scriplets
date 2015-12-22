@@ -49,6 +49,7 @@ Param
 	[Parameter(Mandatory = $false)]
 	[Object[]] $Exclude
 )
+	trap { Log-Exception $_; break; }
 
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
@@ -58,12 +59,7 @@ Param
 	Log-Debug -fn $fn -msg ("CALL. DataContext stack size '{0}'." -f $ModuleVar.DataContext.Count) -fac 1;
 	
 	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	$EntitySetName = 'Entities';
 	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 

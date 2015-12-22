@@ -295,18 +295,17 @@ PARAM
 
 Begin 
 {
+	trap { Log-Exception $_; break; }
+
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
 	$EntitySetName = 'KeyNameValues';
 	
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+
 	$OrderBy = $OrderBy | Select -Unique;
 	$OrderByString = [string]::Join(',', $OrderBy);
 	$Select = $Select | Select -Unique;

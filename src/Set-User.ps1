@@ -131,11 +131,14 @@ Param
 
 Begin 
 {
+	trap { Log-Exception $_; break; }
 
-$datBegin = [datetime]::Now;
-[string] $fn = $MyInvocation.MyCommand.Name;
-Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
 # Begin
 
@@ -150,14 +153,6 @@ $AddedEntity = $null;
 
 try 
 {
-	# Parameter validation
-	if($svc.Core -isnot [biz.dfch.CS.Appclusive.Api.Core.Core]) 
-	{
-		$msg = "svc: Parameter validation FAILED. Connect to the server before using the Cmdlet.";
-		$e = New-CustomErrorRecord -m $msg -cat InvalidData -o $svc.Core;
-		throw($gotoError);
-	}
-
 	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
 	if(!$CreateIfNotExist -And !$entity) 
