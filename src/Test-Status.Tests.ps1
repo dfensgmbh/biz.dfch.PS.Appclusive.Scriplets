@@ -94,7 +94,7 @@ Describe -Tags "Test-Status" "Test-Status" {
 		It "Test-StatusEchoWithTooLongInputFails" -Test {
 			# Arrange
 			$svc = Enter-ApcServer;
-			$Echo = '1234567890123456789012345678901234567890';
+			$InputObject = '1234567890123456789012345678901234567890';
 
 			# Act
 			$exceptionOccurred = $false;
