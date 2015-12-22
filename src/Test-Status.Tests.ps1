@@ -76,11 +76,19 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$InputObject = '';
 
 			# Act
-			$result = Test-Status $InputObject -svc $svc;
+			$exceptionOccurred = $false;
+			try
+			{
+				$result = Test-Status $InputObject -svc $svc;
+			}
+			catch
+			{
+				$exceptionOccurred = $true;
+			}
 			
 			# Assert
-			$result | Should Not Be $null;
-			$result | Should Be $InputObject
+			$exceptionOccurred | Should Be $true;
+			$result | Should Be $null;
 		}
 
 		It "Test-StatusEchoWithTooLongInputFails" -Test {
@@ -89,11 +97,19 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$Echo = '1234567890123456789012345678901234567890';
 
 			# Act
-			$result = Test-Status $InputObject -svc $svc;
+			$exceptionOccurred = $false;
+			try
+			{
+				$result = Test-Status $InputObject -svc $svc;
+			}
+			catch
+			{
+				$exceptionOccurred = $true;
+			}
 			
 			# Assert
-			$result | Should Not Be $null;
-			$result | Should Be $InputObject
+			$exceptionOccurred | Should Be $true;
+			$result | Should Be $null;
 		}
 	}
 }
