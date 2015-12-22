@@ -167,7 +167,7 @@ Describe -Tags "Get-Job" "Get-Job" {
 			$User = 'User-that-does-not-exist';
 			
 			# Act
-			$result = Get-Job -CreatedBy $User;
+			$result = Get-Job -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Be $null;
@@ -178,7 +178,7 @@ Describe -Tags "Get-Job" "Get-Job" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-Job -CreatedBy $User;
+			$result = Get-Job -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
@@ -191,7 +191,7 @@ Describe -Tags "Get-Job" "Get-Job" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-Job -ModifiedBy $User;
+			$result = Get-Job -svc $svc -ModifiedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
