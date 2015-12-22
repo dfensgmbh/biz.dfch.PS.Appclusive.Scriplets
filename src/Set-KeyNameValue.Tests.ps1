@@ -8,6 +8,7 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 	
 	. "$here\$sut"
 	. "$here\New-KeyNameValue.ps1"
+	. "$here\Remove-KeyNameValue.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -33,6 +34,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithoutCreateIfNotExist-ShouldReturnNull" -Test {
@@ -72,6 +75,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $Description;
+
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewName-ShouldReturnUpdatedEntity" -Test {
@@ -97,6 +102,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $NewName;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $NewName -Value $Value -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewKey-ShouldReturnUpdatedEntity" -Test {
@@ -122,6 +129,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+
+			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewKeyNameValue-ShouldReturnUpdatedEntity" -Test {
@@ -147,6 +156,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $NewName;
 			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $Description;
+			
+			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $NewName -Value $NewValue -Confirm:$false;
 		}
 
 		It "Set-KeyNameValueWithNewKeyNameValueDescription-ShouldReturnUpdatedEntity" -Test {
@@ -173,9 +184,11 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$result.Name | Should Be $NewName;
 			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $NewDescription;
-		}
 
-		It "Set-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
+			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $NewName -Value $NewValue -Confirm:$false;
+			}
+
+		It "Set-KeyNameValueWithDuplicate-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
@@ -186,11 +199,12 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 			$resultCreated2 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue;
 			
 			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -NewValue $NewValue;
+			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue -NewValue $Value;
 
 			# Assert
-			# this raises an error and must be fixed in the controller
-			$result | Should Be $null;
+			$result.Value | Should Be $Value;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 	}
 }
