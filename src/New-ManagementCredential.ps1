@@ -128,7 +128,7 @@ Process
 	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
 	
-	Contract-Assert (!$entity) 'Entity does already exists'
+	Contract-Assert (!$entity) 'Entity does already exist'
 
 	if($PSCmdlet.ShouldProcess($ManagementCredentialContents))
 	{

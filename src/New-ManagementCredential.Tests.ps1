@@ -46,7 +46,7 @@ Describe -Tags "New-ManagementCredential" "New-ManagementCredential" {
 			
 			# Act
 			{ $result = New-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Assertion failed';
-			{ $result = New-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Entity does already exists';
+			{ $result = New-ManagementCredential -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Entity does already exist';
 
 			# Assert
 			$result | Should Be $null;

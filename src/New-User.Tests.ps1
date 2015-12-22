@@ -42,7 +42,7 @@ Describe -Tags "New-User" "New-User" {
 			
 			# Act
 			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Precondition failed'
-			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Entity already exists'
+			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Entity does already exist'
 
 			# Assert
 			$result | Should Be $null;

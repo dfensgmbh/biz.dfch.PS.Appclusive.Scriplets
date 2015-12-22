@@ -130,7 +130,7 @@ Process
 	$UserContents = @($Name);
 	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	Contract-Requires (!$entity) 'Entity already exists'
+	Contract-Requires (!$entity) 'Entity does already exist'
 
 	if($PSCmdlet.ShouldProcess($UserContents))
 	{
