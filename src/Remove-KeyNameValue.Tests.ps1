@@ -7,6 +7,8 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\New-KeyNameValue.ps1"
+	. "$here\Set-KeyNameValue.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -69,12 +71,13 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 			$Value = "Value-ThatDoesNotExist-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			{ $result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value; } | Should Throw 'Assertion failed: ($keyNameValueExists)';
 
 			# Assert
 			$result | Should Be $null;
 		}
 
+		# what is the purpose of this test?
 		It "Remove-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
 			# Arrange
 			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
@@ -82,8 +85,8 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result1 = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
-			$result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value;
+			{ $result1 = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value; } | Should Throw 'Assertion failed: ($keyNameValueExists)';
+			{ $result = Remove-KeyNameValue -svc $svc -Confirm:$false -Key $Key -Name $Name -Value $Value; } | Should Throw 'Assertion failed: ($keyNameValueExists)';
 
 			# Assert
 			$result | Should Be $null;

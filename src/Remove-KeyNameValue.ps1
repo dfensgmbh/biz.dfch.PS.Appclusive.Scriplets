@@ -61,14 +61,13 @@ Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
 
-try 
-{
 	$Exp = @();
 	if($Key) 
 	{ 
@@ -87,91 +86,33 @@ try
 	$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter',$FilterExpression);
 	$r = @();
 	
-	$objectFound = $false;
+	$keyNameValueExists = $false;
 	foreach($item in $knv) 
 	{
-		$objectFound = $true;
+		$keyNameValueExists = $true;
 		$itemString = '{0}/{1}/{2}' -f $item.Key, $item.Name, $item.Value;
 		if($PSCmdlet.ShouldProcess($itemString)) 
 		{
 			$r += ($item | Select -Property Key, Name, Value);
-			Log-Info $fn ("Removing '{0}' ..." -f $itemString);
+			Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
 			$svc.Core.DeleteObject($item);
 			$null = $svc.Core.SaveChanges();
 		}
 	}
-	if(!$objectFound)
-	{
-		$msg = "No object found that matches your criteria: '{0}'/'{1}'/'{2}'" -f $Key, $Name, $Value;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $svc.Core;
-		throw($gotoError);
-	}
+	Contract-Assert ($keyNameValueExists)
 
-	switch($As) 
-	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		Default { $OutputParameter = $r; }
-	}
+	$OutputParameter = Format-ResultAs $r $As
 	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-
 }
 # Process
 
 End 
 {
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
 }
 # End
 
