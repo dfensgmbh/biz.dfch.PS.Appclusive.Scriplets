@@ -144,23 +144,18 @@ Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
-$AddedEntity = $null;
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+	$AddedEntity = $null;
 
-try 
-{
 	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
 	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	if(!$CreateIfNotExist -And !$entity) 
-	{
-		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
-		throw($gotoError);
-	}
+	Contract-Assert ($CreateIfNotExist -Or $entity) "Entity does not exist. Use '-CreateIfNotExist' to create the resource"
+
 	if(!$entity) 
 	{
 		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.User;
@@ -173,16 +168,12 @@ try
 		$entity.Tid = $Tid;
 		
 		$entity.Created = [System.DateTimeOffset]::Now;
-		$entity.CreatedBy = Get-User ($env:USERNAME) -DefaultValue (Get-User 'SYSTEM');
-		$entity.CreatedById = $entity.CreatedBy.Id;
-		$entity.Modified = $entity.Created;
-		$entity.ModifiedBy = $entity.CreatedBy;
-		$entity.ModifiedById = $entity.CreatedById;
-		
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
 	}
 	elseif ($NoUpdateIfExist)
 	{
-		throw($gotoSuccess);
+		return;
 	}
 	
 	if($PSBoundParameters.ContainsKey('Description'))
@@ -204,67 +195,16 @@ try
 	$r = $entity;
 	$OutputParameter = Format-ResultAs $r $As;
 	$fReturn = $true;
-
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-		
-		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-
 }
 # Process
 
 End 
 {
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
 }
 # End
 

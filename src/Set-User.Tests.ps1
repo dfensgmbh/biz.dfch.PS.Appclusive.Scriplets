@@ -26,9 +26,12 @@ Describe -Tags "Set-User" "Set-User" {
 
 			# Assert
 			$result | Should Not Be $null;
+			$result.Id | Should Not Be 0;
+			$result.CreatedById | Should Not Be 0;
+			$result.ModifiedById | Should Not Be 0;
 			$result.Name | Should Be $Name;
 			$result.Mail | Should Be $Mail;
-			$result.ExternalId | Should Not Be $ExternalId;
+			$result.ExternalId | Should Be $ExternalId;
 		}
 
 		It "Set-UserWithNewMailAndDescription-ShouldReturnUpdatedEntity" -Test {
