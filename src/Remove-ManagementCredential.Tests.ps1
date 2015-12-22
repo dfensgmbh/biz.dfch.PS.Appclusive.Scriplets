@@ -39,7 +39,7 @@ Describe -Tags "Remove-ManagementCredential" "Remove-ManagementCredential" {
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Remove-ManagementCredential -svc $svc -Name $Name;
+			{ $result = Remove-ManagementCredential -svc $svc -Name $Name; } | Should Throw 'Assertion failed: ($objectFoundToBeRemoved)';
 
 			# Assert
 			$result | Should Be $null;
