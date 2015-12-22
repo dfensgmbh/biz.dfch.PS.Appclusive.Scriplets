@@ -44,21 +44,6 @@ Describe -Tags "Get-User" "Get-User" {
 			0 -lt $result.Count | Should Be $true;
 		}
 
-		It "Get-UserListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-User -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
 		It "Get-User-ShouldReturnFirstEntity" -Test {
 			# Arrange
 			$ShowFirst = 1;
@@ -93,18 +78,6 @@ Describe -Tags "Get-User" "Get-User" {
 
 			# Assert
 			$result | Should Be $null;
-		}
-		
-		It "Get-UserThatDoesNotExist-ShouldReturnDefaultValue" -Test {
-			# Arrange
-			$UserName = 'User-that-does-not-exist';
-			$DefaultValue = 'MyDefaultValue';
-			
-			# Act
-			$result = Get-User -svc $svc -Name $UserName -DefaultValue $DefaultValue;
-
-			# Assert
-			$result | Should Be $DefaultValue;
 		}
 		
 		It "Get-User-ShouldReturnXML" -Test {
@@ -144,42 +117,6 @@ Describe -Tags "Get-User" "Get-User" {
 				# Assert
 			   	$result | Should Be $null;
 			}
-		}
-		
-		It "Get-UserByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$User = 'User-that-does-not-exist';
-			
-			# Act
-			$result = Get-User -svc $svc -CreatedBy $User;
-
-			# Assert
-		   	$result | Should Be $null;
-		}
-		
-		It "Get-UserByCreatedBy-ShouldReturnListWithEntities" -Test {
-			# Arrange
-			$User = 'SYSTEM';
-			
-			# Act
-			$result = Get-User -svc $svc -CreatedBy $User;
-
-			# Assert
-		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-		
-		It "Get-UserByModifiedBy-ShouldReturnListWithEntities" -Test {
-			# Arrange
-			$User = 'SYSTEM';
-			
-			# Act
-			$result = Get-User -svc $svc -ModifiedBy $User;
-
-			# Assert
-		   	$result | Should Not Be $null;
-			0 -lt $result.Count | Should Be $true;
 		}
 	}
 }

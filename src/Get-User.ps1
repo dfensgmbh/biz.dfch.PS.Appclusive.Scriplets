@@ -138,38 +138,6 @@ PARAM
 	[Alias('n')]
 	[string] $Name
 	,
-	# Filter by creator
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[string] $CreatedBy
-	,
-	# Filter by modifier
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[string] $ModifiedBy
-	,
-	# Specify the attributes of the entity to return
-	[Parameter(Mandatory = $false)]
-	[string[]] $Select = @()
-	,
-	# Specifies to return only values without header information. 
-	# This parameter takes precendes over the 'Select' parameter.
-	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias('HideTableHeaders')]
-	[switch] $ValueOnly
-	,
-	# This value is only returned if the regular search would have returned no results
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Alias('default')]
-	$DefaultValue
-	,
-	# Specifies to deserialize JSON payloads
-	[ValidateScript( { if($ValueOnly -And $_) { $true; } else { throw("You must set the 'ValueOnly' switch when using 'ConvertFromJson'."); } } )]
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias('Convert')]
-	[switch] $ConvertFromJson
-	,
 	# Limits the output to the specified number of entries
 	[Parameter(Mandatory = $false)]
 	[Alias('top')]
@@ -204,53 +172,29 @@ Begin
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
-	if($Select) 
-	{
-		$Select = $Select | Select -Unique;
-	}
 }
 # Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
 
-try 
-{
-	# Parameter validation
-	
-	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
-	{
-		throw($gotoSuccess);
-	}
+	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
-		if($Select) 
+		if($PSBoundParameters.ContainsKey('First'))
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select -Property $Select;
-			}
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
 		}
-		else 
+		else
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-			}
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
 		}
 	} 
 	else 
@@ -264,125 +208,20 @@ try
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
 		}
-		if($CreatedBy) 
-		{ 
-			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
-			if ( !$CreatedById )
-			{
-				# User not found
-				throw($gotoSuccess);
-			}
-			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
-		}
-		if($ModifiedBy)
-		{ 
-			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById )
-			{
-				# User not found
-				throw($gotoSuccess);
-			}			
-			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
-		}
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
-		if($Select) 
+		if($PSBoundParameters.ContainsKey('First'))
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
-			}
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
 		}
-		else 
+		else
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
-			}
-		}
-		if(1 -eq $Select.Count -And $ValueOnly)
-		{
-			$Response = $Response.$Select;
-		}
-		if($PSBoundParameters.ContainsKey('DefaultValue') -And !$Response)
-		{
-			$Response = $DefaultValue;
-		}
-		if($ValueOnly -And $ConvertFromJson)
-		{
-			$ResponseTemp = New-Object System.Collections.ArrayList;
-			foreach($item in $Response)
-			{
-				try
-				{
-					$null = $ResponseTemp.Add((ConvertFrom-Json -InputObject $item));
-				}
-				catch
-				{
-					$null = $ResponseTemp.Add($item);
-				}
-			}
-			$Response = $ResponseTemp.ToArray();
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 		}
 	}
 
 	$OutputParameter = Format-ResultAs $Response $As
 	$fReturn = $true;
-
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
-
 }
 # Process
 
