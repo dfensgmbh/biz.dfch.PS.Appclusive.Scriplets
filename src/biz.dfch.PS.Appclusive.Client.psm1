@@ -43,6 +43,19 @@ if(Test-Path -Path $ManifestPathAndFile)
 
 (Get-Variable -Name $mvar).Value.Credential = [System.Net.CredentialCache]::DefaultCredentials;
 
+function Format-ResultAs([object] $Result, [string] $As)
+{
+	switch($As) 
+	{
+		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $Result).OuterXml; }
+		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $Result).OuterXml; }
+		'json' { $OutputParameter = ConvertTo-Json -InputObject $Result -Compress; }
+		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $Result; }
+		Default { $OutputParameter = $Result; }
+	}
+	return $OutputParameter;
+}
+
 # 
 # Copyright 2014-2015 Ronald Rink, d-fens GmbH
 # 

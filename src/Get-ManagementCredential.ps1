@@ -351,20 +351,15 @@ Process
 		}
 	}
 
-	$r = $Response;
-	switch($As) 
+	if($As -eq 'PSCredential')
 	{
-		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $r).OuterXml; }
-		'json' { $OutputParameter = ConvertTo-Json -InputObject $r -Compress; }
-		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $r; }
-		'PSCredential' 
-		{ 
-			$Password = $r.Password | ConvertTo-SecureString -asPlainText -Force;
-			$Credential = New-Object System.Management.Automation.PSCredential($r.Username, $password);
-			$OutputParameter = $Credential; 
-		}
-		Default { $OutputParameter = $r; }
+		$password = $Response.Password | ConvertTo-SecureString -asPlainText -Force;
+		$credential = New-Object System.Management.Automation.PSCredential($Response.Username, $password);
+		$OutputParameter = $credential; 
+	}
+	else
+	{
+		$OutputParameter = Format-ResultAs $Response $As
 	}
 	$fReturn = $true;
 }
