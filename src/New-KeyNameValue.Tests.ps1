@@ -8,6 +8,7 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 	
 	. "$here\$sut"
 	. "$here\Set-KeyNameValue.ps1"
+	. "$here\Remove-KeyNameValue.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -31,6 +32,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 			$result.Key | Should Be $Key;
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "New-KeyNameValueWithDescription-ShouldReturnNewEntity" -Test {
@@ -51,6 +54,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 			$result.Name | Should Be $Name;
 			$result.Value | Should Be $Value;
 			$result.Description | Should Be $Description;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 
 		It "New-KeyNameValueWithDuplicate-ShouldReturnNull" -Test {
@@ -65,6 +70,8 @@ Describe -Tags "New-KeyNameValue" "New-KeyNameValue" {
 
 			# Assert
 			$result | Should Be $null;
+			
+			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
 		}
 	}
 }
