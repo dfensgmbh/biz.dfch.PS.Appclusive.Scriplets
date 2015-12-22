@@ -62,15 +62,15 @@ Param
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	$EntitySetName = 'Entities';
-	Contract-Requires (!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Entities' is not a valid entity set in specified Service"
+	Contract-Requires (!!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Entities' is not a valid entity set in specified Service"
 
 	$EntitySetName = 'Links';
-	Contract-Requires (!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Links' is not a valid entity set in specified Service"
+	Contract-Requires (!!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Links' is not a valid entity set in specified Service"
 
-	Contract-Requires ($DataContext -isnot [hashtable]) 
+	Contract-Requires ($DataContext -is [hashtable]) 
 
+	Contract-Requires ($svc.$Service.GetType().BaseType.FullName -eq 'System.Data.Services.Client.DataServiceContext') 
 	$m = $svc.$Service;
-	Contract-Requires ($m -isnot [System.Data.Services.Client.DataServiceContext]) 
 
 	$fReturn = $false;
 	$OutputParameter = $null;
