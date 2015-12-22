@@ -62,37 +62,15 @@ Param
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
 	$EntitySetName = 'Entities';
-	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
-	{
-		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
-	$EntitySetName = 'Links';
-	if(!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) 
-	{
-		$msg = "EntitySetName: Parameter validation FAILED. '{0}' is not a valid entity set in '{1}'." -f $EntitySetName, $Service;
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $EntitySetName;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	Contract-Requires (!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Entities' is not a valid entity set in specified Service"
 
-	if($DataContext -isnot [hashtable]) 
-	{
-		$msg = "DataContext: Parameter validation FAILED. Context must be a hashtable.";
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $DataContext;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	$EntitySetName = 'Links';
+	Contract-Requires (!(Get-Member -InputObject $svc.$Service -MemberType Properties -Name $EntitySetName)) "'Links' is not a valid entity set in specified Service"
+
+	Contract-Requires ($DataContext -isnot [hashtable]) 
+
 	$m = $svc.$Service;
-	if($m -isnot [System.Data.Services.Client.DataServiceContext]) 
-	{
-		$msg = "Service: Parameter validation FAILED. Service must be a DataServiceContext.";
-		Log-Error $fn $msg;
-		$e = New-CustomErrorRecord -m $msg -cat InvalidArgument -o $Service;
-		$PSCmdlet.ThrowTerminatingError($e);
-	}
+	Contract-Requires ($m -isnot [System.Data.Services.Client.DataServiceContext]) 
 
 	$fReturn = $false;
 	$OutputParameter = $null;
