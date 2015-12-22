@@ -152,7 +152,7 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 			# Act
 			try 
 			{
-				$result = Get-ManagementCredential -Id 'myManagementCredential';
+				$result = Get-ManagementCredential -svc $svc -Id 'myManagementCredential';
 				'throw exception' | Should Be $true;
 			} 
 			catch
@@ -167,7 +167,7 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 			$User = 'User-that-does-not-exist';
 			
 			# Act
-			$result = Get-ManagementCredential -CreatedBy $User;
+			$result = Get-ManagementCredential -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Be $null;
@@ -178,7 +178,7 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-ManagementCredential -CreatedBy $User;
+			$result = Get-ManagementCredential -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
@@ -191,7 +191,7 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-ManagementCredential -ModifiedBy $User;
+			$result = Get-ManagementCredential -svc $svc -ModifiedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;

@@ -211,9 +211,6 @@ Process
 	# Return values are always and only returned via OutputParameter.
 	$OutputParameter = $null;
 
-	# Parameter validation
-	# N/A
-	
 	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 	
 	if($PSCmdlet.ParameterSetName -eq 'pipe') 
@@ -273,7 +270,7 @@ Process
 			if ( !$CreatedById )
 			{
 				# User not found
-				throw($gotoSuccess);
+				return;
 			}
 			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
 		}
