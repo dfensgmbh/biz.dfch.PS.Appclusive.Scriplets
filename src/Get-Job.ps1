@@ -251,20 +251,14 @@ Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
 
-try 
-{
-	# Parameter validation
-	
-	if(!$PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
-	{
-		throw($gotoSuccess);
-	}
+	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
 
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
@@ -308,7 +302,7 @@ try
 			if ( !$CreatedById )
 			{
 				# User not found
-				throw($gotoSuccess);
+				return;
 			}
 			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
 		}
@@ -318,7 +312,7 @@ try
 			if ( !$ModifiedById ) 
 			{
 				# User not found
-				throw($gotoSuccess);
+				return;
 			}			
 			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
 		}
@@ -374,51 +368,6 @@ try
 
 	$OutputParameter = Format-ResultAs $Response $As
 	$fReturn = $true;
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
 
 }
 # Process
