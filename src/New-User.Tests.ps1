@@ -16,32 +16,33 @@ Describe -Tags "New-User" "New-User" {
 		# Context wide constants
 		# N/A
 
-		It "New-User-ShouldReturnNewEntity" -Test {
-			# Arrange
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
-			$ExternalId = "{0}" -f [guid]::NewGuid();
+		# It "New-User-ShouldReturnNewEntity" -Test {
+			# # Arrange
+			# $Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			# $Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
+			# $ExternalId = "{0}" -f [guid]::NewGuid();
 			
-			# Act
-			$result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId;
+			# # Act
+			# $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId -ExternalType Internal;
 
-			# Assert
-			$result | Should Not Be $null;
-			$result.Name | Should Be $Name;
-			$result.Mail | Should Not Be $Mail;
-			$result.ExternalId | Should Be $ExternalId;
-		}
+			# # Assert
+			# $result | Should Not Be $null;
+			# $result.Name | Should Be $Name;
+			# $result.Mail | Should Be $Mail;
+			# $result.ExternalId | Should Be $ExternalId;
+		# }
 
 		It "New-UserDuplicate-ShouldReturnNull" -Test {
 			# Arrange
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			$Mail = "Mail-{0}@appclusive.net" -f [guid]::NewGuid().ToString();
 			$ExternalId = "{0}" -f [guid]::NewGuid();
-			$result1 = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId;
+			$result1 = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId -ExternalType Internal;
 			$result1 | Should Not Be $null;
 			
 			# Act
-			$result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId;
+			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Precondition failed'
+			{ $result = New-User -svc $svc -Name $Name -Mail $Mail -ExternalId $ExternalId; } | Should Throw 'Entity already exists'
 
 			# Assert
 			$result | Should Be $null;
