@@ -117,6 +117,8 @@ NestedModules = @(
 	'Get-ManagementUri.ps1'
 	,
 	'Get-EntityKind.ps1'
+	,
+	'Format-ResultAs.ps1'
 )
 
 # Functions to export from this module
@@ -155,10 +157,6 @@ FileList = @(
 	'System.Spatial.dll'
 	,
 	'Import-Module.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
 )
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess

@@ -1,74 +1,37 @@
-$fn = $MyInvocation.MyCommand.Name;
-
-trap { Log-Exception $_; break; }
-
-Set-Variable gotoSuccess -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoSuccess';
-Set-Variable gotoError -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoError';
-Set-Variable gotoFailure -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoFailure';
-Set-Variable gotoNotFound -Option 'Constant' -Value 'biz.dfch.System.Exception.gotoNotFound';
-
-[string] $ModuleConfigFile = '{0}.xml' -f (Get-Item $PSCommandPath).BaseName;
-[string] $ModuleConfigurationPathAndFile = Join-Path -Path $PSScriptRoot -ChildPath $ModuleConfigFile;
-$mvar = $ModuleConfigFile.Replace('.xml', '').Replace('.', '_');
-if($true -eq (Test-Path -Path $ModuleConfigurationPathAndFile)) 
+function Format-ResultAs([object] $Result, [string] $As)
 {
-	if($true -ne (Test-Path variable:$($mvar))) 
+	switch($As) 
 	{
-		Log-Debug $fn ("Loading module configuration file from: '{0}' ..." -f $ModuleConfigurationPathAndFile);
-		Set-Variable -Name $mvar -Value (Import-Clixml -Path $ModuleConfigurationPathAndFile);
+		'xml' { $OutputParameter = (ConvertTo-Xml -InputObject $Result).OuterXml; }
+		'xml-pretty' { $OutputParameter = Format-Xml -String (ConvertTo-Xml -InputObject $Result).OuterXml; }
+		'json' { $OutputParameter = ConvertTo-Json -InputObject $Result -Compress; }
+		'json-pretty' { $OutputParameter = ConvertTo-Json -InputObject $Result; }
+		Default { $OutputParameter = $Result; }
 	}
+	return $OutputParameter;
 }
 
-if($true -ne (Test-Path variable:$($mvar))) 
-{
-	Write-Error "Could not find module configuration file '$ModuleConfigFile' in 'ENV:PSModulePath'.`nAborting module import...";
-	# Aborts loading module.
-	break;
-}
-
-Export-ModuleMember -Variable $mvar;
-
-[string] $ManifestFile = '{0}.psd1' -f (Get-Item $PSCommandPath).BaseName;
-$ManifestPathAndFile = Join-Path -Path $PSScriptRoot -ChildPath $ManifestFile;
-if(Test-Path -Path $ManifestPathAndFile)
-{
-	$Manifest = (Get-Content -raw $ManifestPathAndFile) | iex;
-	foreach( $ScriptToProcess in $Manifest.ScriptsToProcess) 
-	{ 
-		$ModuleToRemove = (Get-Item (Join-Path -Path $PSScriptRoot -ChildPath $ScriptToProcess)).BaseName;
-		if(Get-Module $ModuleToRemove)
-		{ 
-			Remove-Module $ModuleToRemove -ErrorAction:SilentlyContinue;
-		}
-	}
-}
-
-(Get-Variable -Name $mvar).Value.Credential = [System.Net.CredentialCache]::DefaultCredentials;
-
-Contract-Requires ((Get-Module biz.dfch.PS.System.Logging).Version -ge ([Version] '1.1.4'))
-Contract-Requires ((Get-Module biz.dfch.PS.System.Utilities).Version -ge ([Version] '1.0.9'))
-
-# 
-# Copyright 2014-2015 Ronald Rink, d-fens GmbH
-# 
+#
+# Copyright 2014-2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+XwYT7Ib9XCIbKpINN7kSmGo
-# I6igghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyhWMqSS3Z+FLGm94NxWZqqVs
+# 8WigghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -167,26 +130,26 @@ Contract-Requires ((Get-Module biz.dfch.PS.System.Utilities).Version -ge ([Versi
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT1SSAg6UUOdyLu
-# n/R+ZnX9xy3umTANBgkqhkiG9w0BAQEFAASCAQCdCK8H3rpaijZk5X4i/1M6A/Pb
-# kwmxq65jOhe3JoCJQsPeuMacUjpMtGNDQQBMGF+DpARjdHVsWthQ8m4uSOqd1yMD
-# S+tlk/FZ1tkPG8esU9QloI1NQGqlTz7P+nOzgUuxyd3UECEqHcFV7DzmkFJg5dLd
-# b83JBvNn8fq5cjMQ4GA9GU/6rvmwbtroRHbaGNDzzIAZwYcaRetbJH9JUGzTlcEA
-# /L18wW+AT0vBuDrkUWHwPhanKE51PcPNHSpHi3biE1JoAoVNuM6X06n6XJ5GpJJF
-# 8PyAPjqYopuLOqVFzWpV9rY0RQqamLfMMYNCu0eZ71T4rTg0WOWS90kFf2IMoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTic9IsjwjmuY2h
+# iUHiP4xuVpfXyTANBgkqhkiG9w0BAQEFAASCAQAW6/feAoKndE49covv2tG79oQu
+# /AYCtyCxZF9t4oItpaviJ62/E72eVJxHwnSbVyBw9nh/fDL/Zw3tRnULU65y4ZmO
+# ray2bXnuNEa3v1Cr3q2eTz1Vf84DNWIEABYOXf4LB8LmZu6SvMzjXeMi1tqVVHWv
+# rRWB73WLAxeY1prqhjQW8glaRJ3DRcZUNGxmE/AHojbnm1OhJfYOmE7/LOYKNWjj
+# rb6zAy7pqQj6pJ+exU7WHYiJAVYst1bB1368auXIvClWtLyYmYoBM8hMInmBNx9D
+# 8+eT/O6mKaAbFoRtwSPdZTJgx0vG25ySpnv6GSMS2COkJo24pcPO3TVsUvXRoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTMzNVowIwYJKoZIhvcNAQkEMRYEFCOZdjgBHDuFV1HqtlyIK5Z8+3P4
+# MTIyMjE0MDcwNlowIwYJKoZIhvcNAQkEMRYEFLd5RX5/WNb0vzRRHrKt1tMpPNIY
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCnCy8Ejlf9x9EBqOYm
-# OrsJSDMfKGuqKSs+vhDj1HnMXejPxgQH2qIVqAxQrXnO0/OKWjsJCxNFWYXkeepT
-# NpfgRf/txCM2w54r/+ZqntXEF8BCv5hKcj3U/yxvrBOKGNN20BaLOKaCmJgo1aLh
-# hHwlswlGiAxvBvTmoU/Ss66d97QxBAXOgZkJDJeE40/05R5fQjW9zdSxt8eyIM81
-# uU6A+PWRdsO+g3iE1bquJN44Hk20ZwIQMhMr6rYOceP90OCzXWNXuBYJZkuRtqkO
-# RF5EXY1epwb8+UB5lTqT/j4TBKHtPcdiH/3xxB/3AxCHWjSMPkxgTo9u41pw5z8u
-# mfQU
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCcmvOHODXANZGDvIBP
+# UBGUGBCsRQQBa2ohZdZdeDYXAoashKa6FsA7KWP+y+rXHCp903tjRBpu78VCv1Su
+# fDOts7ty1WR9tmxP35Z+Et0rSX0cc5XRd3hxL45Cjdz8I7wml4Czd5m2LA2Dh3fl
+# lCc8IT9TZf5CGs0kzPifqMyRGt0buO2Er4XnLd+EXP6m1JFPKRNgJUi6bBXHIydn
+# W5qvffB57f2Fm9a9AxwD2Oy5n5UFym8K4k2zGgndjc5i+o0XH1ryO5CUgp1YjQE5
+# bw3sahL7+2s8EjgJVjjBCnd8FBrZOlMK7W724CIIznKhQ6dT/OPAwTw/pYxsRKCH
+# wq98
 # SIG # End signature block
