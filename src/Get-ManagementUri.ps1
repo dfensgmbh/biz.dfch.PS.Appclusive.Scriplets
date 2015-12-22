@@ -276,7 +276,7 @@ try
 		}
 		if($CreatedBy) 
 		{ 
-			$CreatedById = Get-User -Name $CreatedBy -Select Id -ValueOnly;
+			$CreatedById = Get-User -svc $svc -Name $CreatedBy -Select Id -ValueOnly;
 			if ( !$CreatedById )
 			{
 				# User not found
@@ -286,7 +286,7 @@ try
 		}
 		if($ModifiedBy)
 		{ 
-			$ModifiedById = Get-User -Name $ModifiedBy -Select Id -ValueOnly;
+			$ModifiedById = Get-User -svc $svc -Name $ModifiedBy -Select Id -ValueOnly;
 			if ( !$ModifiedById )
 			{
 				# User not found

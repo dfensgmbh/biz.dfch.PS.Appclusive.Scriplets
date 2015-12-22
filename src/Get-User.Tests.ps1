@@ -136,7 +136,7 @@ Describe -Tags "Get-User" "Get-User" {
 			# Act
 			try 
 			{
-				$result = Get-User -Id 'myUser';
+				$result = Get-User -svc $svc -Id 'myUser';
 				'throw exception' | Should Be $true;
 			} 
 			catch
@@ -151,7 +151,7 @@ Describe -Tags "Get-User" "Get-User" {
 			$User = 'User-that-does-not-exist';
 			
 			# Act
-			$result = Get-User -CreatedBy $User;
+			$result = Get-User -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Be $null;
@@ -162,7 +162,7 @@ Describe -Tags "Get-User" "Get-User" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-User -CreatedBy $User;
+			$result = Get-User -svc $svc -CreatedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
@@ -175,7 +175,7 @@ Describe -Tags "Get-User" "Get-User" {
 			$User = 'SYSTEM';
 			
 			# Act
-			$result = Get-User -ModifiedBy $User;
+			$result = Get-User -svc $svc -ModifiedBy $User;
 
 			# Assert
 		   	$result | Should Not Be $null;
