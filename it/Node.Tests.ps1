@@ -139,7 +139,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			{
 				#Cleanup
 				#Reconnect
-				$svc = Enter-AppclusiveServer;
+				$svc = Enter-ApcServer;
 				$svc.Core.AttachTo('Nodes', $nodeChild);
 				$svc.Core.AttachTo('Nodes', $nodeParent);
 				

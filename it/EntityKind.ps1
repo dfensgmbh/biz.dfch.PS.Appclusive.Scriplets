@@ -1,174 +1,20 @@
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
+function CreateEntityKind($entityKindName, $entityKindDescription) 
 {
-	$msg = $message;
-	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
-	$PSCmdlet.ThrowTerminatingError($e);
+	$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+	$entityKind.Version = "1";
+	$entityKind.Parameters = '{}';
+	$entityKind.Tid = '11111111-1111-1111-1111-111111111111';
+	$entityKind.Name = $entityKindName;
+	$entityKind.Description = $entityKindDescription;
+	$entityKind.CreatedById = 1;
+	$entityKind.ModifiedById = $entityKind.CreatedById;
+	$entityKind.Created = [DateTimeOffset]::Now;
+	$entityKind.Modified = $entityKind.Created;
+	$entityKind.Id = 0;
+	return $entityKind;
 }
 
-Describe -Tags "EntityType.Tests" "EntityType.Tests" {
-
-	Mock Export-ModuleMember { return $null; }
-	
-	. "$here\$sut"
-	
-	Context "#CLOUDTCL-1879-EntityTypeTests" {
-		
-		BeforeEach {
-			$moduleName = 'biz.dfch.PS.Appclusive.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			$svc = Enter-ApcServer;
-		}
-		
-		It "GetEntityTypesCreatedBySeed" -Test {
-			# Arrange
-			
-			# Act
-			$entityTypes = $svc.Core.EntityTypes;
-			
-			# Assert	
-			$entityTypes | Should Not Be $null;
-			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order" | Should be $true;
-			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval" | Should be $true;
-			$entityTypes.Name -Contains "biz.dfch.CS.Appclusive.Core.OdataServices.Core.Default" | Should be $true;
-		}
-		
-		It "CreateAndDeleteEntityType-Succeeds" -Test {
-			try
-			{
-				# Arrange
-				$entityTypeName = "TestForPesterRun"
-				$entityTypeDescription = "Test Description For Pester Run"
-				
-				# Act
-				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription
-				$svc.Core.AddToEntityTypes($entityType)
-				$result = $svc.Core.SaveChanges();
-				
-				$entityTypeCreated = $svc.Core.EntityTypes.AddQueryOption('$filter', "Id eq "+$entityType.Id+"")
-				
-				# Assert	
-				$result.StatusCode | Should Be 201;			
-				$entityTypeCreated | Should Not Be $null;
-				$entityTypeCreated.Name | Should Be $entityTypeName
-				$entityTypeCreated.Description | Should Be $entityTypeDescription
-			}
-			finally
-			{
-				if (!$entityType -eq $false)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-			}
-		}
-		
-		It "CreateEntityTypeTwiceWithSameNameAndVersion-Fail" -Test {
-			try
-			{
-				# Arrange
-				$entityTypeName = "TestForPesterRun"
-				$entityTypeDescription = "Test Description For Pester Run"
-				$entityTypeDescription2 = "Second Entity With same Name same Version"
-				
-				# Act
-				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription;
-				$svc.Core.AddToEntityTypes($entityType);
-				$result = $svc.Core.SaveChanges();
-				
-				$entityType2 = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription2;
-				$svc.Core.AddToEntityTypes($entityType2);
-				
-				try 
-				{
-					$result2 = $svc.Core.SaveChanges();
-				}
-				catch
-				{
-					$exception = $error[0];
-					write-host "error " + $error[0];
-				}
-				
-				write-host $exception;
-				# Assert
-				$exception | Should Not Be $null;
-				$result.StatusCode | Should Be 201;			
-				$entityTypeCreated | Should Not Be $null;
-				$entityTypeCreated.Name | Should Be $entityTypeName
-				$entityTypeCreated.Description | Should Be $entityTypeDescription
-			}
-			finally
-			{
-				if (!$entityType -eq $false)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-				
-				if (!$exception)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType2);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-			}
-		}
-		
-		It "SetEntityTypeNameDescriptionVersionParameter-Succeeds" -Test {
-			try
-			{
-				# Arrange
-				$entityTypeName = "TestForPesterRun"
-				$entityTypeDescription = "Test Description For Pester Run"
-				
-				$entityTypeUpdateName = "NameUpdated";
-				$entityTypeUpdateDescription = "DescriptionUpdated";
-				$entityTypeUpdateParameter = "ParameterUpdated";
-				$entityTypeUpdateVersion = 2;
-				
-				$entityType = CreateEntityType -entityTypeName $entityTypeName -entityTypeDescription $entityTypeDescription
-				$svc.Core.AddToEntityTypes($entityType)
-				$result = $svc.Core.SaveChanges();
-
-				#Act
-				$entityType.Name = $entityTypeUpdateName;
-				$entityType.Description = $entityTypeUpdateDescription;
-				$entityType.Parameters = $entityTypeUpdateParameter;
-				$entityType.Version = $entityTypeUpdateVersion;
-
-				$svc.Core.UpdateObject($entityType);
-				$result = $svc.Core.SaveChanges();
-				
-				$entityTypeUpdated = $svc.Core.EntityTypes.AddQueryOption('$filter', "Id eq "+$entityType.Id+"")
-				
-				# Assert	
-				$result.StatusCode | Should Be 204;			
-				$entityTypeUpdated.Name | Should Be $entityTypeUpdateName;
-				$entityTypeUpdated.Description | Should Be $entityTypeUpdateDescription;
-				$entityTypeUpdated.Parameters | Should Be $entityTypeUpdateParameter;
-				$entityTypeUpdated.Version | Should Be $entityTypeUpdateVersion;
-			}
-			finally
-			{
-				if (!$entityType -eq $false)
-				{
-					#Cleanup
-					$svc.Core.DeleteObject($entityType);
-					$result = $svc.Core.SaveChanges();
-					$result.StatusCode | Should Be 204;
-				}
-			}
-		}
-	}
-}
 
 #
 # Copyright 2015 d-fens GmbH
@@ -189,8 +35,8 @@ Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZX5w8Xw+udMvWl6nNjqlG7YQ
-# 2tugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUxYSSGDBuauk589wRQa9mOsDb
+# /UugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -289,26 +135,26 @@ Describe -Tags "EntityType.Tests" "EntityType.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTw3JlKeHQiw2lA
-# 2iJee4jfe1ok0zANBgkqhkiG9w0BAQEFAASCAQDBSK+A2XFr+NaI3FLcxOBVbQU/
-# aMfGJGwzAABNVWoanByc8XE6MuZ+5yXdvdeXZITHAFxrwRe7R2N6+5EcjQGWAzJi
-# HyKTZ2T5tFXBi9qJPTTKytbdYtMOJeWClr9v15iHJcOjaba4IWFxcX7n3k7fspI2
-# +ePobEIdGl7kSNMNEd8e3GgIN2EUUu6xkOPycP0Alw4oMsd+E+RV2qJyGn6ukIoW
-# +WoPCtFySmIH9vI7xP5F7T0nl1csaJtj00eSu7qREwUdefszhqDyadKmDCLus1bS
-# dSnSktG5UuVndbfFJXlssxRC4cPsvtedToZteJ08p/FWbvOZ9tQMESSZkklmoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTBhDiDGg1+2tXG
+# W1CaMajnolVNcTANBgkqhkiG9w0BAQEFAASCAQA6IqoJGL0LejPPGy2/JnswJApo
+# KXoFpFPM3cpSDUc24OFMfMRnwnCVWrjSuFVsRXMVKaj0Rs+P83zHxqqla8WGB9Vk
+# bvcCVT0R4ixP84y9xk92oSZLc4alfLEOULqfqTbeK7yKVDpsNO5WoaarXu7pGAEZ
+# OMA1XvWC1srJyTeg/KxVYAEFZULJ9kjwhO3oghLBqDl7bP+C7A5e+ndmOYPJowUk
+# AN0ubOEZb81WVCb0oq/Kav/N2v2szxENN/Y0cix5Xx9qjRwOd750yRDs673W9K8P
+# GMvuOX6TOqLpR3TxYMk2c6Qkd+YkvzjWoppRAniWJtCNcPDzMMZdZ0Mdys6noYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTAyODE0MjA0NlowIwYJKoZIhvcNAQkEMRYEFPKGbdv4mF14VLiWolIKpcIGtFoF
+# MTAyODE0MjA1MVowIwYJKoZIhvcNAQkEMRYEFJWHSVx2J2n0ni0D6yrsSY4/6sWy
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBy7ufxDEu0kJPJ9whi
-# dhkVPCQP+gc13hOgcjAx+K8Nc+S6jofZa7dfZTI5eABZ7aDpULGQYMW8WnK8gCSL
-# HDOxHmuPOww5c7K/VBaF5Ttrt3ZO+WH8BWp1H3F7GSBJLOrzFF66AF7IhKKvmFoo
-# GegWpNuLJYAVfIy8DfkRIB9ttulWSuA7tT/4rgL5S+2rUHOi3H+GWPsBpUt+b1v/
-# koBcdbApcW/r8n6OtKqHP+PfZL9w/KYyYafr5UrlgRxSjKN+5v+viUfD3UsOrUxV
-# LetMozQxlYdZmyr3xU+exTAcaIyfvdukC/pDLMUsyJLii4ZaR5Zt9tJOzjJyxsFM
-# 034o
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCbcKXeI4z6LLz7dV3E
+# zxllTTpeuo+4f4Xm/hyU8eQgwFKVLXpmsvfwnFUxMvPe6XzMEcazaiEu9LT4TVh1
+# 6+tkoU2ZM1bmuCp6RyaprY+2r+QefS39blUWYHc9weJpriSomHvIRrWoQBT1O6SV
+# ujJXdC/G8mxQVsTFg9zAaitjMh9CguOlSyj5Ob0bYZNCqqX9I4ZbzU2PNZIfpjwY
+# Ts8LVXP9Nu5URIWPwxpSs1NBmsvPZUG5Y1Tt+uVBg9+z4ncSKA8ccTLkn99Qfaij
+# Wob5T8zlCvaVtSEjlIMtOeXkDz6bG41bPzcsLwkOkaHXFjooFVuBL8nDisRWYla8
+# qhRm
 # SIG # End signature block
