@@ -36,7 +36,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <tags>dfch PowerShell Appclusive Automation OData</tags>
     <dependencies>
       <dependency id="biz.dfch.PS.System.Logging" version="1.1.4" />
-      <dependency id="biz.dfch.PS.System.Utilities" version="1.0.7" />
+      <dependency id="biz.dfch.PS.System.Utilities" version="1.0.9" />
     </dependencies>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System.Data.Entity" targetFramework="" />
