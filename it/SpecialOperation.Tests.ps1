@@ -126,33 +126,6 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		}
 	}
 	
-	Context "#CLOUDTCL-1902-CMS Appclusive Client - Special Operation RaiseUpdateConfigurationEvent" {
-		
-		$actionName = 'RaiseUpdateConfigurationEvent';
-		
-		BeforeEach {
-			$moduleName = 'biz.dfch.PS.Appclusive.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			$svc = Enter-ApcServer;
-		}
-		
-		It "RaiseUpdateConfigurationEvent-WritesMessageToTheBus" -Test {
-			# Arrange
-			$job = Start-Job -ScriptBlock {Import-Module biz.dfch.PS.Azure.ServiceBus.Client; $null = Enter-SBServer; Get-SBMessage -Receivemode ReceiveAndDelete -Facility NOTIFY-ALL -EnsureFacility | Get-SBMessageBody};
-			
-			# Act
-			Sleep -Seconds 3;
-			$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", $actionName, $null);
-			
-			# Assert
-			Sleep -Seconds 2;
-			$jobResult = Get-Job -Id $job.Id | Receive-Job;
-			
-			$jobResult -match 'UpdateConfigurationEvent.+UpdateConfigurationEventBody' | Should Be $true
-		}
-	}
-	
 	Context "#CLOUDTCL-1903-CMS Appclusive Client - Special Operation SetTenant" {
 		
 		$actionName = 'SetTenant';
