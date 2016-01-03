@@ -105,7 +105,7 @@ Param
 	,
 	# Specifies the tenant id for this entity
 	[Parameter(Mandatory = $false)]
-	[guid] $Tid = [guid]::Empty.Guid
+	[guid] $Tid = [guid]::Empty.ToString()
 	,
 	# Specifies to create a entity if it does not exist
 	[Parameter(Mandatory = $false)]

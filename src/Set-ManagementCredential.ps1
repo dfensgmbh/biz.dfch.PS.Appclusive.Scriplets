@@ -158,7 +158,7 @@ try
 		$entity.Modified = $entity.Created;
 		$entity.CreatedById = 0;
 		$entity.ModifiedById = 0;
-		$entity.Tid = [guid]::Empty.Guid;
+		$entity.Tid = [guid]::Empty.ToString();
 		$entity.EncryptedPassword = "crypttext";
 	}
 	if($PSBoundParameters.ContainsKey('Description'))

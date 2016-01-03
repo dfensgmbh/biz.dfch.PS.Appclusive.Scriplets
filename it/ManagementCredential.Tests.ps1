@@ -26,9 +26,9 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 		
 		It "ManagementCredential-AddingAndRemovingItemSucceeds" -Test {
 			# Arrange
-			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Username = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$Password = "Passwort-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
 			$resultNew = New-ApcManagementCredential -Name $Name -Username $Username -Password $Password;
@@ -46,9 +46,9 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 
 		It "ManagementCredential-AddingDoubleItemSameNameThrowException" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-			$Username = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name1-{0}" -f [guid]::NewGuid().ToString();
+			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$Password = "Passwort-{0}" -f [guid]::NewGuid().ToString();
 		
 		
 			# Act
@@ -78,7 +78,7 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 		
 		It "ManagementCredential-RemoveNonExtistingItemThrowException" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name1-{0}" -f [guid]::NewGuid().ToString();
 		
 			# Act
 				
@@ -96,9 +96,9 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 		
 		It "ManagementCredential-SetAndRemoveNewItemSucceed" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-			$Username = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password = "Passwort-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name1-{0}" -f [guid]::NewGuid().ToString();
+			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$Password = "Passwort-{0}" -f [guid]::NewGuid().ToString();
 		
 			# Act
 			$resultSetNew = Set-ApcManagementCredential -Name $Name -Username $Username -Password $Password -CreateIfNotExist
@@ -116,11 +116,11 @@ Describe -Tags "ManagementCredential.Tests" "ManagementCredential.Tests" {
 		
 		It "ManagementCredential-SetNewPasswordAndUsernameSucceed" -Test {
 			# Arrange
-			$Name = "Name1-{0}" -f [guid]::NewGuid().Guid;
-			$Username1 = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Username2 = "Username-{0}" -f [guid]::NewGuid().Guid;
-			$Password1 = "Passwort-{0}" -f [guid]::NewGuid().Guid;
-			$Password2 = "Passwort-{0}" -f [guid]::NewGuid().Guid;
+			$Name = "Name1-{0}" -f [guid]::NewGuid().ToString();
+			$Username1 = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$Username2 = "Username-{0}" -f [guid]::NewGuid().ToString();
+			$Password1 = "Passwort-{0}" -f [guid]::NewGuid().ToString();
+			$Password2 = "Passwort-{0}" -f [guid]::NewGuid().ToString();
 		
 			# Act
 			$resultSetNew = Set-ApcManagementCredential -Name $Name -Username $Username1 -Password $Password1 -CreateIfNotExist -As json | ConvertFrom-Json;

@@ -41,7 +41,7 @@ Describe -Tags "EntityKind.Tests" "EntityKind.Tests" {
 			{
 				# Arrange
 				$entityKindName = "TestForPesterRun"
-				$Version = [Guid]::NewGuid().Guid;
+				$Version = [Guid]::NewGuid().ToString();
 				$entityKindDescription = "Test Description For Pester Run"
 				
 				# Act
@@ -73,7 +73,7 @@ Describe -Tags "EntityKind.Tests" "EntityKind.Tests" {
 		It "CreateEntityKindTwiceWithSameNameAndVersion-Fail" -Test {
 
 			# Arrange
-			$entityKindName = "TestForPesterRun-{0}" -f [Guid]::NewGuid().Guid;
+			$entityKindName = "TestForPesterRun-{0}" -f [Guid]::NewGuid().ToString();
 			$entityKindDescription = "Test Description For Pester Run"
 			$entityKindDescription2 = "Second Entity With same Name same Version"
 			

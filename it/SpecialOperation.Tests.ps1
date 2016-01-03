@@ -63,7 +63,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		It "SetCreatedBy-ForKeyNameValueSucceeds" -Test {
 			# Arrange
 			$creator = 'testuser';
-			$value = [guid]::NewGuid().Guid;
+			$value = [guid]::NewGuid().ToString();
 			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
 			
 			# Act
@@ -109,7 +109,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		
 		It "ClearAuditLog-DeletesAllAuditTrailEntries" -Test {
 			# Arrange
-			$value = [guid]::NewGuid().Guid;
+			$value = [guid]::NewGuid().ToString();
 			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
 			
 			# Act
@@ -158,7 +158,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		
 		It "SetTenant-WithInvalidEntityTypeInBodyFails" -Test {
 			# Arrange
-			$tenantId = [guid]::NewGuid().Guid;
+			$tenantId = [guid]::NewGuid().ToString();
 			
 			# Act
 			try
@@ -176,8 +176,8 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 
 		It "SetTenant-ForKeyNameValueSucceeds" -Test {
 			# Arrange
-			$tenantId = [guid]::NewGuid().Guid;
-			$value = [guid]::NewGuid().Guid;
+			$tenantId = [guid]::NewGuid().ToString();
+			$value = [guid]::NewGuid().ToString();
 			$knv = New-ApcKeyNameValue -Name $value -Key $value -Value $value;
 			
 			# Act
@@ -193,7 +193,7 @@ Describe -Tags "SpecialOperation.Tests" "SpecialOperation.Tests" {
 		
 		It "SetTenant-ForAuditTrailFails" -Test {
 			# Arrange
-			$tenantId = [guid]::NewGuid().Guid;
+			$tenantId = [guid]::NewGuid().ToString();
 			
 			# Act
 			try
