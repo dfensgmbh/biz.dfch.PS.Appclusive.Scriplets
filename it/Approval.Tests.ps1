@@ -77,14 +77,14 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$cart = GetCartOfUser -svc $svc;
 			$cart | Should Be $null;
 
-			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and RefId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'Approval';
 			
 			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
 			$approvalJob.Status | Should Be 'Created';
 			
-			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.RefId;
 			$approval.Status | Should Be 'Created';
 			
 			# Approve approval
@@ -108,14 +108,14 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'WaitingToRun';
 			
-			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and RefId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'WaitingToRun';
 			
 			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
 			$approvalJob.Status | Should Be 'Approved';
 			
-			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.RefId;
 			$approval.Status | Should Be 'Approved';
 			
 			# Cleanup
@@ -185,14 +185,14 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$createdOrder.Requester | Should Be $createdOrder.Requester;
 			$createdOrder.Status | Should Be 'Approval';
 			
-			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and RefId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'Approval';
 			
 			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
 			$approvalJob.Status | Should Be 'Created';
 			
-			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.RefId;
 			$approval.Status | Should Be 'Created';
 			
 			$cart = GetCartOfUser -svc $svc;
@@ -219,14 +219,14 @@ Describe -Tags "Approval.Tests" "Approval.Tests" {
 			$createdOrder = $svc.Core.Orders |? Name -eq $orderName;
 			$createdOrder.Status | Should Be 'Cancelled';
 			
-			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and ReferencedItemId eq '{0}'" -f $createdOrder.Id;
+			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and RefId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'Cancelled';
 			
 			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
 			$approvalJob.Status | Should Be 'Declined';
 			
-			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.ReferencedItemId;
+			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.RefId;
 			$approval.Status | Should Be 'Declined';
 			
 			# Cleanup

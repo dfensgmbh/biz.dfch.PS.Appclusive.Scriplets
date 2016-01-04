@@ -48,7 +48,7 @@ Retrieves the id, status and name of all Jobs.
 Get-Job 1027
 
 Status              : InitialState
-RefItemId			: 1027
+RefId				: 1027
 Token               :
 TenantId            : 00000000-0000-0000-0000-000000000000
 EntityKindId        : 2
