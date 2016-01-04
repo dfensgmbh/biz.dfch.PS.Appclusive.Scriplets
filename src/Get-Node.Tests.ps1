@@ -1,200 +1,228 @@
-#
-# Module manifest for module 'biz.dfch.PS.Appclusive.Client'
-#
 
-@{
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
-
-# Version number of this module.
-ModuleVersion = '1.1.4.20151222'
-
-# ID used to uniquely identify this module
-GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
-
-# Author of this module
-Author = 'Ronald Rink'
-
-# Company or vendor of this module
-CompanyName = 'd-fens GmbH'
-
-# Copyright statement for this module
-Copyright = '(c) 2015 d-fens GmbH. Distributed under Apache 2.0 license.'
-
-# Description of the functionality provided by this module
-Description = 'PowerShell module for the Appclusive Framework and Middleware'
-
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
-
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
-
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
-
-# Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.5'
-
-# Minimum version of the common language runtime (CLR) required by this module
-# CLRVersion = ''
-
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
-
-# Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(
-	'biz.dfch.PS.System.Logging'
-	,
-	'biz.dfch.PS.System.Utilities'
-)
-
-# Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @(
-	'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'System.Net'
-	,
-	'System.Web'
-	,
-	'System.Web.Extensions'
-)
-
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = @(
-	'Import-Module.ps1'
-)
-
-# ModuleToProcess = @()
-
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
-
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
-
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-	'Enter-Server.ps1'
-	,
-	'New-KeyNameValue.ps1'
-	,
-	'Get-KeyNameValue.ps1'
-	,
-	'Set-KeyNameValue.ps1'
-	,
-	'Remove-KeyNameValue.ps1'
-	,
-	'New-ManagementCredential.ps1'
-	,
-	'Get-ManagementCredential.ps1'
-	,
-	'Set-ManagementCredential.ps1'
-	,
-	'Remove-ManagementCredential.ps1'
-	,
-	'Remove-Entity.ps1'
-	,
-	'Get-ModuleVariable.ps1'
-	,
-	'Get-Time.ps1'
-	,
-	'Test-Status.ps1'
-	,
-	'Get-Job.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'New-User.ps1'
-	,
-	'Get-User.ps1'
-	,
-	'Set-User.ps1'
-	,
-	'Get-ManagementUri.ps1'
-	,
-	'Get-EntityKind.ps1'
-	,
-	'Format-ResultAs.ps1'
-	,
-	'Get-Node.ps1'
-)
-
-# Functions to export from this module
-FunctionsToExport = '*'
-
-# Cmdlets to export from this module
-CmdletsToExport = '*'
-
-# Variables to export from this module
-VariablesToExport = '*'
-
-# Aliases to export from this module
-AliasesToExport = '*'
-
-# List of all modules packaged with this module.
-# ModuleList = @()
-
-# List of all files packaged with this module
-FileList = @(
-	'LICENSE'
-	,
-	'NOTICE'
-	,
-	'README.md'
-	,
-	'biz.dfch.PS.Appclusive.Client.dll'
-	,
-	'biz.dfch.PS.Appclusive.Client.xml'
-	,
-	'Microsoft.Data.Edm.dll'
-	,
-	'Microsoft.Data.OData.dll'
-	,
-	'Microsoft.Data.Services.Client.dll'
-	,
-	'System.Spatial.dll'
-	,
-	'Import-Module.ps1'
-)
-
-# Private data to pass to the module specified in RootModule/ModuleToProcess
-PrivateData = @{
-	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
+function Stop-Pester($message = "Unrepresentative, because no entities existing.")
+{
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-# HelpInfo URI of this module
-HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
 
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Apc'
+Describe -Tags "Get-Node" "Get-Node" {
 
+	Mock Export-ModuleMember { return $null; }
+	
+	. "$here\$sut"
+	. "$here\Get-User.ps1"
+	. "$here\Format-ResultAs.ps1"
+	
+	$svc = Enter-ApcServer;
+
+	Context "Get-Node" {
+	
+		# Context wide constants
+		# N/A
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+
+		It "Get-NodeListAvailable-ShouldReturnList" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Node -svc $svc -ListAvailable;
+			if ( $result.Count -eq 0 )
+			{
+				Stop-Pester
+			}
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+
+		It "Get-NodeListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Node -svc $svc -ListAvailable -Select Name;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+			$result[0].Name | Should Not Be $null;
+			$result[0].Id | Should Be $null;
+		}
+
+		It "Get-Node-ShouldReturnFirstEntity" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Node] | Should Be $true;
+		}
+		
+		It "Get-Node-ShouldReturnFirstEntityById" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-Node -svc $svc -First $ShowFirst;
+			$Id = $resultFirst.Id;
+			$result = Get-Node -Id $Id -svc $svc;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $resultFirst;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Node] | Should Be $true;
+		}
+		
+		It "Get-Node-ShouldReturnFiveEntities" -Test {
+			# Arrange
+			$ShowFirst = 5;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$ShowFirst -eq $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.Node] | Should Be $true;
+		}
+
+		It "Get-NodeThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$NodeName = 'Node-that-does-not-exist';
+			
+			# Act
+			$result = Get-Node -svc $svc -Name $NodeName;
+
+			# Assert
+			$result | Should Be $null;
+		}
+		
+		It "Get-NodeThatDoesNotExist-ShouldReturnDefaultValue" -Test {
+			# Arrange
+			$NodeName = 'Node-that-does-not-exist';
+			$DefaultValue = 'MyDefaultValue';
+			
+			# Act
+			$result = Get-Node -svc $svc -Name $NodeName -DefaultValue $DefaultValue;
+
+			# Assert
+			$result | Should Be $DefaultValue;
+		}
+		
+		It "Get-Node-ShouldReturnXML" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst -As xml;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0,5) | Should Be '<?xml';
+		}
+		
+		It "Get-Node-ShouldReturnJSON" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst -As json;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0, 1) | Should Be '{';
+			$result.Substring($result.Length -1, 1) | Should Be '}';
+		}
+		
+		It "Get-Node-WithInvalidId-ShouldReturnException" -Test {
+			# Act
+			try 
+			{
+				$result = Get-Node -Id 'myNode';
+				'throw exception' | Should Be $true;
+			} 
+			catch
+			{
+				# Assert
+			   	$result | Should Be $null;
+			}
+		}
+		
+		It "Get-NodeByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$User = 'User-that-does-not-exist';
+			
+			# Act
+			$result = Get-Node -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Be $null;
+		}
+		
+		It "Get-NodeByCreatedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-Node -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-NodeByModifiedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-Node -svc $svc -ModifiedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+	}
 }
 
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiXX6+mHSJnlEtTFniRlNHyiz
-# nqGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwO2svMPPdLM5ZzS9w6dvXMDs
+# 9sugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -293,26 +321,26 @@ DefaultCommandPrefix = 'Apc'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQQ+Tkk8Zv5jvJq
-# GcHFqmdu6XE0nDANBgkqhkiG9w0BAQEFAASCAQACULt7UH5bZeR1YjHrDifidhbc
-# Wcke9MwmAhQlSfQd59NbcZF/9ZpR/3b2HNRrwSHA6w6AzWyoCbdPLv0PRvQyL/uR
-# a0jumM5Mec8PDld0QmD+BKal7nxbgiQ3527kQCzkIU+ZRB+zgJs9SBbg3UAJ2vhs
-# 7M7Uhn5eZW1j+RITXPbYORGL2c/lY4S5Bn2Q3vRFwVJ9DwVYoNctoTLRnCp9786m
-# L8IcIpNvRQDI35fr2iWGftiasqfmiDaM3VFohdi42zZPCSICi6ThX7NgQl5TSDtD
-# UnMnC+h6DopawtXuVamurzPreBhKWiMIOW1/wi107cd4p0/a1NrlUtuM8wBvoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQza3FSu9WAhrUM
+# 230/skRZkw6U8TANBgkqhkiG9w0BAQEFAASCAQDEYeJwjyKwN5Lm0tl4RxJt3/pi
+# XoFqchhGrhRLfwF0q+Jyh4mpEautAYQymYKVB/K/6Wu+8aJwOKIm8Dvn/7+64wuB
+# f5+PJuTuxfJ+rL/y21swCqEZtqkDEhOacQewzVu0R/yMoOO5zBEPyu0F9unw53Ec
+# /kBblDYj5eCumfuPdn/CQDyUlDpXoBGY0G6DC7HbBHg7mEVIVUQYxF4PpVDaZbDa
+# vCOgK19n5nfSBvxlOoSTWrqiv3mHkQW3RqLBP97ow5ttufCOYSjQplQTYOX1TiM/
+# bv/KCzDS9jUvuAPyLO27cK2vD7rQdSbxHpCbQTQPc6y1i6JVwFriiCokcxn0oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjE1MDExNVowIwYJKoZIhvcNAQkEMRYEFIuXxHs1f1h46SHaKHMJXtTdluqb
+# MTIyMjExMTMzN1owIwYJKoZIhvcNAQkEMRYEFHnfXBikoiOsmg0q/69NscGlwykk
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA1YLfezZpO2GrKbwts
-# PYRAGEJAb1x4u2pf/WCcg4KAjGzO8BbNClDDsDp/+tnxsHhtbaFvy1OljJfnegO7
-# LFvhI8cmOrzcHOOgCTK2HQr3HJ6euH/w4bSKIte5u2hoEKBnmsPT++ahZg/KGRlJ
-# xQqm0+TNdhRWXu+mSn2sIj/jQQ5eZwMJzSgN/YPgYTEjalPelo3KgZA2ocsYz3xE
-# vjeb98lYY4HccPtFcoMBRs9T9Y5u7FHSL9h6B11YLzd6wPUhPt/4HmAA3BOMIKfO
-# 6HsZwgyLjapEk81LFhzuRjaqI8pj2vZTYt/AdGAsSDIw5u9yqZhPvcMhv4zsSQIm
-# 4fd4
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBhQMKWsQP83Ljc+evV
+# 04wa1pzHVwVvY2JiHrmKIBofwqWubYA73l2uRjpMIOLlBap4nHvYTKvy/9nxHu/w
+# 3wS66pLasikxVHKWZrNQmU4XXoXC3Qkhl3DyeaK9KLmljUXN8wq6f4UcTNR3khRU
+# W5adbe64l7LN6KRHGKJ8d0l6Zmur0NuW2b3qsQYvbNExi7EvmQFQeYs/nkwPmueq
+# 6MbOLSmDni4tJfyG2tHbNUJlLwwoTR1Rx4ZZWB35kD2CwAlTY9tNMdzhuCIXBRJ+
+# DO1sZdZUUb4d2840G2vv25HBKMsevWt8OwCmp94eW3qKn+awmINEzPsfsoKTlVkM
+# PCOK
 # SIG # End signature block
