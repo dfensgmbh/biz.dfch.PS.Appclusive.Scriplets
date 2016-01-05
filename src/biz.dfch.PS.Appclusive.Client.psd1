@@ -121,6 +121,14 @@ NestedModules = @(
 	'Format-ResultAs.ps1'
 	,
 	'Get-Node.ps1'
+	,
+	'New-Node.ps1'
+	,
+	'Set-Node.ps1'
+	,
+	'Invoke-NodeAction.ps1'
+	,
+	'Remove-Node.ps1'
 )
 
 # Functions to export from this module
