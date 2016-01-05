@@ -75,6 +75,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="Get-ManagementUri.ps1" target="tools\Get-ManagementUri.ps1" />
     <file src="Get-EntityKind.ps1" target="tools\Get-EntityKind.ps1" />
     <file src="Format-ResultAs.ps1" target="tools\Format-ResultAs.ps1" />
+    <file src="Get-Node.ps1" target="tools\Get-Node.ps1" />
     <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
     <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
     <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />
