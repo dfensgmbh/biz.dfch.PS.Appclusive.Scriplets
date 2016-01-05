@@ -205,7 +205,7 @@ try
 		$knv.Modified = $knv.Created;
 		$knv.CreatedById = 0;
 		$knv.ModifiedById = 0;
-		$knv.Tid = [guid]::Empty.Guid;
+		$knv.Tid = [guid]::Empty.ToString();
 	}
 	if($NewKey) { $knv.Key = $NewKey; }
 	if($NewName) { $knv.Name = $NewName; }

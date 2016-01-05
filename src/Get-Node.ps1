@@ -1,11 +1,11 @@
-function Get-Job {
+function Get-Node {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the Node entity set.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the Job entity set.
+Retrieves one or more entities from the Node entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
@@ -24,7 +24,7 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id, Status, Name
+Get-Node -ListAvailable -Select Id, Status, Name
 
   Id Status       Name
   -- ------       ----
@@ -41,14 +41,14 @@ Get-Job -ListAvailable -Select Id, Status, Name
    6 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 ...
 
-Retrieves the id, status and name of all Jobs.
+Retrieves the id, status and name of all Nodes.
 
 
 .EXAMPLE
-Get-Job 1027
+Get-Node 1027
 
 Status              : InitialState
-RefId				: 1027
+ReferencedItemId    : 1027
 Token               :
 TenantId            : 00000000-0000-0000-0000-000000000000
 EntityKindId        : 2
@@ -61,7 +61,7 @@ ParentId            : 1
 Id                  : 2
 Tid                 : 22222222-2222-2222-2222-222222222222
 Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-Description         : This is a node job
+Description         : This is a node Node
 CreatedById         : 1
 ModifiedById        : 1
 Created             : 01.12.2015 00:00:00 +01:00
@@ -74,11 +74,11 @@ Tenant              :
 CreatedBy           :
 ModifiedBy          :
 
-Retrieves the Job object with Id 1027 and returns all properties of it.
+Retrieves the Node object with Id 1027 and returns all properties of it.
 
 
 .EXAMPLE
-Get-Job 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
+Get-Node 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
 
 ServiceId
 ---
@@ -89,7 +89,7 @@ of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-Job -ListAvailable -Select Id -First 3
+Get-Node -ListAvailable -Select Id -First 3
 
 Id
 --
@@ -97,23 +97,23 @@ Id
  3
  4
 
-Retrieves the id of the first 3 Jobs.
+Retrieves the id of the first 3 Nodes.
 
 
 .EXAMPLE
-Get-Job 1027 -Select Name -ValueOnly
+Get-Node 1027 -Select Name -ValueOnly
 
 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 
-Retrieves the name of the Job with Id 4005.
+Retrieves the name of the Node with Id 4005.
 
 
 .EXAMPLE
-Get-Job -ModifiedBy SYSTEM -Select Id, Name
+Get-Node -ModifiedBy SYSTEM -Select Id, Name
 
 Id Name
 -- ----
- 1 Root Job
+ 1 Root Node
  2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
  3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
  4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
@@ -134,21 +134,21 @@ Id Name
 19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 
-Retrieves id and name of all Jobs that have been modified by user 
+Retrieves id and name of all Nodes that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
-Get-Job AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
+Get-Node AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
 
 AppclusiveSchedulerNotAvailable
 
-Retrieves the 'Name' property of a Job with Name 'AppclusiveScheduler' 
+Retrieves the 'Name' property of a Node with Name 'AppclusiveScheduler' 
 and AppclusiveSchedulerNotAvailable if the entity is not found.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Node/
 
 
 .NOTES
@@ -161,7 +161,7 @@ See module manifest for required software versions and dependencies.
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Job/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Node/'
 	,
 	DefaultParameterSetName = 'list'
 )]
@@ -237,7 +237,7 @@ Begin
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'Jobs';
+	$EntitySetName = 'Nodes';
 	
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
@@ -386,7 +386,7 @@ return $OutputParameter;
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Job; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Node; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH

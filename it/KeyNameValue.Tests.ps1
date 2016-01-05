@@ -26,9 +26,9 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 		
 		It "KeyNameValue-AddingAndRemovingItemSucceeds" -Test {
 			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().Guid;
-			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Value = "Value-{0}" -f [guid]::NewGuid().Guid;
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
 			$resultNew = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
@@ -57,9 +57,9 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 
 		It "KeyNameValue-AddingDuplicateItemThrowsException" -Test {
 			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().Guid;
-			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Value = "Value-{0}" -f [guid]::NewGuid().Guid;
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
 			$resultNew1 = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value;
@@ -82,10 +82,10 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 		
 		It "KeyNameValue-RemovingMultipleItemsSucceeds" -Test {
 			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().Guid;
-			$Name = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Value1 = "Value-{0}" -f [guid]::NewGuid().Guid;
-			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;
+			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Value1 = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$Value2 = "Value-{0}" -f [guid]::NewGuid().ToString();
 							
 			# Act
 			$resultNew1 = New-ApcKeyNameValue -Key $Key -Name $Name -Value $Value1;
@@ -102,12 +102,12 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 		
 		It "KeyNameValue-CreateItemWithSetAndUpdateItemSucceeds" -Test {
 			# Arrange
-			$Key1 = "Key-{0}" -f [guid]::NewGuid().Guid;
-			$Key2 = "Key-{0}" -f [guid]::NewGuid().Guid;
-			$Name1 = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Name2 = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Value1 = "Value-{0}" -f [guid]::NewGuid().Guid;		
-			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;
+			$Key1 = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$Key2 = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$Name1 = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Name2 = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Value1 = "Value-{0}" -f [guid]::NewGuid().ToString();		
+			$Value2 = "Value-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
 			$resultNewSet = Set-ApcKeyNameValue -Key $Key1 -Name $Name1 -Value $Value1 -CreateIfNotExist;
@@ -133,10 +133,10 @@ Describe -Tags "KeyNameValue.Tests" "KeyNameValue.Tests" {
 		
 		It "KeyNameValue-SetNonExcsitingItemThrowsException" -Test {
 			# Arrange
-			$Key1 = "Key-{0}" -f [guid]::NewGuid().Guid;
-			$Name1 = "Name-{0}" -f [guid]::NewGuid().Guid;
-			$Value1 = "Value-{0}" -f [guid]::NewGuid().Guid;
-			$Value2 = "Value-{0}" -f [guid]::NewGuid().Guid;			
+			$Key1 = "Key-{0}" -f [guid]::NewGuid().ToString();
+			$Name1 = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Value1 = "Value-{0}" -f [guid]::NewGuid().ToString();
+			$Value2 = "Value-{0}" -f [guid]::NewGuid().ToString();			
 			$resultNewSet = $null; 
 				
 			# Act

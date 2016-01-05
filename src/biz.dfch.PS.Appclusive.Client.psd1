@@ -8,7 +8,7 @@
 RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.1.4.20151222'
+ModuleVersion = '1.2.0.20160105'
 
 # ID used to uniquely identify this module
 GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
@@ -119,6 +119,8 @@ NestedModules = @(
 	'Get-EntityKind.ps1'
 	,
 	'Format-ResultAs.ps1'
+	,
+	'Get-Node.ps1'
 )
 
 # Functions to export from this module

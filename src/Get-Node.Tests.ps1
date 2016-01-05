@@ -1,273 +1,228 @@
-function Set-ManagementCredential {
-<#
-.SYNOPSIS
-Sets or creates a ManagementCredential entry in Appclusive.
 
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-.DESCRIPTION
-Sets or creates a ManagementCredential entry in Appclusive.
-
-By updating a ManagementCredential entry you can specify if you want to update the Name, Username, Password or any combination thereof.
-
-
-.OUTPUTS
-default
-
-
-.EXAMPLE
-Set-ManagementCredential myName myUserName myPassword -CreateIfNotExist
-
-Username          : myUserName
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myName
-Description       : 
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
-
-Create a new ManagementCredential entry if it does not exists.
-
-
-.EXAMPLE
-Set-ManagementCredential -Name myName -NewName myNewName -Username myNewUserName -Password myNewPassword
-
-Username          : myNewUserName
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myNewName
-Description       : 
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
-
-Update an existing ManagementCredential with new name, username and password.
-
-
-.LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ManagementCredential/
-Set-ManagementCredential: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ManagementCredential/
-
-
-.NOTES
-See module manifest for dependencies and further requirements.
-
-
-#>
-[CmdletBinding(
-    SupportsShouldProcess = $false
-	,
-    ConfirmImpact = 'Low'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ManagementCredential/'
-)]
-Param 
-(
-	# Specifies the name to modify
-	[Parameter(Mandatory = $true, Position = 0)]
-	[Alias('n')]
-	[string] $Name
-	,
-	# Specifies the new name name
-	[Parameter(Mandatory = $false)]
-	[string] $NewName
-	,
-	# Specifies the description
-	[Parameter(Mandatory = $false)]
-	[Alias("d")]
-	[string] $Description
-	,
-	# Specifies the key to modify
-	[Parameter(Mandatory = $false, Position = 1)]
-	[string] $Username
-	,
-	# Specifies the new name name
-	[Parameter(Mandatory = $false, Position = 2)]
-	[string] $Password
-	,
-	# Specifies to create a entity if it does not exist
-	[Parameter(Mandatory = $false)]
-	[Alias("c")]
-	[switch] $CreateIfNotExist = $false
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias('Services')]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias('ReturnFormat')]
-	[string] $As = 'default'
-)
-
-Begin 
+function Stop-Pester($message = "Unrepresentative, because no entities existing.")
 {
-	trap { Log-Exception $_; break; }
-
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
-	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
-# Begin
 
-Process 
-{
 
-# Default test variable for checking function response codes.
-[Boolean] $fReturn = $false;
-# Return values are always and only returned via OutputParameter.
-$OutputParameter = $null;
-$AddedEntity = $null;
+Describe -Tags "Get-Node" "Get-Node" {
 
-try 
-{
-	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	if(!$CreateIfNotExist -And !$entity) 
-	{
-		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
-		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
-		throw($gotoError);
-	}
-	if(!$entity) 
-	{
-		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
-		$svc.Core.AddToManagementCredentials($entity);
-		$AddedEntity = $entity;
-		$entity.Name = $Name;
-		$entity.Created = [System.DateTimeOffset]::Now;
-		$entity.Modified = $entity.Created;
-		$entity.CreatedById = 0;
-		$entity.ModifiedById = 0;
-		$entity.Tid = [guid]::Empty.ToString();
-		$entity.EncryptedPassword = "crypttext";
-	}
-	if($PSBoundParameters.ContainsKey('Description'))
-	{
-		$entity.Description = $Description;
-	}
-	if($PSBoundParameters.ContainsKey('Username'))
-	{
-		$entity.Username = $Username;
-	}
-	if($PSBoundParameters.ContainsKey('Password'))
-	{
-		$entity.Password = $Password;
-	}
-	if($NewName) { $entity.Name = $NewName; }
-	$svc.Core.UpdateObject($entity);
-	$r = $svc.Core.SaveChanges();
+	Mock Export-ModuleMember { return $null; }
+	
+	. "$here\$sut"
+	. "$here\Get-User.ps1"
+	. "$here\Format-ResultAs.ps1"
+	
+	$svc = Enter-ApcServer;
 
-	$r = $entity;
-	$OutputParameter = Format-ResultAs $r $As;
-	$fReturn = $true;
-
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-		$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
+	Context "Get-Node" {
+	
+		# Context wide constants
+		# N/A
 		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
-			Log-Debug $fn $ErrorText -fac 3;
+		It "Warmup" -Test {
+			$true | Should Be $true;
 		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
+
+		It "Get-NodeListAvailable-ShouldReturnList" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Node -svc $svc -ListAvailable;
+			if ( $result.Count -eq 0 )
 			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
+				Stop-Pester
+			}
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+
+		It "Get-NodeListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Node -svc $svc -ListAvailable -Select Name;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+			$result[0].Name | Should Not Be $null;
+			$result[0].Id | Should Be $null;
+		}
+
+		It "Get-Node-ShouldReturnFirstEntity" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Node] | Should Be $true;
+		}
+		
+		It "Get-Node-ShouldReturnFirstEntityById" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-Node -svc $svc -First $ShowFirst;
+			$Id = $resultFirst.Id;
+			$result = Get-Node -Id $Id -svc $svc;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $resultFirst;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Node] | Should Be $true;
+		}
+		
+		It "Get-Node-ShouldReturnFiveEntities" -Test {
+			# Arrange
+			$ShowFirst = 5;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst;
+
+			# Assert
+			$result | Should Not Be $null;
+			$ShowFirst -eq $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.Node] | Should Be $true;
+		}
+
+		It "Get-NodeThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$NodeName = 'Node-that-does-not-exist';
+			
+			# Act
+			$result = Get-Node -svc $svc -Name $NodeName;
+
+			# Assert
+			$result | Should Be $null;
+		}
+		
+		It "Get-NodeThatDoesNotExist-ShouldReturnDefaultValue" -Test {
+			# Arrange
+			$NodeName = 'Node-that-does-not-exist';
+			$DefaultValue = 'MyDefaultValue';
+			
+			# Act
+			$result = Get-Node -svc $svc -Name $NodeName -DefaultValue $DefaultValue;
+
+			# Assert
+			$result | Should Be $DefaultValue;
+		}
+		
+		It "Get-Node-ShouldReturnXML" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst -As xml;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0,5) | Should Be '<?xml';
+		}
+		
+		It "Get-Node-ShouldReturnJSON" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$result = Get-Node -svc $svc -First $ShowFirst -As json;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Substring(0, 1) | Should Be '{';
+			$result.Substring($result.Length -1, 1) | Should Be '}';
+		}
+		
+		It "Get-Node-WithInvalidId-ShouldReturnException" -Test {
+			# Act
+			try 
 			{
-				# N/A
+				$result = Get-Node -Id 'myNode';
+				'throw exception' | Should Be $true;
+			} 
+			catch
+			{
+				# Assert
+			   	$result | Should Be $null;
 			}
 		}
-		$fReturn = $false;
-		$OutputParameter = $null;
 		
-		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
+		It "Get-NodeByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
+			# Arrange
+			$User = 'User-that-does-not-exist';
+			
+			# Act
+			$result = Get-Node -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Be $null;
+		}
+		
+		It "Get-NodeByCreatedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-Node -svc $svc -CreatedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-NodeByModifiedBy-ShouldReturnListWithEntities" -Test {
+			# Arrange
+			$User = 'SYSTEM';
+			
+			# Act
+			$result = Get-Node -svc $svc -ModifiedBy $User;
+
+			# Assert
+		   	$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
 	}
 }
-finally 
-{
-	# Clean up
-	# N/A
-}
 
-}
-# Process
-
-End 
-{
-
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-
-}
-# End
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ManagementCredential; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
-# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwO2svMPPdLM5ZzS9w6dvXMDs
+# 9sugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -366,26 +321,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ManagementCrede
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
-# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
-# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
-# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
-# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
-# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
-# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQza3FSu9WAhrUM
+# 230/skRZkw6U8TANBgkqhkiG9w0BAQEFAASCAQDEYeJwjyKwN5Lm0tl4RxJt3/pi
+# XoFqchhGrhRLfwF0q+Jyh4mpEautAYQymYKVB/K/6Wu+8aJwOKIm8Dvn/7+64wuB
+# f5+PJuTuxfJ+rL/y21swCqEZtqkDEhOacQewzVu0R/yMoOO5zBEPyu0F9unw53Ec
+# /kBblDYj5eCumfuPdn/CQDyUlDpXoBGY0G6DC7HbBHg7mEVIVUQYxF4PpVDaZbDa
+# vCOgK19n5nfSBvxlOoSTWrqiv3mHkQW3RqLBP97ow5ttufCOYSjQplQTYOX1TiM/
+# bv/KCzDS9jUvuAPyLO27cK2vD7rQdSbxHpCbQTQPc6y1i6JVwFriiCokcxn0oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
+# MTIyMjExMTMzN1owIwYJKoZIhvcNAQkEMRYEFHnfXBikoiOsmg0q/69NscGlwykk
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
-# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
-# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
-# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
-# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
-# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
-# PLS1
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBhQMKWsQP83Ljc+evV
+# 04wa1pzHVwVvY2JiHrmKIBofwqWubYA73l2uRjpMIOLlBap4nHvYTKvy/9nxHu/w
+# 3wS66pLasikxVHKWZrNQmU4XXoXC3Qkhl3DyeaK9KLmljUXN8wq6f4UcTNR3khRU
+# W5adbe64l7LN6KRHGKJ8d0l6Zmur0NuW2b3qsQYvbNExi7EvmQFQeYs/nkwPmueq
+# 6MbOLSmDni4tJfyG2tHbNUJlLwwoTR1Rx4ZZWB35kD2CwAlTY9tNMdzhuCIXBRJ+
+# DO1sZdZUUb4d2840G2vv25HBKMsevWt8OwCmp94eW3qKn+awmINEzPsfsoKTlVkM
+# PCOK
 # SIG # End signature block
