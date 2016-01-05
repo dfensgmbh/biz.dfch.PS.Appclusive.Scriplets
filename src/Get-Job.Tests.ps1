@@ -15,6 +15,7 @@ Describe -Tags "Get-Job" "Get-Job" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"
 	. "$here\Get-User.ps1"
 	
 	$svc = Enter-ApcServer;
@@ -182,7 +183,6 @@ Describe -Tags "Get-Job" "Get-Job" {
 
 			# Assert
 		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
 			0 -lt $result.Count | Should Be $true;
 		}
 		
@@ -195,8 +195,23 @@ Describe -Tags "Get-Job" "Get-Job" {
 
 			# Assert
 		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
 			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-JobExpandNode-ShouldReturnNode" -Test {
+			# Arrange
+			. "$here\Get-Node.ps1"
+			Mock Get-Node { return New-Object biz.dfch.CS.Appclusive.Api.Core.Node };
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-Job -svc $svc -First $ShowFirst;
+			$result = Get-Job -svc $svc -Id $resultFirst.Id -ExpandNode;
+
+			# Assert
+		   	Assert-MockCalled Get-Node -Exactly 1;
+		   	$result | Should Not Be $null;
+		   	$result.GetType().Name | Should Be 'Node';
 		}
 	}
 }
