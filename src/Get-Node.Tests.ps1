@@ -183,7 +183,6 @@ Describe -Tags "Get-Node" "Get-Node" {
 
 			# Assert
 		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
 			0 -lt $result.Count | Should Be $true;
 		}
 		
@@ -196,8 +195,21 @@ Describe -Tags "Get-Node" "Get-Node" {
 
 			# Assert
 		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
 			0 -lt $result.Count | Should Be $true;
+		}
+		
+		
+		It "Get-NodeExpandJob-ShouldReturnJob" -Test {
+			# Arrange
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-Node -svc $svc -First $ShowFirst;
+			$result = Get-Node -svc $svc -Id $resultFirst.Id -ExpandJob;
+
+			# Assert
+		   	$result | Should Not Be $null;
+		   	$result.GetType().Name | Should Be 'Job';
 		}
 	}
 }
