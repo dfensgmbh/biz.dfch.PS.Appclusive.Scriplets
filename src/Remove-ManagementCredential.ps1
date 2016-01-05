@@ -8,7 +8,7 @@ function Remove-ManagementCredential {
 )]
 Param 
 (
-	# The key name portion of the KNV to remove
+	# The name of the ManagementCredential to remove
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[string] $Name
 	,
