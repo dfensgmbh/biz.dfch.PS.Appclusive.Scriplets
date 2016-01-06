@@ -2,7 +2,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-function Stop-Pester($message = "Unrepresentative, because no entities existing.")
+function Stop-Pester($message = "Unrepresentative, because no entities exists.")
 {
 	$msg = $message;
 	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
@@ -19,24 +19,37 @@ Describe -Tags "Invoke-EntityAction" "Invoke-EntityAction" {
 	
 	$svc = Enter-ApcServer;
 
-    $NodeEnity = Get-Node -First 1 -svc $svc;
-	$EnityId = $NodeEnity.Id;
+    $NodeEntity = Get-Node -First 1 -svc $svc;
+	$EntityId = $NodeEntity.Id;
 	
-	if ( !$EnityId ) { Stop-Pester; }
+	if ( !$EntityId ) { Stop-Pester; }
 
 	Context "Invoke-EntityAction" {
 	
 		# Context wide constants
 		# N/A
 
-		It "Invoke-EntityAction-ShouldReturnStatus" -Test {
+		It "Invoke-EntityActionStatus-ShouldReturnSingle" -Test {
 			# Arrange
 			$EntitySetName = 'Nodes';
 			$EntityActionName = 'Status';
 			$ExpectedResult = 'single';
 			
 			# Act			
-			$result = Invoke-ApcEntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc;
+			$result = Invoke-EntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc;
+
+			# Assert
+			$result | Should Not Be $null;
+		}
+		
+		It "Invoke-EntityActionAvailableActions-ShouldReturnList" -Test {
+			# Arrange
+			$EntitySetName = 'Nodes';
+			$EntityActionName = 'AvailableActions';
+			$ExpectedResult = 'list';
+			
+			# Act			
+			$result = Invoke-EntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc;
 
 			# Assert
 			$result | Should Not Be $null;
@@ -49,7 +62,7 @@ Describe -Tags "Invoke-EntityAction" "Invoke-EntityAction" {
 			$ExpectedResult = 'single';
 			
 			# Act / Assert
-			{ Invoke-ApcEntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc} | Should Throw
+			{ Invoke-EntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc} | Should Throw
 
 			# Assert
 			#N/A
