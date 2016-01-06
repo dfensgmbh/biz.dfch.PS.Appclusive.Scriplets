@@ -1,210 +1,83 @@
-#
-# Module manifest for module 'biz.dfch.PS.Appclusive.Client'
-#
 
-@{
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
-
-# Version number of this module.
-ModuleVersion = '1.2.1.20160106'
-
-# ID used to uniquely identify this module
-GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
-
-# Author of this module
-Author = 'Ronald Rink'
-
-# Company or vendor of this module
-CompanyName = 'd-fens GmbH'
-
-# Copyright statement for this module
-Copyright = '(c) 2015 d-fens GmbH. Distributed under Apache 2.0 license.'
-
-# Description of the functionality provided by this module
-Description = 'PowerShell module for the Appclusive Framework and Middleware'
-
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
-
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
-
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
-
-# Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.5'
-
-# Minimum version of the common language runtime (CLR) required by this module
-# CLRVersion = ''
-
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
-
-# Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(
-	'biz.dfch.PS.System.Logging'
-	,
-	'biz.dfch.PS.System.Utilities'
-)
-
-# Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @(
-	'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'System.Net'
-	,
-	'System.Web'
-	,
-	'System.Web.Extensions'
-)
-
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = @(
-	'Import-Module.ps1'
-)
-
-# ModuleToProcess = @()
-
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
-
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
-
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-	'Enter-Server.ps1'
-	,
-	'New-KeyNameValue.ps1'
-	,
-	'Get-KeyNameValue.ps1'
-	,
-	'Set-KeyNameValue.ps1'
-	,
-	'Remove-KeyNameValue.ps1'
-	,
-	'New-ManagementCredential.ps1'
-	,
-	'Get-ManagementCredential.ps1'
-	,
-	'Set-ManagementCredential.ps1'
-	,
-	'Remove-ManagementCredential.ps1'
-	,
-	'Remove-Entity.ps1'
-	,
-	'Get-ModuleVariable.ps1'
-	,
-	'Get-Time.ps1'
-	,
-	'Test-Status.ps1'
-	,
-	'Get-Job.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'New-User.ps1'
-	,
-	'Get-User.ps1'
-	,
-	'Set-User.ps1'
-	,
-	'Get-ManagementUri.ps1'
-	,
-	'Get-EntityKind.ps1'
-	,
-	'Format-ResultAs.ps1'
-	,
-	'Get-Node.ps1'
-	,
-	'New-Node.ps1'
-	,
-	'Set-Node.ps1'
-	,
-	'Invoke-NodeAction.ps1'
-	,
-	'Remove-Node.ps1'
-	,
-	'Invoke-EntityAction.ps1'
-)
-
-# Functions to export from this module
-FunctionsToExport = '*'
-
-# Cmdlets to export from this module
-CmdletsToExport = '*'
-
-# Variables to export from this module
-VariablesToExport = '*'
-
-# Aliases to export from this module
-AliasesToExport = '*'
-
-# List of all modules packaged with this module.
-# ModuleList = @()
-
-# List of all files packaged with this module
-FileList = @(
-	'LICENSE'
-	,
-	'NOTICE'
-	,
-	'README.md'
-	,
-	'biz.dfch.PS.Appclusive.Client.dll'
-	,
-	'biz.dfch.PS.Appclusive.Client.xml'
-	,
-	'Microsoft.Data.Edm.dll'
-	,
-	'Microsoft.Data.OData.dll'
-	,
-	'Microsoft.Data.Services.Client.dll'
-	,
-	'System.Spatial.dll'
-	,
-	'Import-Module.ps1'
-)
-
-# Private data to pass to the module specified in RootModule/ModuleToProcess
-PrivateData = @{
-	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
+function Stop-Pester($message = "Unrepresentative, because no entities existing.")
+{
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-# HelpInfo URI of this module
-HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
+Describe -Tags "Invoke-EntityAction" "Invoke-EntityAction" {
 
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Apc'
+	Mock Export-ModuleMember { return $null; }
+	
+	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"
+	. "$here\Get-Node.ps1"
+	
+	$svc = Enter-ApcServer;
 
+    $NodeEnity = Get-Node -First 1 -svc $svc;
+	$EnityId = $NodeEnity.Id;
+	
+	if ( !$EnityId ) { Stop-Pester; }
+
+	Context "Invoke-EntityAction" {
+	
+		# Context wide constants
+		# N/A
+
+		It "Invoke-EntityAction-ShouldReturnStatus" -Test {
+			# Arrange
+			$EntitySetName = 'Nodes';
+			$EntityActionName = 'Status';
+			$ExpectedResult = 'single';
+			
+			# Act			
+			$result = Invoke-ApcEntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc;
+
+			# Assert
+			$result | Should Not Be $null;
+		}
+
+		It "Invoke-UnknowEntityAction-ShouldThrow" -Test {
+			# Arrange
+			$EntitySetName = 'Nodes';
+			$EntityActionName = 'NotExistingAction';
+			$ExpectedResult = 'single';
+			
+			# Act / Assert
+			{ Invoke-ApcEntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc} | Should Throw
+
+			# Assert
+			#N/A
+		}
+	}
 }
 
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiXX6+mHSJnlEtTFniRlNHyiz
-# nqGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEhEm8rEvun7iDU9ROUHfehMD
+# tRqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -303,26 +176,26 @@ DefaultCommandPrefix = 'Apc'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQQ+Tkk8Zv5jvJq
-# GcHFqmdu6XE0nDANBgkqhkiG9w0BAQEFAASCAQACULt7UH5bZeR1YjHrDifidhbc
-# Wcke9MwmAhQlSfQd59NbcZF/9ZpR/3b2HNRrwSHA6w6AzWyoCbdPLv0PRvQyL/uR
-# a0jumM5Mec8PDld0QmD+BKal7nxbgiQ3527kQCzkIU+ZRB+zgJs9SBbg3UAJ2vhs
-# 7M7Uhn5eZW1j+RITXPbYORGL2c/lY4S5Bn2Q3vRFwVJ9DwVYoNctoTLRnCp9786m
-# L8IcIpNvRQDI35fr2iWGftiasqfmiDaM3VFohdi42zZPCSICi6ThX7NgQl5TSDtD
-# UnMnC+h6DopawtXuVamurzPreBhKWiMIOW1/wi107cd4p0/a1NrlUtuM8wBvoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBROtaJsc2H0HqbO
+# GQaHDZwjq/tn/DANBgkqhkiG9w0BAQEFAASCAQCOVHxvQ+a8kV9YLpGmJh7t9fd7
+# slG32n/i1Ki3B7D8qBu3QGGpZ+Rt2QUWW7oH0f+4V/JNj3gu2BLF2zU9qEEh6URc
+# lxY70WS90GYsKorYhuiARZ5CgvNqLA12RGN1QNk2w4TJWUHD5UHPHtzjR6sr9P3E
+# nRJOvj8jLjm9yXD7P4t4SOLzoK8IkXenP7qTfAhYNM/YSV0DUDfHzRuotukdxoxx
+# /c7AetjZIyRmuH6sTiFQsOrrXO8u3K6DhzWDk1JkANTi+TlXQEqPYhFOg3woj3WT
+# FGniNQn+lZRQnA6vR7117kPRABu13Ex9W0OrNoZ44T9NDJkiUxm3Mr4S6IRaoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjE1MDExNVowIwYJKoZIhvcNAQkEMRYEFIuXxHs1f1h46SHaKHMJXtTdluqb
+# MTIyMjExMTM0MlowIwYJKoZIhvcNAQkEMRYEFLkUz61/pFO/EgfoCpP2+50LUVyK
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA1YLfezZpO2GrKbwts
-# PYRAGEJAb1x4u2pf/WCcg4KAjGzO8BbNClDDsDp/+tnxsHhtbaFvy1OljJfnegO7
-# LFvhI8cmOrzcHOOgCTK2HQr3HJ6euH/w4bSKIte5u2hoEKBnmsPT++ahZg/KGRlJ
-# xQqm0+TNdhRWXu+mSn2sIj/jQQ5eZwMJzSgN/YPgYTEjalPelo3KgZA2ocsYz3xE
-# vjeb98lYY4HccPtFcoMBRs9T9Y5u7FHSL9h6B11YLzd6wPUhPt/4HmAA3BOMIKfO
-# 6HsZwgyLjapEk81LFhzuRjaqI8pj2vZTYt/AdGAsSDIw5u9yqZhPvcMhv4zsSQIm
-# 4fd4
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCLrElu850uqsS1sJu9
+# XOCN6UP9By64GEh5J273soQrSz6YQYIdjgaqI8qMWJNgJ4AUMferuApe/nNno3Ga
+# ICByEMzRJmRFWr8vgMLu7uX//y5WpJ4lsTZ3O34mlT8sPJLGqdObIC0c74d0eCVv
+# uvFdP3P9GW1fLoqMKCOWTOzAcEouTAyL5yAm22GTgqvu36oMWHztXw9hy7sWGvuC
+# 7e5/SQpcNdfchpvnsq1CEFTtkDOjqO8u47CMQxmd1+igLSMlyG+kuCU5KsKfkdQD
+# HNvoqcklylpWKgoGkWC8yZW3tF8qS8W2BTKUj81aUviy2Lrlv9uOUWtU3T33K79E
+# 9zz1
 # SIG # End signature block
