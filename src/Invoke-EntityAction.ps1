@@ -1,188 +1,236 @@
-#
-# Module manifest for module 'biz.dfch.PS.Appclusive.Client'
-#
+function Invoke-EntityAction {
+<#
+.SYNOPSIS
+Invokes a Node entity action in Appclusive.
 
-@{
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
+.DESCRIPTION
+Invokes a Node entity action in Appclusive.
 
-# Version number of this module.
-ModuleVersion = '1.2.0.20160105'
+You must specify parameter 'Id' (or pipe on an existing Node entity) and the input action name.
 
-# ID used to uniquely identify this module
-GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
 
-# Author of this module
-Author = 'Ronald Rink'
+.EXAMPLE
+Invoke-EntityAction -EntityId 12 -EntitySetName Nodes -EntityActionName InvokeAction -InputName FullManaged -InputParameters @{'ComputerRole'='CAS'}
 
-# Company or vendor of this module
-CompanyName = 'd-fens GmbH'
+Name    Id InputParameters
+----    -- ---------------
+Nodes	12 {Name, Parameters}
 
-# Copyright statement for this module
-Copyright = '(c) 2015 d-fens GmbH. Distributed under Apache 2.0 license.'
+Updates a Node entry to Status 'FullManaged'.
 
-# Description of the functionality provided by this module
-Description = 'PowerShell module for the Appclusive Framework and Middleware'
+.EXAMPLE
+Get-Node 12 | Invoke-EntityAction -EntityActionName InvokeAction -InputName FullManaged -InputParameters @{'ComputerRole'='CAS'}
 
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
+Name    Id InputParameters
+----    -- ---------------
+Srv01	12 {Name, Parameters}
 
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
+Similar to the previous example, but as pipe from Get-Node.
 
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
+.EXAMPLE
+Invoke-ApcEntityAction -EntityId 12 -EntitySetName Nodes -EntityActionName Status -ExpectedResult single
 
-# Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.5'
+Status              : FullManaged
+RefId               : 1459
+Token               : optional
+TenantId            : 22222222-2222-2222-2222-222222222222
+EntityKindId        : 1
+Parameters          : optional
+Condition           :
+ConditionParameters :
+Error               : optional
+EndTime             :
+ParentId            : 1
+Id                  : 1337
+Tid                 : 22222222-2222-2222-2222-222222222222
+Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+Description         : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+CreatedById         : 60
+ModifiedById        : 60
+Created             : 05.01.2016 20:04:54 +01:00
+Modified            : 06.01.2016 14:42:39 +01:00
+RowVersion          : {0, 0, 0, 0...}
+EntityKind          :
+Parent              :
+Children            : {}
+Tenant              :
+CreatedBy           :
+ModifiedBy          :
 
-# Minimum version of the common language runtime (CLR) required by this module
-# CLRVersion = ''
+Returns the corresponding Job entry from the Node with Id 12.
 
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
 
-# Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(
-	'biz.dfch.PS.System.Logging'
+.EXAMPLE
+Invoke-ApcEntityAction -EntityId 12 -EntitySetName Nodes -EntityActionName AvailableActions -ExpectedResult list
+
+BA01ReturnToUnmanaged
+BD01EnableFullCustomerMaintenance
+BF01ReturnToLimitedManaged
+
+Returns the available actions from the Node with Id 12.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Invoke-EntityAction/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $true
 	,
-	'biz.dfch.PS.System.Utilities'
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Invoke-EntityAction/'
+)]
+PARAM 
+(
+	# Specifies an reference object of the entity
+	[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'pipe')]
+	$InputObject
+	,
+	# Specifies the id of the entity
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
+	[int] $EntityId
+	,
+	# Specifies the entitiyset name of the entity
+	[Parameter(Mandatory = $true, Position = 1, ParameterSetName = 'id')]
+	$EntitySetName
+	,
+	# Specifies the invoke action name
+	[Parameter(Mandatory = $true, Position = 2)]
+	[string] $EntityActionName
+	,
+	# Specifies the invoke entity action
+	[Parameter(Mandatory = $false, Position = 3)]
+	[string] $InputName
+	,
+	# Specifies the parameters of the entity action
+	[Parameter(Mandatory = $false, Position = 4)]
+	[hashtable] $InputParameters = @{}
+	,
+	[Parameter(Mandatory = $false, Position = 5)]
+	[ValidateSet('void', 'single', 'list')]
+	[string] $ExpectedResult = 'void'
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false, Position = 6)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cnmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false, Position = 7)]
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
 )
 
-# Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @(
-	'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'System.Net'
-	,
-	'System.Web'
-	,
-	'System.Web.Extensions'
-)
+Begin 
+{
+	trap { Log-Exception $_; break; }
 
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = @(
-	'Import-Module.ps1'
-)
-
-# ModuleToProcess = @()
-
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
-
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
-
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-	'Enter-Server.ps1'
-	,
-	'New-KeyNameValue.ps1'
-	,
-	'Get-KeyNameValue.ps1'
-	,
-	'Set-KeyNameValue.ps1'
-	,
-	'Remove-KeyNameValue.ps1'
-	,
-	'New-ManagementCredential.ps1'
-	,
-	'Get-ManagementCredential.ps1'
-	,
-	'Set-ManagementCredential.ps1'
-	,
-	'Remove-ManagementCredential.ps1'
-	,
-	'Remove-Entity.ps1'
-	,
-	'Get-ModuleVariable.ps1'
-	,
-	'Get-Time.ps1'
-	,
-	'Test-Status.ps1'
-	,
-	'Get-Job.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'New-User.ps1'
-	,
-	'Get-User.ps1'
-	,
-	'Set-User.ps1'
-	,
-	'Get-ManagementUri.ps1'
-	,
-	'Get-EntityKind.ps1'
-	,
-	'Format-ResultAs.ps1'
-	,
-	'Get-Node.ps1'
-	,
-	'New-Node.ps1'
-	,
-	'Set-Node.ps1'
-	,
-	'Invoke-NodeAction.ps1'
-	,
-	'Remove-Node.ps1'
-	,
-	'Invoke-EntityAction.ps1'
-)
-
-# Functions to export from this module
-FunctionsToExport = '*'
-
-# Cmdlets to export from this module
-CmdletsToExport = '*'
-
-# Variables to export from this module
-VariablesToExport = '*'
-
-# Aliases to export from this module
-AliasesToExport = '*'
-
-# List of all modules packaged with this module.
-# ModuleList = @()
-
-# List of all files packaged with this module
-FileList = @(
-	'LICENSE'
-	,
-	'NOTICE'
-	,
-	'README.md'
-	,
-	'biz.dfch.PS.Appclusive.Client.dll'
-	,
-	'biz.dfch.PS.Appclusive.Client.xml'
-	,
-	'Microsoft.Data.Edm.dll'
-	,
-	'Microsoft.Data.OData.dll'
-	,
-	'Microsoft.Data.Services.Client.dll'
-	,
-	'System.Spatial.dll'
-	,
-	'Import-Module.ps1'
-)
-
-# Private data to pass to the module specified in RootModule/ModuleToProcess
-PrivateData = @{
-	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 }
+# Begin
 
-# HelpInfo URI of this module
-HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
+Process 
+{
 
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Apc'
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
+	# Parameter validation
+	Contract-Assert ($PSCmdlet.ShouldProcess(($PSBoundParameters | Out-String)))
+	
+	$InvokeActionMethodName = 'InvokeEntityActionWith{0}Result' -f $ExpectedResult;
+	switch($ExpectedResult) 
+	{
+		'void' 	{ $ResultType = $null; }
+		'single'{ $ResultType = [System.Object]; }
+		'list' 	{ $ResultType = [string]; }
+		Default	{ $ResultType = $null; }
+	}
+	
+	if ( !$InputName )
+	{
+		[hashtable] $EntityActionInputParameters = $InputParameters;
+	}
+	else
+	{
+		[hashtable] $EntityActionInputParameters = 
+		@{
+			'Name'			= $InputName
+			;
+			'Parameters'	= ($InputParameters | ConvertTo-Json -Compress).ToString()
+		};
+	}
+
+	$r = @();
+	if($PSCmdlet.ParameterSetName -eq 'pipe') 
+	{
+		# Get ValueFromPipeline
+		foreach($Object in $InputObject)
+		{
+			if($PSCmdlet.ShouldProcess($Object))
+			{
+				if ( !$ResultType )
+				{
+					$r += ($Object | Select -Property Name, Id, @{Name="InputParameters"; Expression={$EntityActionInputParameters}});
+					$svc.Core.$InvokeActionMethodName($Object, $EntityActionName, $EntityActionInputParameters);
+				}
+				else
+				{
+					$r += $svc.Core.$InvokeActionMethodName($Object, $EntityActionName, $ResultType, $EntityActionInputParameters);
+				}
+			}
+		}
+	}
+	else
+	{
+		if ( !$ResultType )
+		{
+			$r += ($EntityId | Select -Property @{Name="Name"; Expression={$EntitySetName}}, @{Name="Id"; Expression={$_}}, @{Name="InputParameters"; Expression={$EntityActionInputParameters}});
+			$svc.Core.$InvokeActionMethodName($EntitySetName, [long]$EntityId, $EntityActionName, $EntityActionInputParameters);
+		}
+		else
+		{
+			$r += $svc.Core.$InvokeActionMethodName($EntitySetName, [long]$EntityId, $EntityActionName, $ResultType, $EntityActionInputParameters);
+		}
+	}
+
+	$OutputParameter = Format-ResultAs $r $As;
+	$fReturn = $true;
+}
+# Process
+
+End 
+{
+
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
 
 }
+# End
+
+} # function
+
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Invoke-EntityAction; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -203,8 +251,8 @@ DefaultCommandPrefix = 'Apc'
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiXX6+mHSJnlEtTFniRlNHyiz
-# nqGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSbdJa31xllZViUR0en73fyG3
+# d6igghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -303,26 +351,26 @@ DefaultCommandPrefix = 'Apc'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQQ+Tkk8Zv5jvJq
-# GcHFqmdu6XE0nDANBgkqhkiG9w0BAQEFAASCAQACULt7UH5bZeR1YjHrDifidhbc
-# Wcke9MwmAhQlSfQd59NbcZF/9ZpR/3b2HNRrwSHA6w6AzWyoCbdPLv0PRvQyL/uR
-# a0jumM5Mec8PDld0QmD+BKal7nxbgiQ3527kQCzkIU+ZRB+zgJs9SBbg3UAJ2vhs
-# 7M7Uhn5eZW1j+RITXPbYORGL2c/lY4S5Bn2Q3vRFwVJ9DwVYoNctoTLRnCp9786m
-# L8IcIpNvRQDI35fr2iWGftiasqfmiDaM3VFohdi42zZPCSICi6ThX7NgQl5TSDtD
-# UnMnC+h6DopawtXuVamurzPreBhKWiMIOW1/wi107cd4p0/a1NrlUtuM8wBvoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR1Y11nYgtACAai
+# 8BpdAi8vDmpgjTANBgkqhkiG9w0BAQEFAASCAQBWLbQVO3TezIT9yuRoFqyr9Ngc
+# EuKpA5FzMXjF8kITyMZhCHEbrlmSVZzNRzN5I/OMJMancVk5p4Fwwrd/ihCRU2UB
+# pUOkO8+Sqq3jcTQgwGch1feApVz+p47cYbymNqRbdWpzKnCACnodg7QaNKmK8qWQ
+# Vf46ozak7dDBOB+ZSoQ+iJSi1LZ64+FaMpmRrd8K74nSaXHNcLXkcc7f3emByvRf
+# zpS+6X0v+6amIZ8020xUWifebzGTlfOidXBg0xdQAt84EheShPiAZ+hwe+5ipgJF
+# 1eujnO8zmwEdY7HG5ipTyC3P+NsJA0VWQ8t1GYZkX4zmFv7/x5au7NKPwSeOoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjE1MDExNVowIwYJKoZIhvcNAQkEMRYEFIuXxHs1f1h46SHaKHMJXtTdluqb
+# MTIyMjExMTM0MFowIwYJKoZIhvcNAQkEMRYEFOuhsUHnlFoJBQQ3kj39SE43qq05
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA1YLfezZpO2GrKbwts
-# PYRAGEJAb1x4u2pf/WCcg4KAjGzO8BbNClDDsDp/+tnxsHhtbaFvy1OljJfnegO7
-# LFvhI8cmOrzcHOOgCTK2HQr3HJ6euH/w4bSKIte5u2hoEKBnmsPT++ahZg/KGRlJ
-# xQqm0+TNdhRWXu+mSn2sIj/jQQ5eZwMJzSgN/YPgYTEjalPelo3KgZA2ocsYz3xE
-# vjeb98lYY4HccPtFcoMBRs9T9Y5u7FHSL9h6B11YLzd6wPUhPt/4HmAA3BOMIKfO
-# 6HsZwgyLjapEk81LFhzuRjaqI8pj2vZTYt/AdGAsSDIw5u9yqZhPvcMhv4zsSQIm
-# 4fd4
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBTVQDZ2WOHQBX3rFi6
+# O/VEKleY4UivYuZ9f1aXfmqKaJ83UogrickfCASNad0UgBIBvy2f/zql0MxNeQ5Q
+# KW4KRcR92Y7SZ18PO8Xa0PwQFLh3lSC3iPSq0MXlN5k/BA2R+57I7Rdmjkk1Ygz4
+# F854xkib8TUI64I4Rytei7fWEFdrKhE9+r7AJbxZYYpFp2hLoqeeUhLb9Ed7QYIk
+# aiz4s0jQ5J/jSavOH9fyI0q9s+7iH/7pzu7jTKKoBQRtu/iCxScL6amcGBXTLDPt
+# CqgoS+Yuwg947m6smuW3IdW6KYkQAeUW/ylXpFT38ajKZ6gRERwaoFpWVZDFypEt
+# uqBg
 # SIG # End signature block
