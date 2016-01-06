@@ -187,6 +187,11 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
 	[switch] $ListAvailable = $false
 	,
+	# Indicates to return credential information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[switch] $ExpandManagementCredential = $false
+	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
@@ -307,6 +312,20 @@ Process
 			else
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			}
+			
+			if ( $ExpandManagementCredential )
+			{
+				$ResponseTemp = New-Object System.Collections.ArrayList;
+				foreach ($item in $Response)
+				{
+					if ( $item.ManagementCredentialId )
+					{
+						$Response_ = Get-ManagementCredential -Id $Response.ManagementCredentialId;
+						$null = $ResponseTemp.Add($Response_);
+					}
+				}
+				$Response = $ResponseTemp.ToArray();
 			}
 		}
 		if(1 -eq $Select.Count -And $ValueOnly)

@@ -222,6 +222,13 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
 	[switch] $ListAvailable = $false
 	,
+	# Indicates to return node information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[Alias('ExpandRef')]
+	[Alias('ExpandReferencedItem')]
+	[switch] $ExpandNode = $false
+	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
@@ -338,6 +345,20 @@ Process
 			else
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			}
+			
+			if ( $ExpandNode )
+			{
+				$ResponseTemp = New-Object System.Collections.ArrayList;
+				foreach ($item in $Response)
+				{
+					if ( $item.RefId )
+					{
+						$Response_ = Get-Node -Id $item.RefId;
+						$null = $ResponseTemp.Add($Response_);
+					}
+				}
+				$Response = $ResponseTemp.ToArray();
 			}
 		}
 		if(1 -eq $Select.Count -And $ValueOnly)

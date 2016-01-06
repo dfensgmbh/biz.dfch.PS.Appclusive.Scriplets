@@ -2,206 +2,51 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
+Describe -Tags "Set-Node" "Set-Node" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Get-User.ps1"
 	. "$here\Format-ResultAs.ps1"
+	. "$here\Remove-Entity.ps1"
 	
 	$svc = Enter-ApcServer;
 
-	Context "Get-ManagementUri" {
+	Context "Set-Node" {
 	
 		# Context wide constants
 		# N/A
-		
-		It "Warmup" -Test {
-			$true | Should Be $true;
-		}
 
-		It "Get-ManagementUriListAvailable-ShouldReturnList" -Test {
+		It "Set-Node-ShouldReturnNewEntity" -Test {
 			# Arrange
-			# N/A
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Get-ManagementUri -svc $svc -ListAvailable;
+			$result = Set-Node -svc $svc -Name $Name -EntityKindId 1 -CreateIfNotExist;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+			$result.Name | Should Be $Name;
+			
+			Remove-Entity -svc $svc -Name $Name -EntitySetName 'Nodes' -Force -Confirm:$false;
 		}
 
-		It "Get-ManagementUriListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
+		It "Set-NodeWithNewDescription-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
-			# N/A
+			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
+			$NewDescription = "NewDescription-{0}" -f [guid]::NewGuid().ToString();
+			$result1 = Set-Node -svc $svc -Name $Name -Description $Description -EntityKindId 1 -CreateIfNotExist;
+			$result1 | Should Not Be $null;
 			
 			# Act
-			$result = Get-ManagementUri -svc $svc -ListAvailable -Select Name;
+			$result = Set-Node -svc $svc -Name $Name -Description $NewDescription -EntityKindId 1;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-ManagementUri-ShouldReturnFirstEntity" -Test {
-			# Arrange
-			$ShowFirst = 1;
+			$result.Description | Should Be $NewDescription;
 			
-			# Act
-			$result = Get-ManagementUri -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementUri] | Should Be $true;
-		}
-		
-		It "Get-ManagementUri-ShouldReturnFirstEntityById" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$resultFirst = Get-ManagementUri -svc $svc -First $ShowFirst;
-			$Id = $resultFirst.Id;
-			$result = Get-ManagementUri -Id $Id -svc $svc;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result | Should Be $resultFirst;
-			$result -is [biz.dfch.CS.Appclusive.Api.Core.ManagementUri] | Should Be $true;
-		}
-		
-		It "Get-ManagementUri-ShouldReturnFiveEntities" -Test {
-			# Arrange
-			$ShowFirst = 5;
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$ShowFirst -eq $result.Count | Should Be $true;
-			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.ManagementUri] | Should Be $true;
-		}
-
-		It "Get-ManagementUriThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$ManagementUriName = 'ManagementUri-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -Name $ManagementUriName;
-
-			# Assert
-			$result | Should Be $null;
-		}
-		
-		It "Get-ManagementUriThatDoesNotExist-ShouldReturnDefaultValue" -Test {
-			# Arrange
-			$ManagementUriName = 'ManagementUri-that-does-not-exist';
-			$DefaultValue = 'MyDefaultValue';
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -Name $ManagementUriName -DefaultValue $DefaultValue;
-
-			# Assert
-			$result | Should Be $DefaultValue;
-		}
-		
-		It "Get-ManagementUri-ShouldReturnXML" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -First $ShowFirst -As xml;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0,5) | Should Be '<?xml';
-		}
-		
-		It "Get-ManagementUri-ShouldReturnJSON" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -First $ShowFirst -As json;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0, 1) | Should Be '{';
-			$result.Substring($result.Length -1, 1) | Should Be '}';
-		}
-		
-		It "Get-ManagementUri-WithInvalidId-ShouldReturnException" -Test {
-			# Act
-			try 
-			{
-				$result = Get-ManagementUri -Id 'myManagementUri';
-				'throw exception' | Should Be $true;
-			} 
-			catch
-			{
-				# Assert
-			   	$result | Should Be $null;
-			}
-		}
-		
-		It "Get-ManagementUriByCreatedByThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$User = 'User-that-does-not-exist';
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -CreatedBy $User;
-
-			# Assert
-		   	$result | Should Be $null;
-		}
-		
-		It "Get-ManagementUriByCreatedBy-ShouldReturnListWithEntities" -Test {
-			# Arrange
-			$User = 'SYSTEM';
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -CreatedBy $User;
-
-			# Assert
-		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-		
-		It "Get-ManagementUriByModifiedBy-ShouldReturnListWithEntities" -Test {
-			# Arrange
-			$User = 'SYSTEM';
-			
-			# Act
-			$result = Get-ManagementUri -svc $svc -ModifiedBy $User;
-
-			# Assert
-		   	$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-		
-		It "Get-ManagementUriExpandManagementCredential-ShouldReturnManagementCredential" -Test {
-			# Arrange
-			. "$here\Get-ManagementCredential.ps1"
-			Mock Get-ManagementCredential { return New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential };
-			$ShowFirst = 1;
-			
-			# Act
-			$resultFirst = Get-ManagementUri -svc $svc -First $ShowFirst;
-			$result = Get-ManagementUri -svc $svc -Id $resultFirst.Id -ExpandManagementCredential;
-
-			# Assert
-		   	Assert-MockCalled Get-ManagementCredential -Exactly 1;
-		   	$result | Should Not Be $null;
-		   	$result.GetType().Name | Should Be 'ManagementCredential';
+			Remove-Entity -svc $svc -Name $Name -EntitySetName 'Nodes' -Force -Confirm:$false;
 		}
 	}
 }
@@ -225,8 +70,8 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU4YttZ53AesrRs6jmsn+2td0D
-# Ye+gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSc+q8LviO/A5eJwirrKwgJ2V
+# ZnKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -325,26 +170,26 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRLTIvg4GYzyoY/
-# PHFcf2bOS/9A3TANBgkqhkiG9w0BAQEFAASCAQCkc3yGyNdUZbZi8Gc+dySNhp/r
-# hh2BwRE3pQoj27wvG54tqnwOOFiMOhPZBRyudX3rL3WQpjoDU6YkIjmNuP1MUHCb
-# BMsoiqee7fEcg/IBfNN2ert9A1u2AKH3AbDauwUi7ri+rZeVS9HfiHG8zB7YWv9h
-# MjGB+kh1J0MQFZf8Qyus2fhIbsGPOkNqAiB+MgdZ+2WQTrrRiakJT0KXWf1qn30N
-# Xid8kiL1cbmDEpMp7O6aZzsA230XGd1gvHkrwwIfS+fiVF4v4o5RDL2hTvYndRCr
-# TKqFcdqbjsdEWlMpu82Lg2i1hg6kxfCmJCslmfng32tIcJLQ++/07V7WMfKhoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTHiWHaeSZhjq6v
+# NlRT9RoQOTHhfDANBgkqhkiG9w0BAQEFAASCAQAigd9s7coZ11l6ptShYvACNn0w
+# buYWRpHcSRhhaX7ZY/TwDE5oEo6ZLd5p+wl7mgd7/ZM7Ytf0J8q0CzSoSCudhGpM
+# RhjlZ75EIdNZ0wrRRv4DJeVcOMTOj9numzgOkbs3kActcQ1toipDHow4NOVZzIie
+# lAXMXGqYxN0OB74fumW2W6RzUYjAtXE++zE/lFKs7CwBU0yC64xJgASfJPOvTVxZ
+# 7rpMgAsR3Jv/SWCLUTXBU/pyr2pdDq2/YwccHSDaGyP70dXU1iWaS6VsK7wWtsuv
+# Z2rqOjSoKwVG3863HYEFzqLRpERdO7o5Alov0jDoxmi8ba81aDMxqCConn9foYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0MFowIwYJKoZIhvcNAQkEMRYEFBYNckqS+20xcOKr7mbvQPzzbCsx
+# MTIxNTA2NTIyNFowIwYJKoZIhvcNAQkEMRYEFJ1OKH6EJknu0HrRO08O1sGrIiVS
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCCWFkLOgiKtGbk52XW
-# MhbvY4RuOzjHvlzObFq0yL49DNWcBWTmayp6QpK+XX/F7/pW1g4/ODSV87k8Wrzi
-# 4T8BZMlhUo44DQE9rkD+AV4pl4ECOs4PHYpTb69mkBSbCO4OPH0vPRFYjbgNdMF6
-# lvKDmShQgYO4FJLv0l5a4wOrrXKG/dWRX+/mXwzeTDvjbFoKl7ojMEdfyaOhq8uX
-# vVQNVF+XcYPba0lxjiC4g+a2LxQxpNegtXNrso16qgYWdCKSLkfZQLsDV4UJ39Hj
-# 8gyHSnPwoHxdgLWdZ1CRgVqdnRn44DhLnT10cHWEgZT4FR/U7nORboLcUV/UjBt2
-# IpVw
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB7pGP2jd4bnaWnIl7K
+# /kEcqx47U8adL1QVxCJMGp/89io+0D08uyYV5SZP92KRQdDHwuCFEI5MbDSvBpMa
+# 2mjepKnRFP4KiD2STJdFrMvm5RvoVePFLWpc772iwNWMcMKgiPyJf370GovWhCgb
+# NRskJX4MwshwKfR3YNXI2lBqJ8Mcc8bEKcA7hBonTdCfuh9+1MB1/cCdRr4nvx7l
+# xCLmWS/LeBezGA0fq/elnaDYMQ6lXB1iXxCVibhlIDNJwYlMxmNnn8Yc+vaTPqfH
+# 8c731hnM1CFu5NIygBpubmxdSaXH0A+2CceGh05fY2ypDRKT8H9afRRQQRqU9siK
+# x4Ga
 # SIG # End signature block

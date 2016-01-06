@@ -1,27 +1,131 @@
-function Remove-ManagementCredential {
+function Set-Node {
+<#
+.SYNOPSIS
+Sets or creates a Node entry in Appclusive.
+
+
+.DESCRIPTION
+Sets or creates a Node entry in Appclusive.
+
+By updating a Node entry you can specify if you want to update the Name, Username, Password or any combination thereof.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-Node myName myUserName myPassword -CreateIfNotExist
+
+Username          : myUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Create a new Node entry if it does not exists.
+
+
+.EXAMPLE
+Set-Node -Name myName -NewName myNewName -Username myNewUserName -Password myNewPassword
+
+Username          : myNewUserName
+EncryptedPassword : ***
+Id                : 4
+Tid               : 22222222-2222-2222-2222-222222222222
+Name              : myNewName
+Description       : 
+CreatedById       : 1
+ModifiedById      : 1
+Created           : 01.12.2015 00:00:00 +01:00
+Modified          : 01.12.2015 00:00:00 +01:00
+RowVersion        : {0, 0, 0, 0...}
+ManagementUris    : {}
+Tenant            :
+CreatedBy         : SYSTEM
+ModifiedBy        : SYSTEM
+
+Update an existing Node with new name, username and password.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-Node/
+Set-Node: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Node/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
-    SupportsShouldProcess = $true
+    SupportsShouldProcess = $false
 	,
-    ConfirmImpact = 'High'
+    ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-ManagementCredential/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Node/'
 )]
 Param 
 (
-	# The name of the ManagementCredential to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
+	# Specifies the name to modify
+	[Parameter(Mandatory = $true, Position = 0)]
+	[Alias('n')]
 	[string] $Name
+	,
+	# Specifies the new name name
+	[Parameter(Mandatory = $false)]
+	[string] $NewName
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $ParentId = 1
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $true, ParameterSetName = 'id')]
+	[int] $EntityKindId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $true, ParameterSetName = 'name')]
+	[string] $EntityKindName
+	,
+	# Specifies the parameters for this entity
+	[Parameter(Mandatory = $false)]
+	[hashtable] $Parameters = @{}
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
-	# Specifies the return format of the Cnmdlet
+	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies the return method
+	[Parameter(Mandatory = $false)]
+	[switch] $Async = $false
 )
 
 Begin 
@@ -34,54 +138,153 @@ Begin
 
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	
+	$EntitySetName = 'Nodes';
 }
 # Begin
 
 Process 
 {
-	trap { Log-Exception $_; break; }
 
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+$AddedEntity = $null;
 
-	$FilterExpression = "Name eq '{0}'" -f $Name;
-	$entity = $svc.Core.ManagementCredentials.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	$r = @();
-	
-	$objectFoundToBeRemoved = $false;
-	foreach($item in $entity) 
+try 
+{
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	if(!$CreateIfNotExist -And !$entity) 
 	{
-		$objectFoundToBeRemoved = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Username);
-			Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
+		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
 	}
-	Contract-Assert ($objectFoundToBeRemoved)
+	if(!$entity) 
+	{		
+		if($PSCmdlet.ParameterSetName -eq 'id')
+		{
+			$entityKind = Get-EntityKind -Id $EntityKindId;
+			$entityKey = "Id '{0}'" -f $EntityKindId;
+		}
+		else
+		{
+			$entityKind = Get-EntityKind -Name $EntityKindName;
+			$entityKey = "Name '{0}'" -f $EntityKindName;
+		}
+		if(!$entityKind) 
+		{
+			$msg = "Name: Parameter validation FAILED. EntityKind does not exist: {0} " -f $entityKey;
+			$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $entityKey;
+			throw($gotoError);
+		}
+	
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+		$svc.Core.AddToNodes($entity);
+		$AddedEntity = $entity;
+		$entity.Name = $Name;
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.Modified = $entity.Created;
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.Tid = [guid]::Empty.ToString();
+		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
+		$entity.Type = $entityKind.Name;
+		$entity.EntityKindId = $entityKind.Id;
+	}
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$entity.Description = $Description;
+	}
+	if($PSBoundParameters.ContainsKey('Parameters'))
+	{
+		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
+	}
+	if($NewName)
+	{ 
+		$entity.Name = $NewName; 
+	}
+	
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
+	$r = $entity | Select @{ Name="JobUri"; Expression={$_.Name.Replace('http://','https://').Replace('JobResponses','Jobs')} }, @{ Name="JobId"; Expression={$_.Id} };
+
+	if ( !$Async )
+	{
+		$r = Get-Job -Id $r.JobId -ExpandNode;
+		# DFTODO retry handling
+	}
 
 	$OutputParameter = Format-ResultAs $r $As;
 	$fReturn = $true;
+
+}
+catch 
+{
+	if($gotoSuccess -eq $_.Exception.Message) 
+	{
+		$fReturn = $true;
+	} 
+	else 
+	{
+		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
+		$ErrorText += (($_ | fl * -Force) | Out-String);
+		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
+		$ErrorText += (Get-PSCallStack | Out-String);
+		
+		if($_.Exception -is [System.Net.WebException]) 
+		{
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
+			Log-Debug $fn $ErrorText -fac 3;
+		}
+		else 
+		{
+			Log-Error $fn $ErrorText -fac 3;
+			if($gotoError -eq $_.Exception.Message) 
+			{
+				Log-Error $fn $e.Exception.Message;
+				$PSCmdlet.ThrowTerminatingError($e);
+			} 
+			elseif($gotoFailure -ne $_.Exception.Message) 
+			{ 
+				Write-Verbose ("$fn`n$ErrorText"); 
+			} 
+			else 
+			{
+				# N/A
+			}
+		}
+		$fReturn = $false;
+		$OutputParameter = $null;
+		
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
+	}
+}
+finally 
+{
+	# Clean up
+	# N/A
+}
+
 }
 # Process
 
 End 
 {
+
 $datEnd = [datetime]::Now;
 Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
 # Return values are always and only returned via OutputParameter.
 return $OutputParameter;
+
 }
 # End
 
 }
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCredential; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-Node; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -102,8 +305,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUixDzD7OpxUcdAXb3NPVbVvg7
-# hPSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
+# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -202,26 +405,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-ManagementCr
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSWcrDI8WRQWy0s
-# 8p49AHGE1BM6YjANBgkqhkiG9w0BAQEFAASCAQCJIrgclhDXCZo6H/LQdixJLdXv
-# Ep4Oaus4p9tXew3zBmK64I40eHjiDg+eNSfO7UZJh0b/xJGD9vXPeuZA9QqWUN69
-# TtdlVOfV4qUsNYwSRn2c3OFFojSBE0oj34H1mgdD1zwCrP2UuFkeSNZSvlK4l5OX
-# kFmpjyIDd/D+LlOS2dpi3+1b+uHdhjnfM3smLz3u39u+Jcvoic+s7xYEv1EkPnR+
-# a4ruoG1dQ6FOBEh3L7jgsHKTwYb6nuMhxUKe3JtHDJANi/OtsQMCVV+hXAM83KXo
-# OnQKgurv4BDtzPzxUFPQI/zvU8Z520wvd4FwHZ3kC4SuRgdHpqFSOqV6OM80oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
+# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
+# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
+# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
+# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
+# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
+# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NlowIwYJKoZIhvcNAQkEMRYEFPK2LM9gEAced8YWRXtkMxrqLeg9
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA0K6RFzWmkTau54IXb
-# DeSzsis7aeTHFOSKtsT+h1YbSZupJrYrO66nV74dS5kemjR47E9EM2g5FNpZmHKw
-# As1/inw6Nq4uoiV7A/WRb/1rxnRlouF0keWlEPL4nB6lFK49vD6GQSNRy1T2QB1E
-# J35Oe2fqWSI6a0c3Om4kRK0mwJVHzMZnmXQyUHglZNrAddc7/Lp5T1kjHVX7aB3o
-# w+AYVURpoxWeG+vEC0KgLO4LbLSYOrP9y043BhywKuqpZ8co6w5o7e0IQNtQKxS4
-# AXmY4oA8l/+JfFWwT5d708lgvjtOFHzkGycq1JsVMPDYsNCbKL8rlBAUSpCBbrq8
-# 0wMn
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
+# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
+# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
+# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
+# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
+# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
+# PLS1
 # SIG # End signature block
