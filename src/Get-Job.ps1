@@ -354,7 +354,7 @@ Process
 				{
 					if ( $item.RefId )
 					{
-						$Response_ = Get-Node -Id $item.RefId;
+						$Response_ = Get-Node -Id $item.RefId -svc $svc;
 						$null = $ResponseTemp.Add($Response_);
 					}
 				}

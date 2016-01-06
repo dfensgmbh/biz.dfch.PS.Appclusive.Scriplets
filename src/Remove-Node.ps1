@@ -65,7 +65,7 @@ Process
 	foreach($item in $entity) 
 	{
 		# Job entity
-		$jobentity = Get-Node -Id $item.Id -ExpandJob;
+		$jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
 		if ($jobentity)
 		{
 			$itemString = "Referenced Job '{0}' in Status '{1}'" -f $jobentity.Id, $jobentity.Status;

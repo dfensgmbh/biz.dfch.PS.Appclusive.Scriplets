@@ -15,45 +15,57 @@ You must specify all three parameters 'Name', 'Username' and 'Password'. If the 
 
 
 .EXAMPLE
-New-Node myName myUserName myPassword
+New-Node Srv01 -EntityKindName com.swisscom.cms.rhel7
 
-Username          : myUserName
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myName
-Description       : 
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
+Type           : com.swisscom.cms.rhel7
+Parameters     : {}
+EntityKindId   : 29
+ParentId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv01
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
 
 Create a new Node entry if it not already exists.
 
 
 .EXAMPLE
-New-Node -Name myName -Username myUserName -Password myPassword -Description myDescription
+New-Node -Name myName -EntityKindName com.swisscom.cms.rhel7 -Description myDescription
 
-Username          : myUserName
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myName
-Description       : myDescription
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
+Type           : com.swisscom.cms.rhel7
+Parameters     : {}
+EntityKindId   : 29
+ParentId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : myName
+Description    : myDescription
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
 
 Create a new Node entry if it not already exists.
 
