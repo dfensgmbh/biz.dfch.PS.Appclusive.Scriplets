@@ -184,6 +184,22 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[string] $ModifiedBy
 	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[int] $ParentId
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[string] $Status
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $EntityKindId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $EntityKindName
+	,
 	# Specify the attributes of the entity to return
 	[Parameter(Mandatory = $false)]
 	[string[]] $Select = @()
@@ -303,6 +319,14 @@ Process
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
 		}
+		if($Status) 
+		{ 
+			$Exp += ("tolower(Status) eq '{0}'" -f $Status.ToLower());
+		}
+		if($ParentId)
+		{
+			$Exp += ("ParentId eq {0}" -f $ParentId);
+		}
 		if($CreatedBy) 
 		{ 
 			$CreatedById = Get-User -svc $svc $CreatedBy -Select Id -ValueOnly;
@@ -322,6 +346,19 @@ Process
 				return;
 			}			
 			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
+		}
+		if($EntityKindName)
+		{
+			$EntityKindId = Get-EntityKind -Name $EntityKindName -svc $svc -Select Id -ValueOnly;
+			if ( !$EntityKindId ) 
+			{
+				# EntityKind not found
+				return;
+			}
+		}
+		if($EntityKindId)
+		{
+			$Exp += ("(EntityKindId eq {0})" -f $EntityKindId);
 		}
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
@@ -354,7 +391,7 @@ Process
 				{
 					if ( $item.RefId )
 					{
-						$Response_ = Get-Node -Id $item.RefId;
+						$Response_ = Get-Node -Id $item.RefId -svc $svc;
 						$null = $ResponseTemp.Add($Response_);
 					}
 				}

@@ -2,51 +2,65 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
+function Stop-Pester($message = "Unrepresentative, because no entities exists.")
+{
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
+}
+
 Describe -Tags "Invoke-NodeAction" "Invoke-NodeAction" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"
+	. "$here\Set-Node.ps1"
+	. "$here\Get-Node.ps1"
+	. "$here\Remove-Node.ps1"
+	. "$here\Get-EntityKind.ps1"
+	. "$here\Get-Job.ps1"
 	
 	$svc = Enter-ApcServer;
+	
+	$NodeName = "Name-{0}" -f [guid]::NewGuid().ToString();
+    $NodeEntity = Set-Node -Name $NodeName -EntityKindId 29 -CreateIfNotExist -svc $svc;
+	$NodeEntity
+	$EntityId = $NodeEntity.Id;
+	
+	if ( !$EntityId ) { Stop-Pester; }
 
 	Context "Invoke-NodeAction" {
 	
 		# Context wide constants
 		# N/A
 
-		It "Invoke-NodeAction-ShouldReturnNewStatus" -Test {
+		It "Invoke-NodeAction-ShouldReturnStatus" -Test {
 			# Arrange
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
+			$InputName = (Get-Node -Id $EntityId -ExpandAvailableActions -svc $svc)[0];
 			
 			# Act
-			$result = Invoke-NodeAction -svc $svc -InputName $Name;
+			Invoke-NodeAction -EntityId $EntityId -InputName $InputName -svc $svc;
+			$result = Get-Node -Id $EntityId -svc $svc -ExpandStatus;
 
 			# Assert
-			$result | Should Not Be $null;
-			$result.Name | Should Be $Name;
-			
-			Remove-Node -svc $svc -Name $Name -Confirm:$false;
+			$result.Status | Should Be $InputName;
 		}
 
-		It "Invoke-NodeActionDuplicate-ShouldThrow" -Test {
+		It "Invoke-UnkownNodeAction-ShouldThrow" -Test {
 			# Arrange
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$Username = "Username-{0}" -f [guid]::NewGuid().ToString();
-			$Password = "Password-{0}" -f [guid]::NewGuid().ToString();
-			$result1 = Invoke-NodeAction -svc $svc -Name $Name -Username $Username -Password $Password;
-			$result1 | Should Not Be $null;
+			$InputName = "NotExistingAction";
 			
-			# Act
-			{ $result = Invoke-NodeAction -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Assertion failed';
-			{ $result = Invoke-NodeAction -svc $svc -Name $Name -Username $Username -Password $Password; } | Should Throw 'Entity does already exist';
+			# Act			
+			Invoke-NodeAction -EntityId $EntityId -InputName $InputName -svc $svc;
+			$result = Get-Node -Id $EntityId -svc $svc -ExpandStatus;
 
 			# Assert
-			$result | Should Be $null;
-			
-			Remove-Node -svc $svc -Name $Name -Confirm:$false;
+			$result.Status | Should Not Be $InputName;
 		}
 	}
+	
+	$r = Remove-Node -Id $EntityId -Confirm:$false -svc $svc;
 }
 
 #

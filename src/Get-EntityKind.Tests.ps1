@@ -8,6 +8,7 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 	
 	. "$here\$sut"
 	. "$here\Get-User.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

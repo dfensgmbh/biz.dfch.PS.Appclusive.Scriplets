@@ -7,7 +7,7 @@ Sets or creates a Node entry in Appclusive.
 .DESCRIPTION
 Sets or creates a Node entry in Appclusive.
 
-By updating a Node entry you can specify if you want to update the Name, Username, Password or any combination thereof.
+By updating a Node entry you can specify if you want to update the Name.
 
 
 .OUTPUTS
@@ -15,47 +15,58 @@ default
 
 
 .EXAMPLE
-Set-Node myName myUserName myPassword -CreateIfNotExist
+Set-Node Srv01 -EntityKindName com.swisscom.cms.rhel7 -CreateIfNotExist
 
-Username          : myUserName
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myName
-Description       : 
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
+Parameters     : {}
+EntityKindId   : 29
+ParentId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv01
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
 
 Create a new Node entry if it does not exists.
 
 
 .EXAMPLE
-Set-Node -Name myName -NewName myNewName -Username myNewUserName -Password myNewPassword
+Set-Node -Name Srv01 -NewName Srv02
 
-Username          : myNewUserName
-EncryptedPassword : ***
-Id                : 4
-Tid               : 22222222-2222-2222-2222-222222222222
-Name              : myNewName
-Description       : 
-CreatedById       : 1
-ModifiedById      : 1
-Created           : 01.12.2015 00:00:00 +01:00
-Modified          : 01.12.2015 00:00:00 +01:00
-RowVersion        : {0, 0, 0, 0...}
-ManagementUris    : {}
-Tenant            :
-CreatedBy         : SYSTEM
-ModifiedBy        : SYSTEM
+Parameters     : {}
+EntityKindId   : 29
+ParentId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv02
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
 
-Update an existing Node with new name, username and password.
+Update an existing Node with new name.
 
 
 .LINK
@@ -166,12 +177,12 @@ try
 	{		
 		if($PSCmdlet.ParameterSetName -eq 'id')
 		{
-			$entityKind = Get-EntityKind -Id $EntityKindId;
+			$entityKind = Get-EntityKind -Id $EntityKindId -svc $svc;
 			$entityKey = "Id '{0}'" -f $EntityKindId;
 		}
 		else
 		{
-			$entityKind = Get-EntityKind -Name $EntityKindName;
+			$entityKind = Get-EntityKind -Name $EntityKindName -svc $svc;
 			$entityKey = "Name '{0}'" -f $EntityKindName;
 		}
 		if(!$entityKind) 
@@ -191,7 +202,6 @@ try
 		$entity.ModifiedById = 0;
 		$entity.Tid = [guid]::Empty.ToString();
 		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
-		$entity.Type = $entityKind.Name;
 		$entity.EntityKindId = $entityKind.Id;
 	}
 	if($PSBoundParameters.ContainsKey('Description'))
@@ -213,7 +223,7 @@ try
 
 	if ( !$Async )
 	{
-		$r = Get-Job -Id $r.JobId -ExpandNode;
+		$r = Get-Job -Id $r.JobId -svc $svc -ExpandNode;
 		# DFTODO retry handling
 	}
 

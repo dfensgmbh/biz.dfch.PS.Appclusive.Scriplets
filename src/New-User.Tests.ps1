@@ -8,6 +8,7 @@ Describe -Tags "New-User" "New-User" {
 	
 	. "$here\$sut"
 	. "$here\Set-User.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

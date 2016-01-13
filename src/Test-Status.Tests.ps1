@@ -8,6 +8,7 @@ Describe -Tags "Test-Status" "Test-Status" {
 	
 	. "$here\$sut"
 	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	Context "Test-Status" {
 	

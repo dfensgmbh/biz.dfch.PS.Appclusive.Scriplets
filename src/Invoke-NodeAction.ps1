@@ -13,11 +13,19 @@ You must specify parameter 'Id' or pipe on an existing Node entity and the input
 .EXAMPLE
 Invoke-NodeAction -Node 12 -InputName Installed -InputParameters @{'Computername'='Server01'}
 
+Name    Id InputParameters
+----    -- ---------------
+Nodes	12 {Name, Parameters}
+
 Updates a Node entry to Status 'Installed'.
 
 
 .EXAMPLE
 Get-Node -First 3 | Invoke-NodeAction -InputName Installed -InputParameters @{'Operation'='Bulk'}
+
+Name    Id InputParameters
+----    -- ---------------
+Srv01	12 {Name, Parameters}
 
 Updates the 3 first Nodes to Status 'Installed'.
 

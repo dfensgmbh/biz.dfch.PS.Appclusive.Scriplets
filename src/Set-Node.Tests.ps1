@@ -7,8 +7,8 @@ Describe -Tags "Set-Node" "Set-Node" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Format-ResultAs.ps1"
 	. "$here\Remove-Entity.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

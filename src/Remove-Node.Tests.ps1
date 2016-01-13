@@ -9,6 +9,7 @@ Describe -Tags "Remove-Node" "Remove-Node" {
 	. "$here\$sut"
 	. "$here\New-Node.ps1"
 	. "$here\Set-Node.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

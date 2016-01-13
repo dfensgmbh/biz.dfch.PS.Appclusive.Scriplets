@@ -8,6 +8,7 @@ Describe -Tags "Get-ManagementCredential" "Get-ManagementCredential" {
 	
 	. "$here\$sut"
 	. "$here\Get-User.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

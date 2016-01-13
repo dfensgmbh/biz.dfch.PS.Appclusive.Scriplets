@@ -190,6 +190,7 @@ PARAM
 	,
 	# This value is only returned if the regular search would have returned no results
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias('default')]
 	$DefaultValue
 	,

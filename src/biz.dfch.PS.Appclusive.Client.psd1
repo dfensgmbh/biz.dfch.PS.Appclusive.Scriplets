@@ -8,7 +8,7 @@
 RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.2.1.20160106'
+ModuleVersion = '1.2.6.20160113'
 
 # ID used to uniquely identify this module
 GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
@@ -131,6 +131,8 @@ NestedModules = @(
 	'Remove-Node.ps1'
 	,
 	'Invoke-EntityAction.ps1'
+	,
+	'Set-Job.ps1'
 )
 
 # Functions to export from this module
