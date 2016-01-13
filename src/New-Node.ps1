@@ -17,7 +17,6 @@ You must specify all three parameters 'Name', 'Username' and 'Password'. If the 
 .EXAMPLE
 New-Node Srv01 -EntityKindName com.swisscom.cms.rhel7
 
-Type           : com.swisscom.cms.rhel7
 Parameters     : {}
 EntityKindId   : 29
 ParentId       : 1
@@ -45,7 +44,6 @@ Create a new Node entry if it not already exists.
 .EXAMPLE
 New-Node -Name myName -EntityKindName com.swisscom.cms.rhel7 -Description myDescription
 
-Type           : com.swisscom.cms.rhel7
 Parameters     : {}
 EntityKindId   : 29
 ParentId       : 1

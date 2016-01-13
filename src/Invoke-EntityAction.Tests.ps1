@@ -14,8 +14,8 @@ Describe -Tags "Invoke-EntityAction" "Invoke-EntityAction" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\Format-ResultAs.ps1"
 	. "$here\Get-Node.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

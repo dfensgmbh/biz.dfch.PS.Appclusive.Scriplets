@@ -7,6 +7,7 @@ Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

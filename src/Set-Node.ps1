@@ -17,7 +17,6 @@ default
 .EXAMPLE
 Set-Node Srv01 -EntityKindName com.swisscom.cms.rhel7 -CreateIfNotExist
 
-Type           : com.swisscom.cms.rhel7
 Parameters     : {}
 EntityKindId   : 29
 ParentId       : 1
@@ -46,7 +45,6 @@ Create a new Node entry if it does not exists.
 .EXAMPLE
 Set-Node -Name Srv01 -NewName Srv02
 
-Type           : com.swisscom.cms.rhel7
 Parameters     : {}
 EntityKindId   : 29
 ParentId       : 1
@@ -204,7 +202,6 @@ try
 		$entity.ModifiedById = 0;
 		$entity.Tid = [guid]::Empty.ToString();
 		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
-		$entity.Type = $entityKind.Name;
 		$entity.EntityKindId = $entityKind.Id;
 	}
 	if($PSBoundParameters.ContainsKey('Description'))

@@ -24,41 +24,40 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Node -ListAvailable -Select Id, Type, Name
+Get-Node -ListAvailable -Select Id, Name
 
-  Id Type                                             Name
-  -- ----                                             ----
- 218 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
- 271 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
- 358 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
- 572 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
- 636 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
- 666 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
-1017 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos abhenry
- 270 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 406 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 490 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 568 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 607 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 613 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 745 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 875 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 907 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 967 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
-1024 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
-1081 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
-1179 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos absence
- 361 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos aggrade
- 373 biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos aggrade
+  Id Name
+  -- ----
+ 218  abhenry
+ 271  abhenry
+ 358  abhenry
+ 572  abhenry
+ 636  abhenry
+ 666  abhenry
+1017  abhenry
+ 270  absence
+ 406  absence
+ 490  absence
+ 568  absence
+ 607  absence
+ 613  absence
+ 745  absence
+ 875  absence
+ 907  absence
+ 967  absence
+1024  absence
+1081  absence
+1179  absence
+ 361  aggrade
+ 373  aggrade
 ...
 
-Retrieves the id, type and name of all Nodes.
+Retrieves the id and name of all Nodes.
 
 
 .EXAMPLE
 Get-Node 218
 
-Type           : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
 Parameters     : {"Hostname":"Server01"}
 EntityKindId   : 27
 ParentId       : 1
