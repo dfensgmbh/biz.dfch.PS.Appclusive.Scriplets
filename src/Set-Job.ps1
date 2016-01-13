@@ -1,190 +1,256 @@
-#
-# Module manifest for module 'biz.dfch.PS.Appclusive.Client'
-#
+function Set-Job {
+<#
+.SYNOPSIS
+Sets or creates a Job entry in Appclusive.
 
-@{
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
+.DESCRIPTION
+Sets or creates a Job entry in Appclusive.
 
-# Version number of this module.
-ModuleVersion = '1.2.1.20160106'
+By updating a Job entry you can specify if you want to update the Status.
 
-# ID used to uniquely identify this module
-GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
 
-# Author of this module
-Author = 'Ronald Rink'
+.OUTPUTS
+default
 
-# Company or vendor of this module
-CompanyName = 'd-fens GmbH'
 
-# Copyright statement for this module
-Copyright = '(c) 2015 d-fens GmbH. Distributed under Apache 2.0 license.'
+.EXAMPLE
+Set-Job 
 
-# Description of the functionality provided by this module
-Description = 'PowerShell module for the Appclusive Framework and Middleware'
+Create a new Job entry if it does not exists.
 
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
 
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-Job/
+Set-Job: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Job/
 
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
 
-# Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.5'
+.NOTES
+See module manifest for dependencies and further requirements.
 
-# Minimum version of the common language runtime (CLR) required by this module
-# CLRVersion = ''
 
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
-
-# Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(
-	'biz.dfch.PS.System.Logging'
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $false
 	,
-	'biz.dfch.PS.System.Utilities'
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Job/'
+)]
+Param 
+(
+	# Specifies the id
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
+	[int] $Id
+	,
+	# Specifies the name
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'name')]
+	[Alias('n')]
+	[string] $Name
+	,
+	# Specifies the status
+	[Parameter(Mandatory = $false)]
+	[string] $Status
+	,
+	# Specifies the new status
+	[Parameter(Mandatory = $false)]
+	[string] $NewStatus
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $ParentId
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $EntityKindId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $EntityKindName
+	,
+	# Specifies the parameters for this entity
+	[Parameter(Mandatory = $false)]
+	[hashtable] $Parameters = @{}
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
 )
 
-# Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @(
-	'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'System.Net'
-	,
-	'System.Web'
-	,
-	'System.Web.Extensions'
-)
+Begin 
+{
+	trap { Log-Exception $_; break; }
 
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = @(
-	'Import-Module.ps1'
-)
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
-# ModuleToProcess = @()
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	
+	$EntitySetName = 'Jobs';
+}
+# Begin
 
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
+Process 
+{
 
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+$AddedEntity = $null;
 
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-	'Enter-Server.ps1'
-	,
-	'New-KeyNameValue.ps1'
-	,
-	'Get-KeyNameValue.ps1'
-	,
-	'Set-KeyNameValue.ps1'
-	,
-	'Remove-KeyNameValue.ps1'
-	,
-	'New-ManagementCredential.ps1'
-	,
-	'Get-ManagementCredential.ps1'
-	,
-	'Set-ManagementCredential.ps1'
-	,
-	'Remove-ManagementCredential.ps1'
-	,
-	'Remove-Entity.ps1'
-	,
-	'Get-ModuleVariable.ps1'
-	,
-	'Get-Time.ps1'
-	,
-	'Test-Status.ps1'
-	,
-	'Get-Job.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'New-User.ps1'
-	,
-	'Get-User.ps1'
-	,
-	'Set-User.ps1'
-	,
-	'Get-ManagementUri.ps1'
-	,
-	'Get-EntityKind.ps1'
-	,
-	'Format-ResultAs.ps1'
-	,
-	'Get-Node.ps1'
-	,
-	'New-Node.ps1'
-	,
-	'Set-Node.ps1'
-	,
-	'Invoke-NodeAction.ps1'
-	,
-	'Remove-Node.ps1'
-	,
-	'Invoke-EntityAction.ps1'
-	,
-	'Set-Job.ps1'
-)
+try 
+{
+	if($PSCmdlet.ParameterSetName -eq 'id')
+	{
+		$FilterExpression = "(Id eq {0})" -f $Id;
+		$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	}
+	if(!$CreateIfNotExist -And !$entity) 
+	{
+		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
+	}
+	if(!$entity) 
+	{		
+		if($PSBoundParameters.ContainsKey('EntityKindId'))
+		{
+			$entityKind = Get-EntityKind -Id $EntityKindId -svc $svc;
+			$entityKey = "Id '{0}'" -f $EntityKindId;
+		}
+		else
+		{
+			Contract-Assert (!!$EntityKindName);
+			$entityKind = Get-EntityKind -Name $EntityKindName -svc $svc;
+			$entityKey = "Name '{0}'" -f $EntityKindName;
+		}
+		if(!$entityKind) 
+		{
+			$msg = "Name: Parameter validation FAILED. EntityKind does not exist: {0} " -f $entityKey;
+			$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $entityKey;
+			throw($gotoError);
+		}
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.Job;
+		$svc.Core.AddToJobs($entity);
+		$AddedEntity = $entity;
+		$entity.ParentId = $ParentId;
+		$entity.Name = $Name;
+		$entity.Status = $Status;
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.Modified = $entity.Created;
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.Tid = [guid]::Empty.ToString();
+		$entity.EntityKindId = $entityKind.Id;
+	}
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$entity.Description = $Description;
+	}
+	if($PSBoundParameters.ContainsKey('Parameters'))
+	{
+		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
+	}
+	if($NewName)
+	{ 
+		$entity.Name = $NewName; 
+	}
+	if($NewStatus)
+	{ 
+		$entity.Status = $NewStatus; 
+	}
+	
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
 
-# Functions to export from this module
-FunctionsToExport = '*'
+	$OutputParameter = Format-ResultAs $entity $As;
+	$fReturn = $true;
 
-# Cmdlets to export from this module
-CmdletsToExport = '*'
-
-# Variables to export from this module
-VariablesToExport = '*'
-
-# Aliases to export from this module
-AliasesToExport = '*'
-
-# List of all modules packaged with this module.
-# ModuleList = @()
-
-# List of all files packaged with this module
-FileList = @(
-	'LICENSE'
-	,
-	'NOTICE'
-	,
-	'README.md'
-	,
-	'biz.dfch.PS.Appclusive.Client.dll'
-	,
-	'biz.dfch.PS.Appclusive.Client.xml'
-	,
-	'Microsoft.Data.Edm.dll'
-	,
-	'Microsoft.Data.OData.dll'
-	,
-	'Microsoft.Data.Services.Client.dll'
-	,
-	'System.Spatial.dll'
-	,
-	'Import-Module.ps1'
-)
-
-# Private data to pass to the module specified in RootModule/ModuleToProcess
-PrivateData = @{
-	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
+}
+catch 
+{
+	if($gotoSuccess -eq $_.Exception.Message) 
+	{
+		$fReturn = $true;
+	} 
+	else 
+	{
+		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
+		$ErrorText += (($_ | fl * -Force) | Out-String);
+		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
+		$ErrorText += (Get-PSCallStack | Out-String);
+		
+		if($_.Exception -is [System.Net.WebException]) 
+		{
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
+			Log-Debug $fn $ErrorText -fac 3;
+		}
+		else 
+		{
+			Log-Error $fn $ErrorText -fac 3;
+			if($gotoError -eq $_.Exception.Message) 
+			{
+				Log-Error $fn $e.Exception.Message;
+				$PSCmdlet.ThrowTerminatingError($e);
+			} 
+			elseif($gotoFailure -ne $_.Exception.Message) 
+			{ 
+				Write-Verbose ("$fn`n$ErrorText"); 
+			} 
+			else 
+			{
+				# N/A
+			}
+		}
+		$fReturn = $false;
+		$OutputParameter = $null;
+		
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
+	}
+}
+finally 
+{
+	# Clean up
+	# N/A
 }
 
-# HelpInfo URI of this module
-HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
+}
+# Process
 
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Apc'
+End 
+{
+
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
 
 }
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-Job; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -205,8 +271,8 @@ DefaultCommandPrefix = 'Apc'
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiXX6+mHSJnlEtTFniRlNHyiz
-# nqGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
+# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -305,26 +371,26 @@ DefaultCommandPrefix = 'Apc'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQQ+Tkk8Zv5jvJq
-# GcHFqmdu6XE0nDANBgkqhkiG9w0BAQEFAASCAQACULt7UH5bZeR1YjHrDifidhbc
-# Wcke9MwmAhQlSfQd59NbcZF/9ZpR/3b2HNRrwSHA6w6AzWyoCbdPLv0PRvQyL/uR
-# a0jumM5Mec8PDld0QmD+BKal7nxbgiQ3527kQCzkIU+ZRB+zgJs9SBbg3UAJ2vhs
-# 7M7Uhn5eZW1j+RITXPbYORGL2c/lY4S5Bn2Q3vRFwVJ9DwVYoNctoTLRnCp9786m
-# L8IcIpNvRQDI35fr2iWGftiasqfmiDaM3VFohdi42zZPCSICi6ThX7NgQl5TSDtD
-# UnMnC+h6DopawtXuVamurzPreBhKWiMIOW1/wi107cd4p0/a1NrlUtuM8wBvoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
+# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
+# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
+# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
+# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
+# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
+# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjE1MDExNVowIwYJKoZIhvcNAQkEMRYEFIuXxHs1f1h46SHaKHMJXtTdluqb
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA1YLfezZpO2GrKbwts
-# PYRAGEJAb1x4u2pf/WCcg4KAjGzO8BbNClDDsDp/+tnxsHhtbaFvy1OljJfnegO7
-# LFvhI8cmOrzcHOOgCTK2HQr3HJ6euH/w4bSKIte5u2hoEKBnmsPT++ahZg/KGRlJ
-# xQqm0+TNdhRWXu+mSn2sIj/jQQ5eZwMJzSgN/YPgYTEjalPelo3KgZA2ocsYz3xE
-# vjeb98lYY4HccPtFcoMBRs9T9Y5u7FHSL9h6B11YLzd6wPUhPt/4HmAA3BOMIKfO
-# 6HsZwgyLjapEk81LFhzuRjaqI8pj2vZTYt/AdGAsSDIw5u9yqZhPvcMhv4zsSQIm
-# 4fd4
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
+# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
+# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
+# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
+# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
+# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
+# PLS1
 # SIG # End signature block
