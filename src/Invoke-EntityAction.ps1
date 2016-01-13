@@ -111,7 +111,7 @@ PARAM
 	,
 	# Specifies the parameters of the entity action
 	[Parameter(Mandatory = $false, Position = 4)]
-	[hashtable] $InputParameters = @{}
+	$InputParameters
 	,
 	[Parameter(Mandatory = $false, Position = 5)]
 	[ValidateSet('void', 'single', 'list')]
@@ -166,11 +166,11 @@ Process
 	
 	if ( !$InputName )
 	{
-		[hashtable] $EntityActionInputParameters = $InputParameters;
+		$EntityActionInputParameters = $InputParameters;
 	}
 	else
 	{
-		[hashtable] $EntityActionInputParameters = 
+		$EntityActionInputParameters = 
 		@{
 			'Name'			= $InputName
 			;
