@@ -14,7 +14,7 @@ PARAM
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty', 'DateTimeOffset')]
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
@@ -50,7 +50,14 @@ Process
 	
 	$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Time', [string], $null);
 
-	$OutputParameter = Format-ResultAs $Response $As
+	if($As -eq 'DateTimeOffset')
+	{
+		$OutputParameter = [System.DateTimeOffset]::Parse($Response);
+	}
+	else
+	{
+		$OutputParameter = Format-ResultAs $Response $As
+	}
 	$fReturn = $true;
 }
 # Process
