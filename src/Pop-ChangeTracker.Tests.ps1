@@ -9,6 +9,7 @@ Describe -Tags "Pop-ChangeTracker" "Pop-ChangeTracker" {
 	. "$here\$sut"
 	. "$here\Get-ModuleVariable.ps1"
 	. "$here\Push-ChangeTracker.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	Context "Pop-ChangeTracker" {
 	

@@ -2,138 +2,70 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
+function Stop-Pester($message = "Unrepresentative, because no entities exists.")
+{
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
+}
+
+Describe -Tags "Invoke-EntityAction" "Invoke-EntityAction" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-Node.ps1"
 	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 
-	Context "Get-KeyNameValue" {
+    $NodeEntity = Get-Node -First 1 -svc $svc;
+	$EntityId = $NodeEntity.Id;
+	
+	if ( !$EntityId ) { Stop-Pester; }
+
+	Context "Invoke-EntityAction" {
 	
 		# Context wide constants
 		# N/A
-		
-		It "Warmup" -Test {
-			$true | Should Be $true;
-		}
 
-		It "Get-KeyNameValueListAvailable-ShouldReturnList" -Test {
+		It "Invoke-EntityActionStatus-ShouldReturnSingle" -Test {
 			# Arrange
-			# N/A
+			$EntitySetName = 'Nodes';
+			$EntityActionName = 'Status';
+			$ExpectedResult = 'single';
 			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable;
+			# Act			
+			$result = Invoke-EntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-
-		It "Get-KeyNameValueListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-KeyNameValue-ShouldReturnFirstEntity" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCustomObject] | Should Be $true;
 		}
 		
-		It "Get-KeyNameValue-ShouldReturnFirstEntityByKeyNamePair" -Test {
+		It "Invoke-EntityActionAvailableActions-ShouldReturnList" -Test {
 			# Arrange
-			$ShowFirst = 1;
+			$EntitySetName = 'Nodes';
+			$EntityActionName = 'AvailableActions';
+			$ExpectedResult = 'list';
 			
-			# Act
-			$resultFirst = Get-KeyNameValue -svc $svc -First $ShowFirst;
-			$result = Get-KeyNameValue -Key $resultFirst.Key -Name $resultFirst.Name -First $ShowFirst -svc $svc;
-			
-			# Assert
-			$result | Should Not Be $null;
-			$result.Key | Should Be $resultFirst.Key;
-			$result.Name | Should Be $resultFirst.Name;
-			$result -is [PSCustomObject] | Should Be $true;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnFiveEntities" -Test {
-			# Arrange
-			$ShowFirst = 5;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
+			# Act			
+			$result = Invoke-EntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc;
 
 			# Assert
 			$result | Should Not Be $null;
-			$ShowFirst -eq $result.Count | Should Be $true;
-			$result[0] -is [PSCustomObject] | Should Be $true;
 		}
 
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnNull" -Test {
+		It "Invoke-UnknowEntityAction-ShouldThrow" -Test {
 			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
+			$EntitySetName = 'Nodes';
+			$EntityActionName = 'NotExistingAction';
+			$ExpectedResult = 'single';
 			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName;
+			# Act / Assert
+			{ Invoke-EntityAction -EntityId $EntityId -EntitySetName $EntitySetName -EntityActionName $EntityActionName -ExpectedResult $ExpectedResult -svc $svc} | Should Throw
 
 			# Assert
-			$result | Should Be $null;
-		}
-		
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnDefaultValue" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			$DefaultValue = 'MyDefaultValue';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName -DefaultValue $DefaultValue;
-
-			# Assert
-			$result | Should Be $DefaultValue;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnXML" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As xml;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0,5) | Should Be '<?xml';
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnJSON" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As json;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0, 1) | Should Be '{';
-			$result.Substring($result.Length -1, 1) | Should Be '}';
+			#N/A
 		}
 	}
 }
@@ -157,8 +89,8 @@ Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYcZyy0ijs0URn6ENPWCTlCuJ
-# hOWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEhEm8rEvun7iDU9ROUHfehMD
+# tRqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -257,26 +189,26 @@ Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSneokZUNe25xvf
-# PLm+kkzg74zJXzANBgkqhkiG9w0BAQEFAASCAQCCXPnYZ7A6DUlAeNKzuuxWNIIl
-# T5eRmMpApfwsP3Dbw06glJpYn9AdXDC5cTULE2J/jvKMMDt7tIZTq45sMc6aYTuy
-# 7bjZrZWXIxWfQmfI1PXa6k3iJwk8HuBN5/9VmwGwCDl0Vpf1womZj4APwmDnRQ87
-# SOs+FRGfWeAJw8Z+Afo48fpnMCrXLWUZ8gH9Hhj8t5AZaewzPHA7EP1AEXPjuXIP
-# w/46q45bd78xk4yq65SR8uNRYKuTSnS4M5Z/7QA4J5NOohpdZZ+b65E5N7fuOYIh
-# eLT1py2tug24+Vqlkez1gMfK6Br7quRmSri5GWs0fYayD+SQTlrDLsCBk3EboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBROtaJsc2H0HqbO
+# GQaHDZwjq/tn/DANBgkqhkiG9w0BAQEFAASCAQCOVHxvQ+a8kV9YLpGmJh7t9fd7
+# slG32n/i1Ki3B7D8qBu3QGGpZ+Rt2QUWW7oH0f+4V/JNj3gu2BLF2zU9qEEh6URc
+# lxY70WS90GYsKorYhuiARZ5CgvNqLA12RGN1QNk2w4TJWUHD5UHPHtzjR6sr9P3E
+# nRJOvj8jLjm9yXD7P4t4SOLzoK8IkXenP7qTfAhYNM/YSV0DUDfHzRuotukdxoxx
+# /c7AetjZIyRmuH6sTiFQsOrrXO8u3K6DhzWDk1JkANTi+TlXQEqPYhFOg3woj3WT
+# FGniNQn+lZRQnA6vR7117kPRABu13Ex9W0OrNoZ44T9NDJkiUxm3Mr4S6IRaoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMDIyMzUxNFowIwYJKoZIhvcNAQkEMRYEFKKHvttVQZSFkvr3zjV6jtJGNUAq
+# MTIyMjExMTM0MlowIwYJKoZIhvcNAQkEMRYEFLkUz61/pFO/EgfoCpP2+50LUVyK
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBY1OSK4TI7WapfK1PM
-# RG4v18VVcdRSsOE2zMkx5T9d9DmHa/HczXXF2uMBDAWd1RiZ1lZ3t5mFgcKPD5e4
-# xE7V0VqzgDqwqidFtMoXx4EHWXigSMlz/8rFdwa9JQPLOivTg6P4f697McI2cx4A
-# K7zc6pyhkYBExfRRzaVdjxTvx1WXcMP3Zia0G2qZKNY3EC2T+X0uqSKzlDHWUamW
-# L0+FnVGb/ByiKS49+pE53NI10Zn5l1uBgaijNHeICjrNT2da5mq1bRVDoA5K/RQ3
-# iQ838c3ZBv0EZHsSYOQuSCKVmzF68ye5oe4xF15kw3mzrr7Qruxv/gpUqf2lOVaK
-# 3h1X
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCLrElu850uqsS1sJu9
+# XOCN6UP9By64GEh5J273soQrSz6YQYIdjgaqI8qMWJNgJ4AUMferuApe/nNno3Ga
+# ICByEMzRJmRFWr8vgMLu7uX//y5WpJ4lsTZ3O34mlT8sPJLGqdObIC0c74d0eCVv
+# uvFdP3P9GW1fLoqMKCOWTOzAcEouTAyL5yAm22GTgqvu36oMWHztXw9hy7sWGvuC
+# 7e5/SQpcNdfchpvnsq1CEFTtkDOjqO8u47CMQxmd1+igLSMlyG+kuCU5KsKfkdQD
+# HNvoqcklylpWKgoGkWC8yZW3tF8qS8W2BTKUj81aUviy2Lrlv9uOUWtU3T33K79E
+# 9zz1
 # SIG # End signature block

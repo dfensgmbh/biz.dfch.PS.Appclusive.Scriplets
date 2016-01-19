@@ -1,164 +1,278 @@
+function Set-Job {
+<#
+.SYNOPSIS
+Sets or creates a Job entry in Appclusive.
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
+.DESCRIPTION
+Sets or creates a Job entry in Appclusive.
 
-	Mock Export-ModuleMember { return $null; }
+By updating a Job entry you can specify if you want to update the Status.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-Job 
+
+Create a new Job entry if it does not exists.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-Job/
+Set-Job: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Job/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $false
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Job/'
+)]
+Param 
+(
+	# Specifies the id
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
+	[int] $Id
+	,
+	# Specifies the name
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'name')]
+	[Alias('n')]
+	[string] $Name
+	,
+	# Specifies the status
+	[Parameter(Mandatory = $false)]
+	[string] $Status
+	,
+	# Specifies the new status
+	[Parameter(Mandatory = $false)]
+	[string] $NewStatus
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $ParentId
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $EntityKindId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $EntityKindName
+	,
+	# Specifies the parameters for this entity
+	[Parameter(Mandatory = $false)]
+	[hashtable] $Parameters = @{}
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
+)
+
+Begin 
+{
+	trap { Log-Exception $_; break; }
+
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
-	. "$here\$sut"
-	. "$here\Format-ResultAs.ps1"
+	$EntitySetName = 'Jobs';
+}
+# Begin
+
+Process 
+{
+
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+$AddedEntity = $null;
+
+try 
+{
+	if($PSCmdlet.ParameterSetName -eq 'id')
+	{
+		$FilterExpression = "(Id eq {0})" -f $Id;
+		$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	}
+	if(!$CreateIfNotExist -And !$entity) 
+	{
+		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
+	}
+	if(!$entity) 
+	{		
+		if($PSBoundParameters.ContainsKey('EntityKindId'))
+		{
+			$entityKind = Get-EntityKind -Id $EntityKindId -svc $svc;
+			$entityKey = "Id '{0}'" -f $EntityKindId;
+		}
+		else
+		{
+			Contract-Assert (!!$EntityKindName);
+			$entityKind = Get-EntityKind -Name $EntityKindName -svc $svc;
+			$entityKey = "Name '{0}'" -f $EntityKindName;
+		}
+		if(!$entityKind) 
+		{
+			$msg = "Name: Parameter validation FAILED. EntityKind does not exist: {0} " -f $entityKey;
+			$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $entityKey;
+			throw($gotoError);
+		}
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.Job;
+		$svc.Core.AddToJobs($entity);
+		$AddedEntity = $entity;
+		$entity.ParentId = $ParentId;
+		$entity.Name = $Name;
+		$entity.Status = $Status;
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.Modified = $entity.Created;
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.Tid = [guid]::Empty.ToString();
+		$entity.EntityKindId = $entityKind.Id;
+	}
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$entity.Description = $Description;
+	}
+	if($PSBoundParameters.ContainsKey('Parameters'))
+	{
+		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
+	}
+	if($NewName)
+	{ 
+		$entity.Name = $NewName; 
+	}
+	if($NewStatus)
+	{ 
+		$entity.Status = $NewStatus; 
+	}
 	
-	$svc = Enter-ApcServer;
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
 
-	Context "Get-KeyNameValue" {
-	
-		# Context wide constants
-		# N/A
+	$OutputParameter = Format-ResultAs $entity $As;
+	$fReturn = $true;
+
+}
+catch 
+{
+	if($gotoSuccess -eq $_.Exception.Message) 
+	{
+		$fReturn = $true;
+	} 
+	else 
+	{
+		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
+		$ErrorText += (($_ | fl * -Force) | Out-String);
+		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
+		$ErrorText += (Get-PSCallStack | Out-String);
 		
-		It "Warmup" -Test {
-			$true | Should Be $true;
+		if($_.Exception -is [System.Net.WebException]) 
+		{
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
+			Log-Debug $fn $ErrorText -fac 3;
 		}
-
-		It "Get-KeyNameValueListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
+		else 
+		{
+			Log-Error $fn $ErrorText -fac 3;
+			if($gotoError -eq $_.Exception.Message) 
+			{
+				Log-Error $fn $e.Exception.Message;
+				$PSCmdlet.ThrowTerminatingError($e);
+			} 
+			elseif($gotoFailure -ne $_.Exception.Message) 
+			{ 
+				Write-Verbose ("$fn`n$ErrorText"); 
+			} 
+			else 
+			{
+				# N/A
+			}
 		}
-
-		It "Get-KeyNameValueListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-KeyNameValue-ShouldReturnFirstEntity" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCustomObject] | Should Be $true;
-		}
+		$fReturn = $false;
+		$OutputParameter = $null;
 		
-		It "Get-KeyNameValue-ShouldReturnFirstEntityByKeyNamePair" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$resultFirst = Get-KeyNameValue -svc $svc -First $ShowFirst;
-			$result = Get-KeyNameValue -Key $resultFirst.Key -Name $resultFirst.Name -First $ShowFirst -svc $svc;
-			
-			# Assert
-			$result | Should Not Be $null;
-			$result.Key | Should Be $resultFirst.Key;
-			$result.Name | Should Be $resultFirst.Name;
-			$result -is [PSCustomObject] | Should Be $true;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnFiveEntities" -Test {
-			# Arrange
-			$ShowFirst = 5;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$ShowFirst -eq $result.Count | Should Be $true;
-			$result[0] -is [PSCustomObject] | Should Be $true;
-		}
-
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName;
-
-			# Assert
-			$result | Should Be $null;
-		}
-		
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnDefaultValue" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			$DefaultValue = 'MyDefaultValue';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName -DefaultValue $DefaultValue;
-
-			# Assert
-			$result | Should Be $DefaultValue;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnXML" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As xml;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0,5) | Should Be '<?xml';
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnJSON" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As json;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0, 1) | Should Be '{';
-			$result.Substring($result.Length -1, 1) | Should Be '}';
-		}
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
 	}
 }
+finally 
+{
+	# Clean up
+	# N/A
+}
 
-#
-# Copyright 2015 d-fens GmbH
-#
+}
+# Process
+
+End 
+{
+
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
+
+}
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-Job; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYcZyy0ijs0URn6ENPWCTlCuJ
-# hOWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
+# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -257,26 +371,26 @@ Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSneokZUNe25xvf
-# PLm+kkzg74zJXzANBgkqhkiG9w0BAQEFAASCAQCCXPnYZ7A6DUlAeNKzuuxWNIIl
-# T5eRmMpApfwsP3Dbw06glJpYn9AdXDC5cTULE2J/jvKMMDt7tIZTq45sMc6aYTuy
-# 7bjZrZWXIxWfQmfI1PXa6k3iJwk8HuBN5/9VmwGwCDl0Vpf1womZj4APwmDnRQ87
-# SOs+FRGfWeAJw8Z+Afo48fpnMCrXLWUZ8gH9Hhj8t5AZaewzPHA7EP1AEXPjuXIP
-# w/46q45bd78xk4yq65SR8uNRYKuTSnS4M5Z/7QA4J5NOohpdZZ+b65E5N7fuOYIh
-# eLT1py2tug24+Vqlkez1gMfK6Br7quRmSri5GWs0fYayD+SQTlrDLsCBk3EboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
+# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
+# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
+# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
+# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
+# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
+# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMDIyMzUxNFowIwYJKoZIhvcNAQkEMRYEFKKHvttVQZSFkvr3zjV6jtJGNUAq
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBY1OSK4TI7WapfK1PM
-# RG4v18VVcdRSsOE2zMkx5T9d9DmHa/HczXXF2uMBDAWd1RiZ1lZ3t5mFgcKPD5e4
-# xE7V0VqzgDqwqidFtMoXx4EHWXigSMlz/8rFdwa9JQPLOivTg6P4f697McI2cx4A
-# K7zc6pyhkYBExfRRzaVdjxTvx1WXcMP3Zia0G2qZKNY3EC2T+X0uqSKzlDHWUamW
-# L0+FnVGb/ByiKS49+pE53NI10Zn5l1uBgaijNHeICjrNT2da5mq1bRVDoA5K/RQ3
-# iQ838c3ZBv0EZHsSYOQuSCKVmzF68ye5oe4xF15kw3mzrr7Qruxv/gpUqf2lOVaK
-# 3h1X
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
+# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
+# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
+# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
+# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
+# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
+# PLS1
 # SIG # End signature block

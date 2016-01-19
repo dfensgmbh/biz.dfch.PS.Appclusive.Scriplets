@@ -17,6 +17,7 @@ Describe -Tags "Get-Job" "Get-Job" {
 	. "$here\$sut"
 	. "$here\Format-ResultAs.ps1"
 	. "$here\Get-User.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

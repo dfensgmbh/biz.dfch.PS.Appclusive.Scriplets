@@ -8,6 +8,7 @@ Describe -Tags "Get-Time" "Get-Time" {
 	
 	. "$here\$sut"
 	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	Context "Get-Time" {
 	

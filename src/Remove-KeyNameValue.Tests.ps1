@@ -9,6 +9,7 @@ Describe -Tags "Remove-KeyNameValue" "Remove-KeyNameValue" {
 	. "$here\$sut"
 	. "$here\New-KeyNameValue.ps1"
 	. "$here\Set-KeyNameValue.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

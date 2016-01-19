@@ -24,67 +24,72 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Node -ListAvailable -Select Id, Status, Name
+Get-Node -ListAvailable -Select Id, Name
 
-  Id Status       Name
-  -- ------       ----
-1029 Approved     biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1031 Approved     biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1033 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1035 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1037 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-1039 Created      biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   2 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   3 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   4 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   5 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-   6 InitialState biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+  Id Name
+  -- ----
+ 218  abhenry
+ 271  abhenry
+ 358  abhenry
+ 572  abhenry
+ 636  abhenry
+ 666  abhenry
+1017  abhenry
+ 270  absence
+ 406  absence
+ 490  absence
+ 568  absence
+ 607  absence
+ 613  absence
+ 745  absence
+ 875  absence
+ 907  absence
+ 967  absence
+1024  absence
+1081  absence
+1179  absence
+ 361  aggrade
+ 373  aggrade
 ...
 
-Retrieves the id, status and name of all Nodes.
+Retrieves the id and name of all Nodes.
 
 
 .EXAMPLE
-Get-Node 1027
+Get-Node 218
 
-Status              : InitialState
-ReferencedItemId    : 1027
-Token               :
-TenantId            : 00000000-0000-0000-0000-000000000000
-EntityKindId        : 2
-Parameters          :
-Condition           :
-ConditionParameters : {"ServiceId":"100054"}
-Error               :
-EndTime             :
-ParentId            : 1
-Id                  : 2
-Tid                 : 22222222-2222-2222-2222-222222222222
-Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-Description         : This is a node Node
-CreatedById         : 1
-ModifiedById        : 1
-Created             : 01.12.2015 00:00:00 +01:00
-Modified            : 01.12.2015 00:00:00 +01:00
-RowVersion          : {0, 0, 0, 0...}
-EntityKind          :
-Parent              :
-Children            : {}
-Tenant              :
-CreatedBy           :
-ModifiedBy          :
+Parameters     : {"Hostname":"Server01"}
+EntityKindId   : 27
+ParentId       : 1
+Id             : 218
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : abhenry
+Description    : abhenry is a whiles for timeous purposes
+CreatedById    : 1
+ModifiedById   : 1
+Created        : 15.12.2015 12:06:49 +01:00
+Modified       : 15.12.2015 12:06:49 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
 
-Retrieves the Node object with Id 1027 and returns all properties of it.
+Retrieves the Node object with Id 218 and returns all properties of it.
 
 
 .EXAMPLE
-Get-Node 1027 -Select ConditionParameters -ValueOnly -ConvertFromJson
+Get-Node 218 -Select Parameters -ValueOnly -ConvertFromJson
 
-ServiceId
+Hostname
 ---
-100054
+Server01
 
-Similar to the previous example, but only returns the 'ConditionParameters' property 
+Similar to the previous example, but only returns the 'Parameters' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
@@ -93,19 +98,19 @@ Get-Node -ListAvailable -Select Id -First 3
 
 Id
 --
- 2
- 3
- 4
+218
+271
+358
 
 Retrieves the id of the first 3 Nodes.
 
 
 .EXAMPLE
-Get-Node 1027 -Select Name -ValueOnly
+Get-Node 218 -Select Name -ValueOnly
 
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+abhenry
 
-Retrieves the name of the Node with Id 4005.
+Retrieves the name of the Node with Id 218.
 
 
 .EXAMPLE
@@ -221,6 +226,17 @@ PARAM
 	# Indicates to return all file information
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
 	[switch] $ListAvailable = $false
+	,
+	# Indicates to return job information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[Alias('ExpandStatus')]
+	[switch] $ExpandJob = $false
+	,
+	# Indicates to return available actions information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[switch] $ExpandAvailableActions = $false
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
@@ -338,6 +354,33 @@ Process
 			else
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			}
+			
+			if ( $ExpandJob )
+			{
+				$ResponseTemp = New-Object System.Collections.ArrayList;
+				foreach ($item in $Response)
+				{
+					if ( $item )
+					{
+						$Response_ = $svc.Core.InvokeEntityActionWithSingleResult($Response, 'Status', [System.Object], $null);
+						$null = $ResponseTemp.Add($Response_);
+					}
+				}
+				$Response = $ResponseTemp.ToArray();
+			}
+			if ( $ExpandAvailableActions )
+			{
+				$ResponseTemp = New-Object System.Collections.ArrayList;
+				foreach ($item in $Response)
+				{
+					if ( $item )
+					{
+						$Response_ = $svc.Core.InvokeEntityActionWithListResult($Response, 'AvailableActions', [string], $null);
+						$null = $ResponseTemp.Add($Response_);
+					}
+				}
+				$Response = $ResponseTemp.ToArray();
 			}
 		}
 		if(1 -eq $Select.Count -And $ValueOnly)

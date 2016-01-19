@@ -1,164 +1,199 @@
+function New-Node {
+<#
+.SYNOPSIS
+Creates a Node entry in Appclusive.
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
+.DESCRIPTION
+Creates a Node entry in Appclusive.
 
-	Mock Export-ModuleMember { return $null; }
+You must specify all three parameters 'Name', 'Username' and 'Password'. If the entry already exists no update of the existing entry is performed.
+
+
+.OUTPUTS
+[biz.dfch.CS.Appclusive.Api.Core.Node]
+
+
+.EXAMPLE
+New-Node Srv01 -EntityKindName com.swisscom.cms.rhel7
+
+Parameters     : {}
+EntityKindId   : 29
+ParentId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv01
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+Create a new Node entry if it not already exists.
+
+
+.EXAMPLE
+New-Node -Name myName -EntityKindName com.swisscom.cms.rhel7 -Description myDescription
+
+Parameters     : {}
+EntityKindId   : 29
+ParentId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : myName
+Description    : myDescription
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+Create a new Node entry if it not already exists.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-Node/
+Set-Node: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-Node/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $true
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-Node/'
+)]
+Param 
+(
+	# Specifies the name for this entity
+	[Parameter(Mandatory = $true, Position = 0)]
+	[ValidateNotNullOrEmpty()]
+	[string] $Name
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $ParentId
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $EntityKindId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $EntityKindName
+	,
+	# Specifies the parameters for this entity
+	[Parameter(Mandatory = $false)]
+	[hashtable] $Parameters
+	,
+	# Specifies the description for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $Description
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return method
+	[Parameter(Mandatory = $false)]
+	[switch] $Async = $false
+)
+
+Begin 
+{
+	trap { Log-Exception $_; break; }
+
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	
-	. "$here\$sut"
-	. "$here\Format-ResultAs.ps1"
-	
-	$svc = Enter-ApcServer;
-
-	Context "Get-KeyNameValue" {
-	
-		# Context wide constants
-		# N/A
-		
-		It "Warmup" -Test {
-			$true | Should Be $true;
-		}
-
-		It "Get-KeyNameValueListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-
-		It "Get-KeyNameValueListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-KeyNameValue-ShouldReturnFirstEntity" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCustomObject] | Should Be $true;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnFirstEntityByKeyNamePair" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$resultFirst = Get-KeyNameValue -svc $svc -First $ShowFirst;
-			$result = Get-KeyNameValue -Key $resultFirst.Key -Name $resultFirst.Name -First $ShowFirst -svc $svc;
-			
-			# Assert
-			$result | Should Not Be $null;
-			$result.Key | Should Be $resultFirst.Key;
-			$result.Name | Should Be $resultFirst.Name;
-			$result -is [PSCustomObject] | Should Be $true;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnFiveEntities" -Test {
-			# Arrange
-			$ShowFirst = 5;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$ShowFirst -eq $result.Count | Should Be $true;
-			$result[0] -is [PSCustomObject] | Should Be $true;
-		}
-
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName;
-
-			# Assert
-			$result | Should Be $null;
-		}
-		
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnDefaultValue" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			$DefaultValue = 'MyDefaultValue';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName -DefaultValue $DefaultValue;
-
-			# Assert
-			$result | Should Be $DefaultValue;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnXML" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As xml;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0,5) | Should Be '<?xml';
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnJSON" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As json;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0, 1) | Should Be '{';
-			$result.Substring($result.Length -1, 1) | Should Be '}';
-		}
-	}
+	$EntitySetName = 'Nodes';
 }
+# Begin
 
-#
-# Copyright 2015 d-fens GmbH
-#
+Process
+{
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
+	$NodeContents = @($Name);
+	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	
+	Contract-Assert (!$entity) 'Entity does already exist'
+
+	if($PSCmdlet.ShouldProcess($NodeContents))
+	{
+		$r = Set-Node @PSBoundParameters -CreateIfNotExist:$true;
+		$OutputParameter = $r;
+	}
+	$fReturn = $true;
+}
+# Process
+
+End 
+{
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
+}
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-Node; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYcZyy0ijs0URn6ENPWCTlCuJ
-# hOWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5QNRIWVEOKWwgsRQOK10Vepl
+# FkOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -257,26 +292,26 @@ Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSneokZUNe25xvf
-# PLm+kkzg74zJXzANBgkqhkiG9w0BAQEFAASCAQCCXPnYZ7A6DUlAeNKzuuxWNIIl
-# T5eRmMpApfwsP3Dbw06glJpYn9AdXDC5cTULE2J/jvKMMDt7tIZTq45sMc6aYTuy
-# 7bjZrZWXIxWfQmfI1PXa6k3iJwk8HuBN5/9VmwGwCDl0Vpf1womZj4APwmDnRQ87
-# SOs+FRGfWeAJw8Z+Afo48fpnMCrXLWUZ8gH9Hhj8t5AZaewzPHA7EP1AEXPjuXIP
-# w/46q45bd78xk4yq65SR8uNRYKuTSnS4M5Z/7QA4J5NOohpdZZ+b65E5N7fuOYIh
-# eLT1py2tug24+Vqlkez1gMfK6Br7quRmSri5GWs0fYayD+SQTlrDLsCBk3EboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSh014niF1UCcWc
+# Xg3f3k2TvizqfzANBgkqhkiG9w0BAQEFAASCAQCy6F4Ur2yME0JDTgFeyaiEltLK
+# plvoFa0TkSmFbj4ngm5fNgqWmfi8GPnmc1kzEpl6Gi3vRDDtTNzZsafSy9ysYyWU
+# 27TDvWQU928JMNkVzdS8aIfn/7nydtdBXZ1TVeZbZVc1r7XtqQQEFPxgb6YYrWm7
+# qS0d9G1XiEWPLapiAbHshLoEGSkTZBRAuYi+MrkDct3V1U9zyWpuyIufYyfokRXe
+# PQIa/+XfL/r0rUOQEGEPCJLPL669I4KrZSBbBFT5jYgu2ub68DFDuu/67J8y0bDy
+# T0ePz37i6ddq0kTjnV1XsvcpjhcdMiEWmMxPAfMo9gMz8c3gKD7LwoRyhmMRoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMDIyMzUxNFowIwYJKoZIhvcNAQkEMRYEFKKHvttVQZSFkvr3zjV6jtJGNUAq
+# MTIyMjExMTM0MlowIwYJKoZIhvcNAQkEMRYEFJzgNfxCoaKRJ8Z5YSemxNMyi3rd
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBY1OSK4TI7WapfK1PM
-# RG4v18VVcdRSsOE2zMkx5T9d9DmHa/HczXXF2uMBDAWd1RiZ1lZ3t5mFgcKPD5e4
-# xE7V0VqzgDqwqidFtMoXx4EHWXigSMlz/8rFdwa9JQPLOivTg6P4f697McI2cx4A
-# K7zc6pyhkYBExfRRzaVdjxTvx1WXcMP3Zia0G2qZKNY3EC2T+X0uqSKzlDHWUamW
-# L0+FnVGb/ByiKS49+pE53NI10Zn5l1uBgaijNHeICjrNT2da5mq1bRVDoA5K/RQ3
-# iQ838c3ZBv0EZHsSYOQuSCKVmzF68ye5oe4xF15kw3mzrr7Qruxv/gpUqf2lOVaK
-# 3h1X
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQABURxhXkNRYwJORbq0
+# KeA85JdrBr86kpp4BjdgtB3rFRa/Wa1NU4jDrvt1Ecw8ATa9BYxhdUVJoiZFaQ1v
+# 3gspQaWom97860KIqGgVtwNAsPpUws4c7PbmEIKtIB48tXu5g4+5tb5pO213ww8L
+# QYsttP49AeoBikIJEIuZwALjqbhL8iqLJoo+xEkyIpVnx/MIx779WyiF6VUyvq96
+# L1ED8LUyc2coHEhDdbIX/Y3Pth4f4DrtqW4D1OkEnZ70/k6sIy6mM/r2j/Y4sVdl
+# PuWaNrXS+63ASgu4hMimW+x0xSncnO2RATuUjw9TSQjIivmvIO0sN+jcGIJfPrMU
+# zbJX
 # SIG # End signature block

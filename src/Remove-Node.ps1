@@ -1,164 +1,135 @@
+function Remove-Node {
+[CmdletBinding(
+    SupportsShouldProcess = $true
+	,
+    ConfirmImpact = 'High'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-Node/'
+)]
+Param 
+(
+	# The id of the Node to remove
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
+	[int] $Id
+	,
+	# The name of the Node to remove
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
+	[string] $Name
+	,	
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false, Position = 1)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cnmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false, Position = 2)]
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
+)
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+Begin 
+{
+	trap { Log-Exception $_; break; }
 
-Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 
-	Mock Export-ModuleMember { return $null; }
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+}
+# Begin
+
+Process 
+{
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
+	if($PSCmdlet.ParameterSetName -eq 'id')
+	{
+		$FilterExpression = ("Id eq {0}" -f $Id);
+	}
+	if($Name) 
+	{ 
+		$FilterExpression = ("tolower(Name) eq '{0}'" -f $Name.ToLower());
+	}
+	$entity = $svc.Core.Nodes.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	$r = @();
 	
-	. "$here\$sut"
-	. "$here\Format-ResultAs.ps1"
-	
-	$svc = Enter-ApcServer;
-
-	Context "Get-KeyNameValue" {
-	
-		# Context wide constants
-		# N/A
-		
-		It "Warmup" -Test {
-			$true | Should Be $true;
-		}
-
-		It "Get-KeyNameValueListAvailable-ShouldReturnList" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-		}
-
-		It "Get-KeyNameValueListAvailableSelectName-ShouldReturnListWithNamesOnly" -Test {
-			# Arrange
-			# N/A
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -ListAvailable -Select Name;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [Array] | Should Be $true;
-			0 -lt $result.Count | Should Be $true;
-			$result[0].Name | Should Not Be $null;
-			$result[0].Id | Should Be $null;
-		}
-
-		It "Get-KeyNameValue-ShouldReturnFirstEntity" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result -is [PSCustomObject] | Should Be $true;
+	$objectFoundToBeRemoved = $false;
+	foreach($item in $entity) 
+	{
+		# Job entity
+		$jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
+		if ($jobentity)
+		{
+			$itemString = "Referenced Job '{0}' in Status '{1}'" -f $jobentity.Id, $jobentity.Status;
+			if($PSCmdlet.ShouldProcess($itemString)) 
+			{
+				$r += ($jobentity | Select -Property @{ Name="Name"; Expression={'{0} (Job)' -f $item.Name}}, Id);
+				Log-Notice $fn ("Removing ref job '{0}' ..." -f $jobentity.Id);
+				$svc.Core.DeleteObject($jobentity);		
+				$null = $svc.Core.SaveChanges();				
+			}
 		}
 		
-		It "Get-KeyNameValue-ShouldReturnFirstEntityByKeyNamePair" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$resultFirst = Get-KeyNameValue -svc $svc -First $ShowFirst;
-			$result = Get-KeyNameValue -Key $resultFirst.Key -Name $resultFirst.Name -First $ShowFirst -svc $svc;
-			
-			# Assert
-			$result | Should Not Be $null;
-			$result.Key | Should Be $resultFirst.Key;
-			$result.Name | Should Be $resultFirst.Name;
-			$result -is [PSCustomObject] | Should Be $true;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnFiveEntities" -Test {
-			# Arrange
-			$ShowFirst = 5;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst;
-
-			# Assert
-			$result | Should Not Be $null;
-			$ShowFirst -eq $result.Count | Should Be $true;
-			$result[0] -is [PSCustomObject] | Should Be $true;
-		}
-
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnNull" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName;
-
-			# Assert
-			$result | Should Be $null;
-		}
-		
-		It "Get-KeyNameValueThatDoesNotExist-ShouldReturnDefaultValue" -Test {
-			# Arrange
-			$KeyNameValueName = 'KeyNameValue-that-does-not-exist';
-			$DefaultValue = 'MyDefaultValue';
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -Name $KeyNameValueName -DefaultValue $DefaultValue;
-
-			# Assert
-			$result | Should Be $DefaultValue;
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnXML" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As xml;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0,5) | Should Be '<?xml';
-		}
-		
-		It "Get-KeyNameValue-ShouldReturnJSON" -Test {
-			# Arrange
-			$ShowFirst = 1;
-			
-			# Act
-			$result = Get-KeyNameValue -svc $svc -First $ShowFirst -As json;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Substring(0, 1) | Should Be '{';
-			$result.Substring($result.Length -1, 1) | Should Be '}';
+		# Node entity
+		$objectFoundToBeRemoved = $true;
+		$itemString = '{0}' -f $item.Name;
+		if($PSCmdlet.ShouldProcess($itemString)) 
+		{
+			$r += ($item | Select -Property Name, Id);
+			Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
+			$svc.Core.DeleteObject($item);
+			$null = $svc.Core.SaveChanges();
 		}
 	}
-}
+	Contract-Assert ($objectFoundToBeRemoved)
 
-#
-# Copyright 2015 d-fens GmbH
-#
+	$OutputParameter = Format-ResultAs $r $As;
+	$fReturn = $true;
+}
+# Process
+
+End 
+{
+$datEnd = [datetime]::Now;
+Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
+# Return values are always and only returned via OutputParameter.
+return $OutputParameter;
+}
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-Node; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUYcZyy0ijs0URn6ENPWCTlCuJ
-# hOWgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUixDzD7OpxUcdAXb3NPVbVvg7
+# hPSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -257,26 +228,26 @@ Describe -Tags "Get-KeyNameValue" "Get-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSneokZUNe25xvf
-# PLm+kkzg74zJXzANBgkqhkiG9w0BAQEFAASCAQCCXPnYZ7A6DUlAeNKzuuxWNIIl
-# T5eRmMpApfwsP3Dbw06glJpYn9AdXDC5cTULE2J/jvKMMDt7tIZTq45sMc6aYTuy
-# 7bjZrZWXIxWfQmfI1PXa6k3iJwk8HuBN5/9VmwGwCDl0Vpf1womZj4APwmDnRQ87
-# SOs+FRGfWeAJw8Z+Afo48fpnMCrXLWUZ8gH9Hhj8t5AZaewzPHA7EP1AEXPjuXIP
-# w/46q45bd78xk4yq65SR8uNRYKuTSnS4M5Z/7QA4J5NOohpdZZ+b65E5N7fuOYIh
-# eLT1py2tug24+Vqlkez1gMfK6Br7quRmSri5GWs0fYayD+SQTlrDLsCBk3EboYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSWcrDI8WRQWy0s
+# 8p49AHGE1BM6YjANBgkqhkiG9w0BAQEFAASCAQCJIrgclhDXCZo6H/LQdixJLdXv
+# Ep4Oaus4p9tXew3zBmK64I40eHjiDg+eNSfO7UZJh0b/xJGD9vXPeuZA9QqWUN69
+# TtdlVOfV4qUsNYwSRn2c3OFFojSBE0oj34H1mgdD1zwCrP2UuFkeSNZSvlK4l5OX
+# kFmpjyIDd/D+LlOS2dpi3+1b+uHdhjnfM3smLz3u39u+Jcvoic+s7xYEv1EkPnR+
+# a4ruoG1dQ6FOBEh3L7jgsHKTwYb6nuMhxUKe3JtHDJANi/OtsQMCVV+hXAM83KXo
+# OnQKgurv4BDtzPzxUFPQI/zvU8Z520wvd4FwHZ3kC4SuRgdHpqFSOqV6OM80oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMDIyMzUxNFowIwYJKoZIhvcNAQkEMRYEFKKHvttVQZSFkvr3zjV6jtJGNUAq
+# MTIyMjExMTM0NlowIwYJKoZIhvcNAQkEMRYEFPK2LM9gEAced8YWRXtkMxrqLeg9
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBY1OSK4TI7WapfK1PM
-# RG4v18VVcdRSsOE2zMkx5T9d9DmHa/HczXXF2uMBDAWd1RiZ1lZ3t5mFgcKPD5e4
-# xE7V0VqzgDqwqidFtMoXx4EHWXigSMlz/8rFdwa9JQPLOivTg6P4f697McI2cx4A
-# K7zc6pyhkYBExfRRzaVdjxTvx1WXcMP3Zia0G2qZKNY3EC2T+X0uqSKzlDHWUamW
-# L0+FnVGb/ByiKS49+pE53NI10Zn5l1uBgaijNHeICjrNT2da5mq1bRVDoA5K/RQ3
-# iQ838c3ZBv0EZHsSYOQuSCKVmzF68ye5oe4xF15kw3mzrr7Qruxv/gpUqf2lOVaK
-# 3h1X
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA0K6RFzWmkTau54IXb
+# DeSzsis7aeTHFOSKtsT+h1YbSZupJrYrO66nV74dS5kemjR47E9EM2g5FNpZmHKw
+# As1/inw6Nq4uoiV7A/WRb/1rxnRlouF0keWlEPL4nB6lFK49vD6GQSNRy1T2QB1E
+# J35Oe2fqWSI6a0c3Om4kRK0mwJVHzMZnmXQyUHglZNrAddc7/Lp5T1kjHVX7aB3o
+# w+AYVURpoxWeG+vEC0KgLO4LbLSYOrP9y043BhywKuqpZ8co6w5o7e0IQNtQKxS4
+# AXmY4oA8l/+JfFWwT5d708lgvjtOFHzkGycq1JsVMPDYsNCbKL8rlBAUSpCBbrq8
+# 0wMn
 # SIG # End signature block

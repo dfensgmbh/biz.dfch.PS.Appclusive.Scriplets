@@ -2,210 +2,51 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
+Describe -Tags "Set-Node" "Set-Node" {
 
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
-	. "$here\New-KeyNameValue.ps1"
-	. "$here\Remove-KeyNameValue.ps1"
+	. "$here\Remove-Entity.ps1"
 	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 
-	Context "Set-KeyNameValue" {
+	Context "Set-Node" {
 	
 		# Context wide constants
 		# N/A
 
-		It "Set-KeyNameValueWithCreateIfNotExist-ShouldReturnNewEntity" -Test {
+		It "Set-Node-ShouldReturnNewEntity" -Test {
 			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description -CreateIfNotExist;
+			$result = Set-Node -svc $svc -Name $Name -EntityKindId 1 -CreateIfNotExist;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result.Id | Should Not Be 0;
-			$result.Key | Should Be $Key;
 			$result.Name | Should Be $Name;
-			$result.Value | Should Be $Value;
-			$result.Description | Should Be $Description;
 			
-			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
+			Remove-Entity -svc $svc -Name $Name -EntitySetName 'Nodes' -Force -Confirm:$false;
 		}
 
-		It "Set-KeyNameValueWithoutCreateIfNotExist-ShouldReturnNull" -Test {
+		It "Set-NodeWithNewDescription-ShouldReturnUpdatedEntity" -Test {
 			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
-			
-			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -CreateIfNotExist:$false;
-
-			# Assert
-			$result | Should Be $null;
-		}
-
-		It "Set-KeyNameValueWithNewValue-ShouldReturnUpdatedEntity" -Test {
-			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
-			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
-			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
-			
-			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
-			$resultCreated | Should Not Be $null;
-			
-			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -NewValue $NewValue -CreateIfNotExist:$false;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Id | Should Not Be 0;
-			$result.Key | Should Be $Key;
-			$result.Name | Should Be $Name;
-			$result.Value | Should Be $NewValue;
-			$result.Description | Should Be $Description;
-
-			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue -Confirm:$false;
-		}
-
-		It "Set-KeyNameValueWithNewName-ShouldReturnUpdatedEntity" -Test {
-			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
-			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
-			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
-			
-			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
-			$resultCreated | Should Not Be $null;
-			
-			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -NewName $NewName -Value $Value -CreateIfNotExist:$false;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Id | Should Not Be 0;
-			$result.Key | Should Be $Key;
-			$result.Name | Should Be $NewName;
-			$result.Value | Should Be $Value;
-			$result.Description | Should Be $Description;
-
-			Remove-KeyNameValue -svc $svc -Key $Key -Name $NewName -Value $Value -Confirm:$false;
-		}
-
-		It "Set-KeyNameValueWithNewKey-ShouldReturnUpdatedEntity" -Test {
-			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
-			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
-			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
-			
-			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
-			$resultCreated | Should Not Be $null;
-			
-			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -NewKey $NewKey -Name $Name -Value $Value -CreateIfNotExist:$false;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Id | Should Not Be 0;
-			$result.Key | Should Be $NewKey;
-			$result.Name | Should Be $Name;
-			$result.Value | Should Be $Value;
-			$result.Description | Should Be $Description;
-
-			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $Name -Value $Value -Confirm:$false;
-		}
-
-		It "Set-KeyNameValueWithNewKeyNameValue-ShouldReturnUpdatedEntity" -Test {
-			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
-			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
-			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
-			
-			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
-			$resultCreated | Should Not Be $null;
-			
-			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -NewKey $NewKey -Name $Name -NewName $NewName -Value $Value -NewValue $NewValue -CreateIfNotExist:$false;
-
-			# Assert
-			$result | Should Not Be $null;
-			$result.Id | Should Not Be 0;
-			$result.Key | Should Be $NewKey;
-			$result.Name | Should Be $NewName;
-			$result.Value | Should Be $NewValue;
-			$result.Description | Should Be $Description;
-			
-			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $NewName -Value $NewValue -Confirm:$false;
-		}
-
-		It "Set-KeyNameValueWithNewKeyNameValueDescription-ShouldReturnUpdatedEntity" -Test {
-			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
-			$NewKey = "NewKey-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$NewName = "NewName-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
 			$Description = "Description-{0}" -f [guid]::NewGuid().ToString();
 			$NewDescription = "NewDescription-{0}" -f [guid]::NewGuid().ToString();
-			
-			$resultCreated = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Description $Description;
-			$resultCreated | Should Not Be $null;
+			$result1 = Set-Node -svc $svc -Name $Name -Description $Description -EntityKindId 1 -CreateIfNotExist;
+			$result1 | Should Not Be $null;
 			
 			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -NewKey $NewKey -Name $Name -NewName $NewName -Value $Value -NewValue $NewValue -CreateIfNotExist:$false -Description $NewDescription;
+			$result = Set-Node -svc $svc -Name $Name -Description $NewDescription -EntityKindId 1;
 
 			# Assert
 			$result | Should Not Be $null;
-			$result.Id | Should Not Be 0;
-			$result.Key | Should Be $NewKey;
-			$result.Name | Should Be $NewName;
-			$result.Value | Should Be $NewValue;
 			$result.Description | Should Be $NewDescription;
-
-			Remove-KeyNameValue -svc $svc -Key $NewKey -Name $NewName -Value $NewValue -Confirm:$false;
-			}
-
-		It "Set-KeyNameValueWithDuplicate-ShouldReturnUpdatedEntity" -Test {
-			# Arrange
-			$Key = "Key-{0}" -f [guid]::NewGuid().ToString();
-			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$Value = "Value-{0}" -f [guid]::NewGuid().ToString();
-			$NewValue = "NewValue-{0}" -f [guid]::NewGuid().ToString();
 			
-			$resultCreated1 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
-			$resultCreated2 = New-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue;
-			
-			# Act
-			$result = Set-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $NewValue -NewValue $Value;
-
-			# Assert
-			$result.Value | Should Be $Value;
-			
-			Remove-KeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value -Confirm:$false;
+			Remove-Entity -svc $svc -Name $Name -EntitySetName 'Nodes' -Force -Confirm:$false;
 		}
 	}
 }
@@ -229,8 +70,8 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUuuC4zasRm00VUq6YaZXHHl9M
-# MUGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSc+q8LviO/A5eJwirrKwgJ2V
+# ZnKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -329,26 +170,26 @@ Describe -Tags "Set-KeyNameValue" "Set-KeyNameValue" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR6PYD0AG3JOKYT
-# bQUGf5nJ8A7jOTANBgkqhkiG9w0BAQEFAASCAQCnR+b1Eeih0RKa5c4BAaH4pGcz
-# 4z2nnfDVE59/7EArgCn8xamcsgnihImoyNd8enCCQrQQVcmVDS6xxw2jRYVVwJEG
-# JLcPHre1bDpeskoyuWI9yQDVtKQP1ru7q+71Zti2NWZlEVnTGXYWtUIng8vy3uWl
-# BC39rR/Hlp5wBuiLr4/fbXTZPg/YheoIX4ziIvcJ7ERTXjt4Au2MB+dV91KKhgnu
-# YQpCszciHoNCyLsKpDSVvmtY3M4/SxDKkrCbG0GXiBPCbCgxpzfYwfcdWnY/itsr
-# NMg2GS3QFGQrC3lwTtE/tVQYQV/wX22VgiQLOkHn7xr0JvJ9bC25vawIxijHoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTHiWHaeSZhjq6v
+# NlRT9RoQOTHhfDANBgkqhkiG9w0BAQEFAASCAQAigd9s7coZ11l6ptShYvACNn0w
+# buYWRpHcSRhhaX7ZY/TwDE5oEo6ZLd5p+wl7mgd7/ZM7Ytf0J8q0CzSoSCudhGpM
+# RhjlZ75EIdNZ0wrRRv4DJeVcOMTOj9numzgOkbs3kActcQ1toipDHow4NOVZzIie
+# lAXMXGqYxN0OB74fumW2W6RzUYjAtXE++zE/lFKs7CwBU0yC64xJgASfJPOvTVxZ
+# 7rpMgAsR3Jv/SWCLUTXBU/pyr2pdDq2/YwccHSDaGyP70dXU1iWaS6VsK7wWtsuv
+# Z2rqOjSoKwVG3863HYEFzqLRpERdO7o5Alov0jDoxmi8ba81aDMxqCConn9foYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0N1owIwYJKoZIhvcNAQkEMRYEFP0ex4Y+LTpiKVshVELhAzTQrsGi
+# MTIxNTA2NTIyNFowIwYJKoZIhvcNAQkEMRYEFJ1OKH6EJknu0HrRO08O1sGrIiVS
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCP7fs0IRpzxim288lM
-# IYt3iVKxl5N+26GfGXdab1f/yqEdAjsAbnHmMPCU16P9pYESJFV9s4liRAXrWVuy
-# a3WfUVvGzMKcnVlh4YAjwRqR6YvAcxpzAIgohWxn46FXzU3TRmAx7dNu3kgseQK4
-# Kd8LEsAKVeymXqxpLMmpYTudZEOm9JY6RC6cbMIZwCRolkzvXVku4pVIILCK4Hy9
-# ufFu50ltMj4WxuWTSXN4U/W6z70YsBEiaPlSstDbclXUhepfu6NqUy/L6XjrJec4
-# l9ksQcOC6/cFzzGtZirjfrOCKjEojrK+3mD3Dcs7k4UVuw/TYSgQAFmRTp/kc3rc
-# IdQs
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB7pGP2jd4bnaWnIl7K
+# /kEcqx47U8adL1QVxCJMGp/89io+0D08uyYV5SZP92KRQdDHwuCFEI5MbDSvBpMa
+# 2mjepKnRFP4KiD2STJdFrMvm5RvoVePFLWpc772iwNWMcMKgiPyJf370GovWhCgb
+# NRskJX4MwshwKfR3YNXI2lBqJ8Mcc8bEKcA7hBonTdCfuh9+1MB1/cCdRr4nvx7l
+# xCLmWS/LeBezGA0fq/elnaDYMQ6lXB1iXxCVibhlIDNJwYlMxmNnn8Yc+vaTPqfH
+# 8c731hnM1CFu5NIygBpubmxdSaXH0A+2CceGh05fY2ypDRKT8H9afRRQQRqU9siK
+# x4Ga
 # SIG # End signature block

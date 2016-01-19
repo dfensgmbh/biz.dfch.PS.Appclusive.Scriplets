@@ -9,6 +9,7 @@ Describe -Tags "New-ManagementCredential" "New-ManagementCredential" {
 	. "$here\$sut"
 	. "$here\Set-ManagementCredential.ps1"
 	. "$here\Remove-ManagementCredential.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 

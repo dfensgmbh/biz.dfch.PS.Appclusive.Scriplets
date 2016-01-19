@@ -8,6 +8,7 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 	
 	. "$here\$sut"
 	. "$here\Get-User.ps1"
+	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
 
@@ -185,6 +186,22 @@ Describe -Tags "Get-ManagementUri" "Get-ManagementUri" {
 		   	$result | Should Not Be $null;
 			$result -is [Array] | Should Be $true;
 			0 -lt $result.Count | Should Be $true;
+		}
+		
+		It "Get-ManagementUriExpandManagementCredential-ShouldReturnManagementCredential" -Test {
+			# Arrange
+			. "$here\Get-ManagementCredential.ps1"
+			Mock Get-ManagementCredential { return New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential };
+			$ShowFirst = 1;
+			
+			# Act
+			$resultFirst = Get-ManagementUri -svc $svc -First $ShowFirst;
+			$result = Get-ManagementUri -svc $svc -Id $resultFirst.Id -ExpandManagementCredential;
+
+			# Assert
+		   	Assert-MockCalled Get-ManagementCredential -Exactly 1;
+		   	$result | Should Not Be $null;
+		   	$result.GetType().Name | Should Be 'ManagementCredential';
 		}
 	}
 }

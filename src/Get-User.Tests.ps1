@@ -15,6 +15,7 @@ Describe -Tags "Get-User" "Get-User" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"	
 	
 	$svc = Enter-ApcServer;
 
