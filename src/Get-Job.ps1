@@ -193,11 +193,11 @@ PARAM
 	[string] $Status
 	,
 	# Specifies the EntityKind id for this entity
-	[Parameter(Mandatory = $false)]
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[int] $EntityKindId
 	,
 	# Specifies the EntityKind name for this entity
-	[Parameter(Mandatory = $false)]
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[string] $EntityKindName
 	,
 	# Specify the attributes of the entity to return

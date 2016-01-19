@@ -129,6 +129,16 @@ with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
+Get-EntityKind -Version biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node -Select Id, Name
+
+Id Name
+-- ----
+ 1 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+
+Retrieves id and name of EntityKind with version 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node' (case insensitive substring match).
+
+
+.EXAMPLE
 Get-EntityKind biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Msql -Select Parameters -ValueOnly -DefaultValue @{"InitialState-Create"="Created";"Created-Decommission"="Decomissioned"}
 
 Name                           Value
@@ -160,13 +170,18 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Specifies the name of the entity
+	# Specifies the id of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
+	# Specifies the name of the entity
 	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
 	[Alias('n')]
 	[string] $Name
+	,
+	# Filter by version
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[string] $Version
 	,
 	# Filter by creator
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
@@ -292,6 +307,10 @@ Process
 		if($Name) 
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
+		}
+		if($Version) 
+		{ 
+			$Exp += ("tolower(Version) eq '{0}'" -f $Version.ToLower());
 		}
 		if($CreatedBy) 
 		{ 

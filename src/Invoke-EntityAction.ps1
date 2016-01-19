@@ -164,20 +164,21 @@ Process
 		Default	{ $ResultType = $null; }
 	}
 	
-	if ( !$InputName )
+	switch($EntityActionName) 
 	{
-		$EntityActionInputParameters = $InputParameters;
-	}
-	else
-	{
-		$EntityActionInputParameters = 
-		@{
-			'Name'			= $InputName
-			;
-			'Parameters'	= ($InputParameters | ConvertTo-Json -Compress).ToString()
-		};
+		'JobResult' { $EntityActionInputParameters = @{$EntityActionName = ($InputParameters | ConvertTo-Json -Compress).ToString()}; }
+		Default		{ $EntityActionInputParameters = $InputParameters; }
 	}
 
+	if($PSBoundParameters.ContainsKey('InputName'))
+	{
+		if($InputParameters -is [hashtable])
+		{
+			$EntityActionInputParameters = ($InputParameters | ConvertTo-Json -Compress).ToString();
+		}
+		$EntityActionInputParameters = @{'Name' = $InputName; 'Parameters' = $EntityActionInputParameters };
+	}
+	
 	$r = @();
 	if($PSCmdlet.ParameterSetName -eq 'pipe') 
 	{
