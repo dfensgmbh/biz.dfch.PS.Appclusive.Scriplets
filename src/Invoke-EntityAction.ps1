@@ -1,13 +1,13 @@
 function Invoke-EntityAction {
 <#
 .SYNOPSIS
-Invokes a Node entity action in Appclusive.
+Invokes a Entity action in Appclusive.
 
 
 .DESCRIPTION
-Invokes a Node entity action in Appclusive.
+Invokes a Entity action in Appclusive.
 
-You must specify parameter 'Id' (or pipe on an existing Node entity) and the input action name.
+You must specify the parameters 'EntityId', 'EntitySetName' (or pipe on an existing Entity) and the 'EntityActionName'.
 
 
 .EXAMPLE
@@ -32,7 +32,7 @@ Similar to the previous example, but as pipe from Get-Node.
 Invoke-ApcEntityAction -EntityId 12 -EntitySetName Nodes -EntityActionName Status -ExpectedResult single
 
 Status              : FullManaged
-RefId               : 1459
+RefId               : 13
 Token               : optional
 TenantId            : 22222222-2222-2222-2222-222222222222
 EntityKindId        : 1
@@ -42,7 +42,7 @@ ConditionParameters :
 Error               : optional
 EndTime             :
 ParentId            : 1
-Id                  : 1337
+Id                  : 12
 Tid                 : 22222222-2222-2222-2222-222222222222
 Name                : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
 Description         : biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
@@ -69,6 +69,35 @@ BD01EnableFullCustomerMaintenance
 BF01ReturnToLimitedManaged
 
 Returns the available actions from the Node with Id 12.
+
+
+.EXAMPLE
+Invoke-ApcEntityAction -EntityId 13 -EntitySetName Jobs -EntityActionName JobResult -InputParameters @{Message='Job action successfully',Succeeded=$true}
+
+Name                        Id		InputParameters
+----                        --		---------------
+Job action successfully		13		{JobResult}
+
+Returns confirmation.
+
+.EXAMPLE
+Get-ApcJob -Id 13 | Invoke-ApcEntityAction -EntityActionName JobResult -InputParameters @{Message='Job action successfully',Succeeded=$true}
+
+Name                        Id		InputParameters
+----                        --		---------------
+Job action successfully		13		{JobResult}
+
+Similar to the previous example, but as pipe from Get-Job.
+
+
+.EXAMPLE
+Get-ApcNode -Id 12 -ExpandJob | Invoke-ApcEntityAction -EntityActionName JobResult -InputParameters @{Message='Job action successfully',Succeeded=$true}
+
+Name                        Id		InputParameters
+----                        --		---------------
+Job action successfully		13		{JobResult}
+
+Similar to the previous example, but as pipe from Get-Node.
 
 
 .LINK
