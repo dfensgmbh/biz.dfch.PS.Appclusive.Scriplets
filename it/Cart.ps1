@@ -1,15 +1,10 @@
 function CreateCartItem($catItem) 
 {
 	$cartItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CartItem;
-	$cartItem.Tid = "1";
 	$cartItem.Quantity = 1;
-	$cartItem.CreatedBy = $ENV:USERNAME;
-	$cartItem.ModifiedBy = $catItem.CreatedBy;
-	$cartItem.Created = [DateTimeOffset]::Now;
-	$cartItem.Modified = $catItem.Created;
 	$cartItem.Name = $catItem.Name;
 	$cartItem.CatalogueItemId = $catItem.Id;
-	$cartItem.Parameters = '{}';
+	$cartItem.Parameters = '{"tralala":"tralala"}';
 	return $cartItem;
 }
 
