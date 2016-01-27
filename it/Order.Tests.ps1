@@ -82,14 +82,15 @@ Describe -Tags "Order.Tests" "Order.Tests" {
 			$svc = Enter-ApcServer;
 			
 			$createdOrder = $svc.Core.Orders |? Name -eq 'Arbitrary Order';
-			$createdOrder.Requester | Should Be $createdOrder.Requester;
+			$createdOrder.RequesterId | Should Be $createdOrder.CreatedById;
 			$createdOrder.Status | Should Be 'Approval';
 			
-			$query = "Name eq 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order' and RefId eq '{0}'" -f $createdOrder.Id;
+			$query = "EntityKindId eq 20 and RefId eq '{0}'" -f $createdOrder.Id;
 			$orderJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$orderJob.Status | Should Be 'Approval';
 			
-			$approvalJob = $svc.Core.Jobs |? ParentId -eq $orderJob.Id;
+			$query = "EntityKindId eq 5 and ParentId eq {0}" -f $orderJob.Id;
+			$approvalJob = $svc.Core.Jobs.AddQueryOption('$filter', $query);
 			$approvalJob.Status | Should Be 'Created';
 			
 			$approval = $svc.Core.Approvals |? Id -eq $approvalJob.RefId;
