@@ -133,6 +133,8 @@ NestedModules = @(
 	'Invoke-EntityAction.ps1'
 	,
 	'Set-Job.ps1'
+	,
+	'Get-ExternalNode.ps1'
 )
 
 # Functions to export from this module
