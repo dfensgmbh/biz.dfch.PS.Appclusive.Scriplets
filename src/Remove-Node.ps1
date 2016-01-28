@@ -5,17 +5,24 @@ function Remove-Node {
     ConfirmImpact = 'High'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-Node/'
+	,
+	DefaultParameterSetName = 'o'
 )]
 Param 
 (
 	# The id of the Node to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'id')]
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
 	[int] $Id
 	,
 	# The name of the Node to remove
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'name')]
 	[string] $Name
-	,	
+	,
+	# Specifies the Node to remove
+	[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'o')]
+	[Alias("Entity")]
+	$InputObject
+	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false, Position = 1)]
 	[Alias('Services')]
@@ -52,42 +59,102 @@ Process
 
 	if($PSCmdlet.ParameterSetName -eq 'id')
 	{
-		$FilterExpression = ("Id eq {0}" -f $Id);
+		$InputObject = Get-Node -Id $Id -svc $svc;
 	}
-	if($Name) 
-	{ 
-		$FilterExpression = ("tolower(Name) eq '{0}'" -f $Name.ToLower());
+	if($PSCmdlet.ParameterSetName -eq 'name')
+	{
+		$InputObject = Get-Node -Name $Name -svc $svc;
 	}
-	$entity = $svc.Core.Nodes.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
 	$r = @();
 	
 	$objectFoundToBeRemoved = $false;
-	foreach($item in $entity) 
+	foreach($item in $InputObject)
 	{
+		$bShouldProcess = $false;
+		
+		# Node entity
+		$objectFoundToBeRemoved = $true;
+		$itemString = '{0}' -f $item.Name;
+		$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
+		if(!$bShouldProcess) { break; };
+		
+		# ChildNodes
+		$childNodes = Get-Node -ParentId $item.Id -svc $svc;
+		foreach($childNode in $childNodes)
+		{
+			$itemString = "Referenced ChildNode '{0}'" -f $childNode.Name;
+			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
+			if(!$bShouldProcess) { break; };
+			
+			$r += Remove-Node -Id $childNode.Id -svc $svc;
+		}
+		if(!$bShouldProcess) { break; };
+
+		# ExternalNode entity
+		$externalNodes = Get-Node -Id $item.Id -svc $svc -ExpandExternalNodes;
+		foreach($externalNode in $externalNodes)
+		{
+			$itemString = "Referenced ExternalNode '{0}' of Type '{1}'" -f $externalNode.Name, $externalNode.ExternalType;
+			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
+			if(!$bShouldProcess) { break; };
+
+			# ExternalNodeAttributes
+			$externalNodeAttributes = Get-ExternalNode -Id $externalNode.Id -svc $svc -ExpandAttributes;
+			foreach($externalNodeAttribute in $externalNodeAttributes)
+			{
+				$itemString = "Referenced ExternalNodeAttribute '{0}', '{1}'" -f $externalNodeAttribute.Name, $externalNodeAttribute.Description;
+				$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
+				if(!$bShouldProcess) { break; };
+
+				$r += ($externalNodeAttribute | Select -Property @{ Name="Name"; Expression={'{0} (ExternalNodeAttribute)' -f $item.Name}}, Id);
+				Log-Notice $fn ("Removing ref ExternalNodeAttribute '{0}' ..." -f $externalNodeAttribute.Id);
+				$svc.Core.DeleteObject($externalNodeAttribute);		
+				$null = $svc.Core.SaveChanges();
+			}
+			if(!$bShouldProcess) { break; };
+			
+			$r += ($externalNode | Select -Property @{ Name="Name"; Expression={'{0} (ExternalNode)' -f $item.Name}}, Id);
+			Log-Notice $fn ("Removing ref ExternalNode '{0}' ..." -f $externalNode.Id);
+			$svc.Core.DeleteObject($externalNode);		
+			$null = $svc.Core.SaveChanges();
+		}
+		if(!$bShouldProcess) { break; };
+
 		# Job entity
 		$jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
 		if ($jobentity)
 		{
 			$itemString = "Referenced Job '{0}' in Status '{1}'" -f $jobentity.Id, $jobentity.Status;
-			if($PSCmdlet.ShouldProcess($itemString)) 
+			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
+			if(!$bShouldProcess) { break; };
+
+			# ChildJobs
+			$jobChilds = Get-Job -ParentId $jobentity.Id -svc $svc;
+			foreach($jobChild in $jobChilds)
 			{
-				$r += ($jobentity | Select -Property @{ Name="Name"; Expression={'{0} (Job)' -f $item.Name}}, Id);
-				Log-Notice $fn ("Removing ref job '{0}' ..." -f $jobentity.Id);
-				$svc.Core.DeleteObject($jobentity);		
-				$null = $svc.Core.SaveChanges();				
+				$itemString = "Referenced ChildJob '{0}' in Status '{1}'" -f $jobChild.Id, $jobChild.Status;
+				$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
+				if(!$bShouldProcess) { break; };
+				
+				$r += ($jobChild | Select -Property @{ Name="Name"; Expression={'{0} (ChildJob)' -f $item.Name}}, Id);
+				Log-Notice $fn ("Removing ref ChildJob '{0}' ..." -f $jobChild.Id);
+				$svc.Core.DeleteObject($jobChild);		
+				$null = $svc.Core.SaveChanges();
 			}
+			if(!$bShouldProcess) { break; };
+			
+			$r += ($jobentity | Select -Property @{ Name="Name"; Expression={'{0} (Job)' -f $item.Name}}, Id);
+			Log-Notice $fn ("Removing ref Job '{0}' ..." -f $jobentity.Id);
+			$svc.Core.DeleteObject($jobentity);		
+			$null = $svc.Core.SaveChanges();				
 		}
-		
+		if(!$bShouldProcess) { break; };
+	
 		# Node entity
-		$objectFoundToBeRemoved = $true;
-		$itemString = '{0}' -f $item.Name;
-		if($PSCmdlet.ShouldProcess($itemString)) 
-		{
-			$r += ($item | Select -Property Name, Id);
-			Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
-			$svc.Core.DeleteObject($item);
-			$null = $svc.Core.SaveChanges();
-		}
+		$r += ($item | Select -Property Name, Id);
+		Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
+		$svc.Core.DeleteObject($item);
+		$null = $svc.Core.SaveChanges();
 	}
 	Contract-Assert ($objectFoundToBeRemoved)
 
