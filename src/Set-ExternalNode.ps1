@@ -134,10 +134,6 @@ Param
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
-	,
-	# Specifies the return method
-	[Parameter(Mandatory = $false)]
-	[switch] $Async = $false
 )
 
 Begin 
@@ -171,6 +167,7 @@ try
 {
 	$Exp = @();
 	$Exp += "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$Exp += "(tolower(ExternalId) eq '{0}')" -f $ExternalId.toLower();
 	$Exp += "(NodeId eq {0})" -f $NodeId;
 	$FilterExpression = [String]::Join(' and ', $Exp);
 	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;

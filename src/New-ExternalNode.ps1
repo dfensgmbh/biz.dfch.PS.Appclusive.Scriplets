@@ -104,9 +104,10 @@ Param
 	[Parameter(Mandatory = $false)]
 	[string] $ExternalType
 	,
-	# Specifies the parameters for this entity
+	# Specifies the attributes for this entity
 	[Parameter(Mandatory = $false)]
-	[hashtable] $Parameters
+	[Alias("Parameters")]
+	[hashtable] $Attributes
 	,
 	# Specifies the description for this entity
 	[Parameter(Mandatory = $false)]
@@ -116,10 +117,6 @@ Param
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return method
-	[Parameter(Mandatory = $false)]
-	[switch] $Async = $false
 )
 
 Begin 
@@ -149,6 +146,7 @@ Process
 	$ExternalNodeContents = @($Name);
 	$Exp = @();
 	$Exp += "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$Exp += "(tolower(ExternalId) eq '{0}')" -f $ExternalId.toLower();
 	$Exp += "(NodeId eq {0})" -f $NodeId;
 	$FilterExpression = [String]::Join(' and ', $Exp);
 	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
