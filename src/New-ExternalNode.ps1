@@ -1,45 +1,200 @@
-function CreateCartItem($catItem) 
-{
-	$cartItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CartItem;
-	$cartItem.Quantity = 1;
-	$cartItem.Name = $catItem.Name;
-	$cartItem.CatalogueItemId = $catItem.Id;
-	$cartItem.Parameters = '{"tralala":"tralala"}';
-	return $cartItem;
-}
+function New-ExternalNode {
+<#
+.SYNOPSIS
+Creates a ExternalNode entry in Appclusive.
 
-function GetCartOfUser($svc)
-{
-	$user = "{0}\{1}" -f $ENV:USERDOMAIN, $ENV:USERNAME;
-	return $svc.Core.Carts |? CreatedBy -eq $user;
-}
 
-function GetCartItemsOfCart($svc, $cart)
-{
-	return $svc.Core.LoadProperty($cart, 'CartItems') | Select;
-}
+.DESCRIPTION
+Creates a ExternalNode entry in Appclusive.
 
-#
-# Copyright 2015 d-fens GmbH
-#
+You must specify all three parameters 'Name', 'Username' and 'Password'. If the entry already exists no update of the existing entry is performed.
+
+
+.OUTPUTS
+[biz.dfch.CS.Appclusive.Api.Core.ExternalNode]
+
+
+.EXAMPLE
+New-ExternalNode Srv01 -ExternalType com.swisscom.cms.rhel7
+
+Parameters     : {}
+EntityKindId   : 29
+NodeId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv01
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+Create a new ExternalNode entry if it not already exists.
+
+
+.EXAMPLE
+New-ExternalNode -Name myName -ExternalType com.swisscom.cms.rhel7 -Description myDescription
+
+Parameters     : {}
+EntityKindId   : 29
+NodeId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : myName
+Description    : myDescription
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+Create a new ExternalNode entry if it not already exists.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ExternalNode/
+Set-ExternalNode: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ExternalNode/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $true
+	,
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ExternalNode/'
+)]
+Param 
+(
+	# Specifies the name for this entity
+	[Parameter(Mandatory = $true, Position = 0)]
+	[ValidateNotNullOrEmpty()]
+	[string] $Name
+	,
+	# Specifies the Node id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $NodeId
+	,
+	# Specifies the External id for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalType
+	,
+	# Specifies the attributes for this entity
+	[Parameter(Mandatory = $false)]
+	[Alias("Parameters")]
+	[hashtable] $Attributes
+	,
+	# Specifies the description for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $Description
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+)
+
+Begin 
+{
+	trap { Log-Exception $_; break; }
+
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+
+	# Parameter validation
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	
+	$EntitySetName = 'ExternalNodes';
+}
+# Begin
+
+Process
+{
+	trap { Log-Exception $_; break; }
+
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
+	$ExternalNodeContents = @($Name);
+	$Exp = @();
+	$Exp += "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$Exp += "(tolower(ExternalId) eq '{0}')" -f $ExternalId.toLower();
+	$Exp += "(NodeId eq {0})" -f $NodeId;
+	$FilterExpression = [String]::Join(' and ', $Exp);
+	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+	
+	Contract-Assert (!$entity) 'Entity does already exist'
+
+	if($PSCmdlet.ShouldProcess($ExternalNodeContents))
+	{
+		$r = Set-ExternalNode @PSBoundParameters -CreateIfNotExist:$true;
+		$OutputParameter = $r;
+	}
+	$fReturn = $true;
+}
+# Process
+
+End 
+{
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
+}
+# End
+
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-ExternalNode; } 
+
+# 
+# Copyright 2014-2015 d-fens GmbH
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# 
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU79OcXh1CuTwXiZQVO5KKgiA6
-# EU2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5QNRIWVEOKWwgsRQOK10Vepl
+# FkOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -138,26 +293,26 @@ function GetCartItemsOfCart($svc, $cart)
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ9wwuBfVkaBhJa
-# VnEZYP3LgbgdVDANBgkqhkiG9w0BAQEFAASCAQAo3qxdxe3yc/ZHRxAdIbrhnI0w
-# 2hLqygrN4fwE3VKC8oSAm//4A4hLL03IoSVv+CH2HLtFsxi+4HapSMn0BG60k3PW
-# D70a6txbUvalKYz1EIPSqs5c+e0iTKaBXhQA7u3lx2RYiQ3UEurRFVuw2k7NIacK
-# HJYhsuE012+OJA2K0VSqwiHRRdRuXUgygleghKLFzbnFz1vRXCubHA6qzbxfzMwq
-# vxPrIaSl2hX+VVJPglxItpH2ZCBzR22uCsVWKkdP7QHQyZQxUMVB6pA/ixCiuaKo
-# xJB/CdqG3AnWNJHXjxdFRDz3/BME+DsJ8mG8kbcIIi5L/Lj1r0tWMhvBveoBoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSh014niF1UCcWc
+# Xg3f3k2TvizqfzANBgkqhkiG9w0BAQEFAASCAQCy6F4Ur2yME0JDTgFeyaiEltLK
+# plvoFa0TkSmFbj4ngm5fNgqWmfi8GPnmc1kzEpl6Gi3vRDDtTNzZsafSy9ysYyWU
+# 27TDvWQU928JMNkVzdS8aIfn/7nydtdBXZ1TVeZbZVc1r7XtqQQEFPxgb6YYrWm7
+# qS0d9G1XiEWPLapiAbHshLoEGSkTZBRAuYi+MrkDct3V1U9zyWpuyIufYyfokRXe
+# PQIa/+XfL/r0rUOQEGEPCJLPL669I4KrZSBbBFT5jYgu2ub68DFDuu/67J8y0bDy
+# T0ePz37i6ddq0kTjnV1XsvcpjhcdMiEWmMxPAfMo9gMz8c3gKD7LwoRyhmMRoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM1M1owIwYJKoZIhvcNAQkEMRYEFP767e9fE5L+0t/HQKOYO1ZRaqYL
+# MTIyMjExMTM0MlowIwYJKoZIhvcNAQkEMRYEFJzgNfxCoaKRJ8Z5YSemxNMyi3rd
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCEsMHyoCrw1lydubKm
-# S9AXUYTtAHb222afxMnoAoMvlI/W5HdoZ1ESgZpIg0dyh13QVV9Il1rtHSKI3ElP
-# geKao3Th0N4p2wnb9oMuPaerJSr53JnoyMJzE4zCsLlQjjwufyubukixb4d4Czs2
-# 4ISzyOabJb5jkxoMPTZxG0Qidd/bIZ+4LqXl3im65LHT8FNX/diV561+NmEuUrIv
-# /LriYIIc3i3PgTfqE0DyOElVzTkd/8edu1tesihmEVuiOfHWyp1iZXciqY5jHEfI
-# KFcM9mxNlOBEVjkQkx9yvO/kUN5pNdBTWvLDQrzc8dZ52UNPmXPOj+M/500IzoFf
-# xQ3f
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQABURxhXkNRYwJORbq0
+# KeA85JdrBr86kpp4BjdgtB3rFRa/Wa1NU4jDrvt1Ecw8ATa9BYxhdUVJoiZFaQ1v
+# 3gspQaWom97860KIqGgVtwNAsPpUws4c7PbmEIKtIB48tXu5g4+5tb5pO213ww8L
+# QYsttP49AeoBikIJEIuZwALjqbhL8iqLJoo+xEkyIpVnx/MIx779WyiF6VUyvq96
+# L1ED8LUyc2coHEhDdbIX/Y3Pth4f4DrtqW4D1OkEnZ70/k6sIy6mM/r2j/Y4sVdl
+# PuWaNrXS+63ASgu4hMimW+x0xSncnO2RATuUjw9TSQjIivmvIO0sN+jcGIJfPrMU
+# zbJX
 # SIG # End signature block

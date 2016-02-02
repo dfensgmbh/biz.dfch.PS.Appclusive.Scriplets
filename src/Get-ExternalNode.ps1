@@ -1,11 +1,11 @@
-function Get-EntityKind {
+function Get-ExternalNode {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the EntityKind entity set.
+Retrieves one or more entities from the ExternalNode entity set.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the EntityKind entity set.
+Retrieves one or more entities from the ExternalNode entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
@@ -24,134 +24,124 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-EntityKind -ListAvailable -Select Name
+Get-ExternalNode -ListAvailable -Select Id, Name
 
-Name
-----
-biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Ace
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Assoc
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.AuditTrail
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Cart
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.CartItem
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Catalogue
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.CatalogueItem
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.ContractMapping
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.CostCentre
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Customer
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.EntityKind
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Gate
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.KeyNameValue
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.ManagementCredential
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.ManagementUri
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Order
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.OrderItem
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Permission
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Product
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Role
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Tenant
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.User
+  Id Name
+  -- ----
+ 218  abhenry
+ 271  abhenry
+ 358  abhenry
+ 572  abhenry
+ 636  abhenry
+ 666  abhenry
+1017  abhenry
+ 270  absence
+ 406  absence
+ 490  absence
+ 568  absence
+ 607  absence
+ 613  absence
+ 745  absence
+ 875  absence
+ 907  absence
+ 967  absence
+1024  absence
+1081  absence
+1179  absence
+ 361  aggrade
+ 373  aggrade
+...
 
-Retrieves the name of all EntityKinds.
+Retrieves the id and name of all ExternalNodes.
 
 
 .EXAMPLE
-Get-EntityKind 27
+Get-ExternalNode 218
 
-Version      : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
-Parameters   : {"InitialState-Create":"Created","Created-Run":"Running","Created-Delete":"Deleted","Running-Stop":"Stop
-               ped","Stopped-Decommission":"Decomissioned"}
-Id           : 27
-Tid          : 11111111-1111-1111-1111-111111111111
-Name         : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
-Description  : biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
-CreatedById  : 1
-ModifiedById : 1
-Created      : 14.12.2015 00:00:00 +00:00
-Modified     : 14.12.2015 00:00:00 +00:00
-RowVersion   : {0, 0, 0, 0...}
-Tenant       :
-CreatedBy    : SYSTEM
-ModifiedBy   : SYSTEM
+Parameters     : {"Hostname":"Server01"}
+EntityKindId   : 27
+ParentId       : 1
+Id             : 218
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : abhenry
+Description    : abhenry is a whiles for timeous purposes
+CreatedById    : 1
+ModifiedById   : 1
+Created        : 15.12.2015 12:06:49 +01:00
+Modified       : 15.12.2015 12:06:49 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
 
-Retrieves the EntityKind object with Id 27 and returns all properties of it.
+Retrieves the ExternalNode object with Id 218 and returns all properties of it.
 
 
 .EXAMPLE
-Get-EntityKind biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos -Select Parameters -ValueOnly -ConvertFromJson
+Get-ExternalNode 218 -Select Parameters -ValueOnly -ConvertFromJson
 
-InitialState-Create  : Created
-Created-Run          : Running
-Created-Delete       : Deleted
-Running-Stop         : Stopped
-Stopped-Decommission : Decomissioned
+Hostname
+---
+Server01
 
-Retrieves the EntityKind 'ActivitiClientUri' and only returns the 'Description' property 
+Similar to the previous example, but only returns the 'Parameters' property 
 of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-EntityKind -ListAvailable -Select Name, Id -First 3
+Get-ExternalNode 218 -Select Name -ValueOnly
 
-Name                                               Id
-----                                               --
-biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos   27
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Ace  3
-biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl  4
+abhenry
 
-Retrieves the name and id of the first 3 EntityKinds.
+Retrieves the name of the ExternalNode with Id 218.
 
 
 .EXAMPLE
-Get-EntityKind 27 -Select Name -ValueOnly
-
-biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Mos
-
-Retrieves the name of the EntityKind with Id 27.
-
-
-.EXAMPLE
-Get-EntityKind -ModifiedBy SYSTEM -Select Id, Name
+Get-ExternalNode -ModifiedBy SYSTEM -Select Id, Name
 
 Id Name
 -- ----
- 1 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job
- 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Acl
- 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Approval
+ 1 Root ExternalNode
+ 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
 
-Retrieves id and name of all Users that have been modified by user 
+Retrieves id and name of all ExternalNodes that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
-Get-EntityKind -Version biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node -Select Id, Name
+Get-ExternalNode AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
 
-Id Name
--- ----
- 1 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+AppclusiveSchedulerNotAvailable
 
-Retrieves id and name of EntityKind with version 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node' (case insensitive substring match).
-
-
-.EXAMPLE
-Get-EntityKind biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Msql -Select Parameters -ValueOnly -DefaultValue @{"InitialState-Create"="Created";"Created-Decommission"="Decomissioned"}
-
-Name                           Value
-----                           -----
-InitialState-Create            Created
-Created-Decommission           Decomissioned
-
-Retrieves the 'Parameters' property of a EntityKind with Name 'biz.dfch.CS.Appclusive.Core.com.swisscom.cms.Msql' 
-and @{"InitialState-Create"="Created";"Created-Decommission"="Decomissioned"} if the entity is not found.
+Retrieves the 'Name' property of a ExternalNode with Name 'AppclusiveScheduler' 
+and AppclusiveSchedulerNotAvailable if the entity is not found.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-EntityKind/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ExternalNode/
 
 
 .NOTES
@@ -164,7 +154,7 @@ See module manifest for required software versions and dependencies.
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-EntityKind/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ExternalNode/'
 	,
 	DefaultParameterSetName = 'list'
 )]
@@ -179,9 +169,18 @@ PARAM
 	[Alias('n')]
 	[string] $Name
 	,
-	# Filter by version
+	# Filter by external id
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[string] $Version
+	[string] $ExternalId
+	,
+	# Filter by external id
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[int] $NodeId
+	,
+	# Filter by type
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Alias("Type")]
+	[string] $ExternalType
 	,
 	# Filter by creator
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
@@ -197,7 +196,7 @@ PARAM
 	,
 	# Specifies to return only values without header information. 
 	# This parameter takes precendes over the 'Select' parameter.
-	[ValidateScript( { if(1 -ge $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
+	[ValidateScript( { if(1 -eq $Select.Count -And $_) { $true; } else { throw("You must specify exactly one 'Select' property when using 'ValueOnly'."); } } )]
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias('HideTableHeaders')]
@@ -205,7 +204,6 @@ PARAM
 	,
 	# This value is only returned if the regular search would have returned no results
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias('default')]
 	$DefaultValue
 	,
@@ -216,11 +214,6 @@ PARAM
 	[Alias('Convert')]
 	[switch] $ConvertFromJson
 	,
-	# Limits the output to the specified number of entries
-	[Parameter(Mandatory = $false)]
-	[Alias('top')]
-	[int] $First
-	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
@@ -229,6 +222,17 @@ PARAM
 	# Indicates to return all file information
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
 	[switch] $ListAvailable = $false
+	,
+	# Indicates to return node information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[switch] $ExpandNode = $false
+	,
+	# Indicates to return job information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[Alias('ExpandExternalNodeAttributes')]
+	[switch] $ExpandAttributes = $false
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
@@ -245,18 +249,15 @@ Begin
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'EntityKinds';
+	$EntitySetName = 'ExternalNodes';
 	
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	Contract-Requires (1 -ge ($PSBoundParameters.GetEnumerator() | Where { $_.Key -match 'Expand' -and $_.Value -eq $true}).Count) "You can specify only one 'Expand...' param.";
 	
 	if($Select) 
 	{
 		$Select = $Select | Select -Unique;
-	}
-	elseif ($ValueOnly)
-	{
-		$Select = 'Parameters';
 	}
 }
 # Begin
@@ -276,25 +277,11 @@ Process
 	{
 		if($Select) 
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select -Property $Select;
-			}
+			$Response = $svc.Core.$EntitySetName | Select -Property $Select;
 		}
 		else 
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-			}
+			$Response = $svc.Core.$EntitySetName | Select;
 		}
 	} 
 	else 
@@ -308,13 +295,21 @@ Process
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
 		}
-		if($Version) 
+		if($ExternalType) 
 		{ 
-			$Exp += ("tolower(Version) eq '{0}'" -f $Version.ToLower());
+			$Exp += ("tolower(ExternalType) eq '{0}'" -f $ExternalType.ToLower());
+		}
+		if($ExternalId) 
+		{ 
+			$Exp += ("tolower(ExternalId) eq '{0}'" -f $ExternalId.ToLower());
+		}
+		if($NodeId) 
+		{ 
+			$Exp += ("NodeId eq {0}" -f $NodeId);
 		}
 		if($CreatedBy) 
 		{ 
-			$CreatedById = Get-User -svc $svc -Name $CreatedBy -Select Id -ValueOnly;
+			$CreatedById = Get-User -svc $svc $CreatedBy -Select Id -ValueOnly;
 			if ( !$CreatedById )
 			{
 				# User not found
@@ -324,8 +319,8 @@ Process
 		}
 		if($ModifiedBy)
 		{ 
-			$ModifiedById = Get-User -svc $svc -Name $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById )
+			$ModifiedById = Get-User -svc $svc $ModifiedBy -Select Id -ValueOnly;
+			if ( !$ModifiedById ) 
 			{
 				# User not found
 				return;
@@ -336,24 +331,38 @@ Process
 	
 		if($Select) 
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
-			}
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
 		}
 		else 
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			
+			if ( $ExpandNode )
+			{				
+				$ResponseTemp = New-Object System.Collections.ArrayList;
+				foreach ($item in $Response)
+				{
+					if ( $item )
+					{
+						$Response_ = Get-Node -Id $item.NodeId -svc $svc;
+						$null = $ResponseTemp.Add($Response_);
+					}
+				}
+				$Response = $ResponseTemp.ToArray();
 			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			
+			if ( $ExpandAttributes )
+			{				
+				$ResponseTemp = New-Object System.Collections.ArrayList;
+				foreach ($item in $Response)
+				{
+					if ( $item )
+					{
+						$Response_ = $svc.Core.ExternalNodeAttributes.AddQueryOption('$filter', 'ExternaldNodeId eq {0}' -f $item.Id);
+						$null = $ResponseTemp.Add($Response_);
+					}
+				}
+				$Response = $ResponseTemp.ToArray();
 			}
 		}
 		if(1 -eq $Select.Count -And $ValueOnly)
@@ -402,7 +411,7 @@ return $OutputParameter;
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-EntityKind; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ExternalNode; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -423,8 +432,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-EntityKind; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUb20k6WJZ4iH3TDmeH2LJRZej
-# i/ugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURozod2VyhrZiVdczGYGXK7kZ
+# byqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -523,26 +532,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-EntityKind; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSusfMpcKwrwVbw
-# lwVdtiuSZ2IsajANBgkqhkiG9w0BAQEFAASCAQCRd8otyQgzx+4nZERVCXB8SEFh
-# 2Buml47XRvq5w62wisoBKMxwETlmmw7hZXE9gcS0pJsSpCUZB7R6alEgl5D67Ayi
-# XVNTJ77xPp/uL2mRuq3EFBGQgPvG4fnNRyyIjhU6s3cetTApl4Ap7TecK41Wob0s
-# oV8ZItDyssFypXvYLj28+zweT7PU4oDTDoGhC5JbNPLctoTkib5KTt/KcBCKRtMi
-# UlN3F/KovRfs1Obp9KTvUBcZKJtGilI3oMbMunCvA6WGkVGlcBFrlwi+LpemPWlx
-# YvuwlXlhyzBZbWiWuzqI+ZZIO90cg8lJ9yLqXZIQP5bMsJigHdvSvZu0phb/oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTbWMV/H0SbA3dn
+# KaXj/IIkuT9t6zANBgkqhkiG9w0BAQEFAASCAQCvA6kLvFWbq0bN+YfPoJ5zay+3
+# BI5m1E2oNTzmQTllF/d5s9REmzFEOU3v177w+YLtMsXop25jKE3sEXsB2C+vdBsa
+# G3gQZRNiehxQlgwoVL4cAEXqm8KewT9U4XG5Z71n0PxcnYNWEWhBmdKkEk8M2dCZ
+# RzqNWNLeJirTXg13A7SDdi/Q9ZGzR7i7GoncEaM+oqD7OQ4TcQC3u6k4Rgg0Q6db
+# /zzgdtdOSKyw5X7BjCVpXDDXfBWduxZhX7P1sLuiIZElmyPfd2zxdnWBr4TsKpWp
+# lN1S+6G9TylsG55mwGRaE8H4cGOBaxu4Tj4wXXrw668RcWH3MJYI/yajXh/UoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTMzNlowIwYJKoZIhvcNAQkEMRYEFJWxSFpAT8+A9BJLUHH+viBrDcTm
+# MTIyMjExMTMzN1owIwYJKoZIhvcNAQkEMRYEFJW6Gu7WQBdUOdGfw9u7O0nx45bQ
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAQEqF4Z1UXmEs1565W
-# 0sGjNpdQDQUkUND18Yt4dC7sDtXj7mZcS8KZjULplns08g7UV6XKgZ3cmH384qQz
-# 4LmZ2MoV1wjrwSXqarIOrW+NNg5fMOOpJlkLc86IfPzRT7ypKKo25nvttg7d8WhR
-# 0izftbEr/u070Zn+xtEjdL4OcIB4PVvSsMlYYj7E0BgJKxV8QrLDnkurvvG+tba1
-# rT4J8mXpN2RtBJPb0xyIe2gcnxeQpjHbfm/o5p9NycYDqMd2xnkvsqxuILqRX1Xk
-# Amcgr53tr0gfijlQwzAAV1dnOsQbsIijQ8q7USkRJwTMQDNKx3jCqHxjRKwIHbku
-# Wb4m
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCo32kezAutGFOjx4Bh
+# GwnCuUvjr4UifdLiXu3hV8oRpWdN3FgHVv9Mu5Or1AYVfani7yJk89qR9lqBcxoc
+# KFt5MAr23t0jac6ay5hdPu8oS8SHlY4wT0agUF/lNL3K/NoSMvqtZuHvQm/uysTs
+# JUIqbdBfPtnn6+Y84OY7+vifme1ZRcYip9WfZyUARODt15JHy/nasREIZZelD0hp
+# fPVKLpZmGOs1pLZ352cnMR9MK16DD7PJIzAXJB5MThPXm2eWpz6TJkF2eogSqfTl
+# QDbztI92polfzMGT6z0HxTV2PAKDeYGwoy3EKL+KpYWNXCmoI0R55XJqJmzKCmiR
+# Qjgw
 # SIG # End signature block

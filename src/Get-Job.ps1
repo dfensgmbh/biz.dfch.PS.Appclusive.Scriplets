@@ -245,6 +245,12 @@ PARAM
 	[Alias('ExpandReferencedItem')]
 	[switch] $ExpandNode = $false
 	,
+	# Indicates to return child information
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
+	[Alias('ExpandChildJobs')]
+	[switch] $ExpandChildren = $false
+	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
@@ -263,7 +269,8 @@ Begin
 	$EntitySetName = 'Jobs';
 	
 	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet";
+	Contract-Requires (1 -ge ($PSBoundParameters.GetEnumerator() | Where { $_.Key -match 'Expand' -and $_.Value -eq $true}).Count) "You can specify only one 'Expand...' param.";
 	
 	if($Select) 
 	{
@@ -285,27 +292,18 @@ Process
 
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
+		if($PSBoundParameters.ContainsKey('First'))
+		{
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
+		}
+		else
+		{
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
+		}
+		
 		if($Select) 
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select -Property $Select;
-			}
-		}
-		else 
-		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-			}
+			$Response = $Response | Select -Property $Select;
 		}
 	} 
 	else 
@@ -330,60 +328,55 @@ Process
 		if($CreatedBy) 
 		{ 
 			$CreatedById = Get-User -svc $svc $CreatedBy -Select Id -ValueOnly;
-			if ( !$CreatedById )
-			{
-				# User not found
-				return;
-			}
+			Contract-Assert ( !!$CreatedById ) 'User not found';
 			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
 		}
 		if($ModifiedBy)
 		{ 
 			$ModifiedById = Get-User -svc $svc $ModifiedBy -Select Id -ValueOnly;
-			if ( !$ModifiedById ) 
-			{
-				# User not found
-				return;
-			}			
+			Contract-Assert ( !!$ModifiedById ) 'User not found';
 			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
 		}
 		if($EntityKindName)
 		{
 			$EntityKindId = Get-EntityKind -Name $EntityKindName -svc $svc -Select Id -ValueOnly;
-			if ( !$EntityKindId ) 
-			{
-				# EntityKind not found
-				return;
-			}
+			Contract-Assert ( !!$EntityKindId ) 'EntityKind not found';
 		}
 		if($EntityKindId)
 		{
 			$Exp += ("(EntityKindId eq {0})" -f $EntityKindId);
 		}
 		$FilterExpression = [String]::Join(' and ', $Exp);
-	
-		if($Select) 
+		
+		if($PSBoundParameters.ContainsKey('First'))
 		{
-			if($PSBoundParameters.ContainsKey('First'))
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select -Property $Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
-			}
-		}
-		else 
-		{
-			if($PSBoundParameters.ContainsKey('First'))
+			if(!$ExpandChildren)
 			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
 			}
 			else
 			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$expand', 'Children').AddQueryOption('$top', $First) | Select;
+			}
+		}
+		else
+		{
+			if(!$ExpandChildren)
+			{
 				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 			}
-			
+			else
+			{
+				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$expand', 'Children') | Select;
+			}
+		}
+	
+		if($Select) 
+		{
+			$Response = $Response | Select -Property $Select;
+		}
+		else 
+		{
 			if ( $ExpandNode )
 			{
 				$ResponseTemp = New-Object System.Collections.ArrayList;
@@ -398,6 +391,7 @@ Process
 				$Response = $ResponseTemp.ToArray();
 			}
 		}
+		
 		if(1 -eq $Select.Count -And $ValueOnly)
 		{
 			$Response = $Response.$Select;

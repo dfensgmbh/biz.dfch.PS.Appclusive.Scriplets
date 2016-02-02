@@ -1,36 +1,137 @@
-function Remove-Node {
+function Set-ExternalNode {
+<#
+.SYNOPSIS
+Sets or creates a ExternalNode entry in Appclusive.
+
+
+.DESCRIPTION
+Sets or creates a ExternalNode entry in Appclusive.
+
+By updating a ExternalNode entry you can specify if you want to update the Name.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-ExternalNode Srv01 -ExternalType com.swisscom.cms.rhel7 -CreateIfNotExist
+
+Parameters     : {}
+ExternalId   : 29
+NodeId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv01
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+
+Create a new ExternalNode entry if it does not exists.
+
+
+.EXAMPLE
+Set-ExternalNode -Name Srv01 -NewName Srv02
+
+Parameters     : {}
+ExternalId   : 29
+NodeId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv02
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+Update an existing ExternalNode with new name.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ExternalNode/
+Set-ExternalNode: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ExternalNode/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
-    SupportsShouldProcess = $true
+    SupportsShouldProcess = $false
 	,
-    ConfirmImpact = 'High'
+    ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-Node/'
-	,
-	DefaultParameterSetName = 'o'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ExternalNode/'
 )]
 Param 
 (
-	# The id of the Node to remove
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
-	[int] $Id
-	,
-	# The name of the Node to remove
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'name')]
+	# Specifies the name to modify
+	[Parameter(Mandatory = $true, Position = 0)]
+	[Alias('n')]
 	[string] $Name
 	,
-	# Specifies the Node to remove
-	[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'o')]
-	[Alias("Entity")]
-	$InputObject
+	# Specifies the new name name
+	[Parameter(Mandatory = $false)]
+	[string] $NewName
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $NodeId
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalType
+	,
+	# Specifies the attributes for this entity
+	[Parameter(Mandatory = $false)]
+	[Alias("Parameters")]
+	[hashtable] $Attributes = @{}
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
 	,
 	# Service reference to Appclusive
-	[Parameter(Mandatory = $false, Position = 1)]
+	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
-	# Specifies the return format of the Cnmdlet
+	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false, Position = 2)]
+	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
 )
@@ -45,136 +146,166 @@ Begin
 
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	Contract-Requires ($NodeId -ne $null)
+	Contract-Requires ($NodeId -ne 0)
+	Contract-Requires (![string]::IsNullOrWhiteSpace($ExternalId))
+	
+	$EntitySetName = 'ExternalNodes';
 }
 # Begin
 
 Process 
 {
-	trap { Log-Exception $_; break; }
 
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+$AddedEntity = $null;
 
-	if($PSCmdlet.ParameterSetName -eq 'id')
+try 
+{
+	$Exp = @();
+	$Exp += "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$Exp += "(tolower(ExternalId) eq '{0}')" -f $ExternalId.toLower();
+	$Exp += "(NodeId eq {0})" -f $NodeId;
+	$FilterExpression = [String]::Join(' and ', $Exp);
+	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+	if(!$CreateIfNotExist -And !$entity) 
 	{
-		$InputObject = Get-Node -Id $Id -svc $svc;
+		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
 	}
-	if($PSCmdlet.ParameterSetName -eq 'name')
-	{
-		$InputObject = Get-Node -Name $Name -svc $svc;
+	if(!$entity) 
+	{		
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNode;
+		$svc.Core.AddToExternalNodes($entity);
+		$AddedEntity = $entity;
+		$entity.Name = $Name;
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.Modified = $entity.Created;
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.ExternalType = $ExternalType;
+		$entity.ExternalId = $ExternalId;
+		$entity.NodeId = $NodeId;
 	}
-	$r = @();
 	
-	$objectFoundToBeRemoved = $false;
-	foreach($item in $InputObject)
+	if($PSBoundParameters.ContainsKey('Description'))
 	{
-		$bShouldProcess = $false;
-		
-		# Node entity
-		$objectFoundToBeRemoved = $true;
-		$itemString = '{0}' -f $item.Name;
-		$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-		if(!$bShouldProcess) { break; };
-		
-		# ChildNodes
-		$childNodes = Get-Node -ParentId $item.Id -svc $svc;
-		foreach($childNode in $childNodes)
-		{
-			$itemString = "Referenced ChildNode '{0}'" -f $childNode.Name;
-			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-			if(!$bShouldProcess) { break; };
-			
-			$r += Remove-Node -Id $childNode.Id -svc $svc;
-		}
-		if(!$bShouldProcess) { break; };
-
-		# ExternalNode entity
-		$externalNodes = Get-Node -Id $item.Id -svc $svc -ExpandExternalNodes;
-		foreach($externalNode in $externalNodes)
-		{
-			$itemString = "Referenced ExternalNode '{0}' of Type '{1}'" -f $externalNode.Name, $externalNode.ExternalType;
-			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-			if(!$bShouldProcess) { break; };
-
-			# ExternalNodeAttributes
-			$externalNodeAttributes = Get-ExternalNode -Id $externalNode.Id -svc $svc -ExpandAttributes;
-			foreach($externalNodeAttribute in $externalNodeAttributes)
-			{
-				$itemString = "Referenced ExternalNodeAttribute '{0}', '{1}'" -f $externalNodeAttribute.Name, $externalNodeAttribute.Description;
-				$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-				if(!$bShouldProcess) { break; };
-
-				$r += ($externalNodeAttribute | Select -Property @{ Name="Name"; Expression={'{0} (ExternalNodeAttribute)' -f $item.Name}}, Id);
-				Log-Notice $fn ("Removing ref ExternalNodeAttribute '{0}' ..." -f $externalNodeAttribute.Id);
-				$svc.Core.DeleteObject($externalNodeAttribute);		
-				$null = $svc.Core.SaveChanges();
-			}
-			if(!$bShouldProcess) { break; };
-			
-			$r += ($externalNode | Select -Property @{ Name="Name"; Expression={'{0} (ExternalNode)' -f $item.Name}}, Id);
-			Log-Notice $fn ("Removing ref ExternalNode '{0}' ..." -f $externalNode.Id);
-			$svc.Core.DeleteObject($externalNode);		
-			$null = $svc.Core.SaveChanges();
-		}
-		if(!$bShouldProcess) { break; };
-
-		# Job entity
-		$jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
-		if ($jobentity)
-		{
-			$itemString = "Referenced Job '{0}' in Status '{1}'" -f $jobentity.Id, $jobentity.Status;
-			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-			if(!$bShouldProcess) { break; };
-
-			# ChildJobs
-			$jobChilds = Get-Job -ParentId $jobentity.Id -svc $svc;
-			foreach($jobChild in $jobChilds)
-			{
-				$itemString = "Referenced ChildJob '{0}' in Status '{1}'" -f $jobChild.Id, $jobChild.Status;
-				$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-				if(!$bShouldProcess) { break; };
-				
-				$r += ($jobChild | Select -Property @{ Name="Name"; Expression={'{0} (ChildJob)' -f $item.Name}}, Id);
-				Log-Notice $fn ("Removing ref ChildJob '{0}' ..." -f $jobChild.Id);
-				$svc.Core.DeleteObject($jobChild);		
-				$null = $svc.Core.SaveChanges();
-			}
-			if(!$bShouldProcess) { break; };
-			
-			$r += ($jobentity | Select -Property @{ Name="Name"; Expression={'{0} (Job)' -f $item.Name}}, Id);
-			Log-Notice $fn ("Removing ref Job '{0}' ..." -f $jobentity.Id);
-			$svc.Core.DeleteObject($jobentity);		
-			$null = $svc.Core.SaveChanges();				
-		}
-		if(!$bShouldProcess) { break; };
-	
-		# Node entity
-		$r += ($item | Select -Property Name, Id);
-		Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
-		$svc.Core.DeleteObject($item);
-		$null = $svc.Core.SaveChanges();
+		$entity.Description = $Description;
 	}
-	Contract-Assert ($objectFoundToBeRemoved)
+	if($NewName)
+	{ 
+		$entity.Name = $NewName; 
+	}
+		
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
+	
+	Contract-Assert ($r.StatusCode -eq 201 -or $r.StatusCode -eq 204);
+	Contract-Assert ($entity.NodeId -eq $NodeId);
+	
+	if($PSBoundParameters.ContainsKey('Attributes'))
+	{
+		foreach($attribute in $Attributes.Keys)
+		{
+			$Exp = @();
+			$Exp += "(tolower(Name) eq '{0}')" -f $attribute.toLower();
+			$Exp += "(ExternaldNodeId eq {0})" -f $entity.Id;
+			$FilterExpression = [String]::Join(' and ', $Exp);
+			$extAttr = $svc.Core.ExternalNodeAttributes.AddQueryOption('$filter', $FilterExpression) | Select;
+			if(!$extAttr) 
+			{
+				$extAttr = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNodeAttribute;
+				$extAttr.Name = $attribute;
+				$extAttr.ExternaldNodeId = $entity.Id;
+				$svc.Core.AddToExternalNodeAttributes($extAttr);
+			}
+			$extAttr.Value = $Attributes.Item($attribute);
+			$svc.Core.UpdateObject($extAttr);
+		}
 
+		$ra = $svc.Core.SaveChanges();
+		Contract-Assert ($ra.StatusCode.Count -eq $Attributes.Keys.Count);
+		
+		for($i=0; $i -lt $Attributes.Keys.Count; $i++)
+		{
+			Contract-Assert ($ra.StatusCode[$i] -eq 201 -or $ra.StatusCode[$i] -eq 204)
+			Contract-Assert ($ra.Descriptor[$i].Entity.ExternaldNodeId -eq $entity.Id)
+		}
+	}
+	
+	$r = $entity;
 	$OutputParameter = Format-ResultAs $r $As;
 	$fReturn = $true;
+
+}
+catch 
+{
+	if($gotoSuccess -eq $_.Exception.Message) 
+	{
+		$fReturn = $true;
+	} 
+	else 
+	{
+		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
+		$ErrorText += (($_ | fl * -Force) | Out-String);
+		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
+		$ErrorText += (Get-PSCallStack | Out-String);
+		
+		if($_.Exception -is [System.Net.WebException]) 
+		{
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
+			Log-Debug $fn $ErrorText -fac 3;
+		}
+		else 
+		{
+			Log-Error $fn $ErrorText -fac 3;
+			if($gotoError -eq $_.Exception.Message) 
+			{
+				Log-Error $fn $e.Exception.Message;
+				$PSCmdlet.ThrowTerminatingError($e);
+			} 
+			elseif($gotoFailure -ne $_.Exception.Message) 
+			{ 
+				Write-Verbose ("$fn`n$ErrorText"); 
+			} 
+			else 
+			{
+				# N/A
+			}
+		}
+		$fReturn = $false;
+		$OutputParameter = $null;
+		
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
+	}
+}
+finally 
+{
+	# Clean up
+	# N/A
+}
+
 }
 # Process
 
 End 
 {
+
 $datEnd = [datetime]::Now;
 Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
 # Return values are always and only returned via OutputParameter.
 return $OutputParameter;
+
 }
 # End
 
 }
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-Node; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ExternalNode; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -195,8 +326,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-Node; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUixDzD7OpxUcdAXb3NPVbVvg7
-# hPSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
+# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +426,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-Node; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSWcrDI8WRQWy0s
-# 8p49AHGE1BM6YjANBgkqhkiG9w0BAQEFAASCAQCJIrgclhDXCZo6H/LQdixJLdXv
-# Ep4Oaus4p9tXew3zBmK64I40eHjiDg+eNSfO7UZJh0b/xJGD9vXPeuZA9QqWUN69
-# TtdlVOfV4qUsNYwSRn2c3OFFojSBE0oj34H1mgdD1zwCrP2UuFkeSNZSvlK4l5OX
-# kFmpjyIDd/D+LlOS2dpi3+1b+uHdhjnfM3smLz3u39u+Jcvoic+s7xYEv1EkPnR+
-# a4ruoG1dQ6FOBEh3L7jgsHKTwYb6nuMhxUKe3JtHDJANi/OtsQMCVV+hXAM83KXo
-# OnQKgurv4BDtzPzxUFPQI/zvU8Z520wvd4FwHZ3kC4SuRgdHpqFSOqV6OM80oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
+# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
+# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
+# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
+# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
+# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
+# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM0NlowIwYJKoZIhvcNAQkEMRYEFPK2LM9gEAced8YWRXtkMxrqLeg9
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQA0K6RFzWmkTau54IXb
-# DeSzsis7aeTHFOSKtsT+h1YbSZupJrYrO66nV74dS5kemjR47E9EM2g5FNpZmHKw
-# As1/inw6Nq4uoiV7A/WRb/1rxnRlouF0keWlEPL4nB6lFK49vD6GQSNRy1T2QB1E
-# J35Oe2fqWSI6a0c3Om4kRK0mwJVHzMZnmXQyUHglZNrAddc7/Lp5T1kjHVX7aB3o
-# w+AYVURpoxWeG+vEC0KgLO4LbLSYOrP9y043BhywKuqpZ8co6w5o7e0IQNtQKxS4
-# AXmY4oA8l/+JfFWwT5d708lgvjtOFHzkGycq1JsVMPDYsNCbKL8rlBAUSpCBbrq8
-# 0wMn
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
+# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
+# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
+# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
+# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
+# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
+# PLS1
 # SIG # End signature block
