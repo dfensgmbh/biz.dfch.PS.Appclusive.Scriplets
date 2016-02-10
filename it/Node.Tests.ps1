@@ -25,6 +25,41 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$svc = Enter-ApcServer;
 		}
 		
+		It "DoStateChangeOnNodeSetsConditionAndConditionParametersOnJob" -Test {
+			# Arrange
+			$condition = 'Continue';
+			$conditionParams = @{Msg = "tralala"};
+			
+			$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+			$node.ParentId = 1;
+			$node.Name = 'arbitrary';
+			$node.Parameters = '{}';
+			$node.EntityKindId = 1;
+			$svc.Core.AddToNodes($node);
+			$svc.Core.SaveChanges();
+
+			$svc = Enter-ApcServer;
+			$query = "RefId eq '{0}' and EntityKindId eq 1" -f $node.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+
+			$jobResult = @{Version = "1"; Message = "Msg"; Succeeded = $true};
+			Invoke-ApcEntityAction -InputObject $job -EntityActionName "JobResult" -InputParameters $jobResult;
+			
+			# Act
+			Invoke-ApcEntityAction -InputObject $node -EntityActionName 'InvokeAction' -InputName $condition -InputParameters $conditionParams;
+			
+			# Assert
+			$svc = Enter-ApcServer;
+			$resultingJob = Get-ApcJob -Id $job.Id;
+			$resultingJob.Condition | Should Be $condition;
+			$resultingJob.ConditionParameters | Should Be ($conditionParams | ConvertTo-Json -Compress);
+			
+			# Cleanup
+			$resultingNode = Get-ApcNode -Id $node.Id
+			$svc.core.DeleteObject($resultingJob);
+			$svc.core.DeleteObject($resultingNode);
+		}
+		
 		It "AddAndDeleteNewNode" -Test {
 			try {
 				# Arrange

@@ -1,11 +1,11 @@
-function Get-Node {
+function Get-ExternalNode {
 <#
 .SYNOPSIS
-Retrieves one or more entities from the Node entity set.
+Retrieves one or more entities from the ExternalNode entity set.
 
 
 .DESCRIPTION
-Retrieves one or more entities from the Node entity set.
+Retrieves one or more entities from the ExternalNode entity set.
 
 You can retrieve one ore more entities from the entity set by specifying 
 Id, Name or other properties.
@@ -24,7 +24,7 @@ In addition output can be filtered on specified properties.
 
 
 .EXAMPLE
-Get-Node -ListAvailable -Select Id, Name
+Get-ExternalNode -ListAvailable -Select Id, Name
 
   Id Name
   -- ----
@@ -52,11 +52,11 @@ Get-Node -ListAvailable -Select Id, Name
  373  aggrade
 ...
 
-Retrieves the id and name of all Nodes.
+Retrieves the id and name of all ExternalNodes.
 
 
 .EXAMPLE
-Get-Node 218
+Get-ExternalNode 218
 
 Parameters     : {"Hostname":"Server01"}
 EntityKindId   : 27
@@ -79,11 +79,11 @@ Tenant         :
 CreatedBy      :
 ModifiedBy     :
 
-Retrieves the Node object with Id 218 and returns all properties of it.
+Retrieves the ExternalNode object with Id 218 and returns all properties of it.
 
 
 .EXAMPLE
-Get-Node 218 -Select Parameters -ValueOnly -ConvertFromJson
+Get-ExternalNode 218 -Select Parameters -ValueOnly -ConvertFromJson
 
 Hostname
 ---
@@ -94,66 +94,54 @@ of it. In addition the contents of the property will be converted from JSON.
 
 
 .EXAMPLE
-Get-Node -ListAvailable -Select Id -First 3
-
-Id
---
-218
-271
-358
-
-Retrieves the id of the first 3 Nodes.
-
-
-.EXAMPLE
-Get-Node 218 -Select Name -ValueOnly
+Get-ExternalNode 218 -Select Name -ValueOnly
 
 abhenry
 
-Retrieves the name of the Node with Id 218.
+Retrieves the name of the ExternalNode with Id 218.
 
 
 .EXAMPLE
-Get-Node -ModifiedBy SYSTEM -Select Id, Name
+Get-ExternalNode -ModifiedBy SYSTEM -Select Id, Name
 
 Id Name
 -- ----
- 1 Root Node
- 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
- 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
-20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node
+ 1 Root ExternalNode
+ 2 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 3 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 4 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 5 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 6 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 7 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 8 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+ 9 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+10 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+11 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+12 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+13 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+14 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+15 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+16 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+17 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+18 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+19 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
+20 biz.dfch.CS.Appclusive.Core.OdataServices.Core.ExternalNode
 
-Retrieves id and name of all Nodes that have been modified by user 
+Retrieves id and name of all ExternalNodes that have been modified by user 
 with name 'SYSTEM' (case insensitive substring match).
 
 
 .EXAMPLE
-Get-Node AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
+Get-ExternalNode AppclusiveScheduler -Select Name -ValueOnly -DefaultValue 'AppclusiveSchedulerNotAvailable'
 
 AppclusiveSchedulerNotAvailable
 
-Retrieves the 'Name' property of a Node with Name 'AppclusiveScheduler' 
+Retrieves the 'Name' property of a ExternalNode with Name 'AppclusiveScheduler' 
 and AppclusiveSchedulerNotAvailable if the entity is not found.
 
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Node/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ExternalNode/
 
 
 .NOTES
@@ -166,7 +154,7 @@ See module manifest for required software versions and dependencies.
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Node/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-ExternalNode/'
 	,
 	DefaultParameterSetName = 'list'
 )]
@@ -181,6 +169,19 @@ PARAM
 	[Alias('n')]
 	[string] $Name
 	,
+	# Filter by external id
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[string] $ExternalId
+	,
+	# Filter by external id
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[int] $NodeId
+	,
+	# Filter by type
+	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
+	[Alias("Type")]
+	[string] $ExternalType
+	,
 	# Filter by creator
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[string] $CreatedBy
@@ -188,18 +189,6 @@ PARAM
 	# Filter by modifier
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[string] $ModifiedBy
-	,
-	# Specifies the Parent id for this entity
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[int] $ParentId
-	,
-	# Specifies the EntityKind id for this entity
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[int] $EntityKindId
-	,
-	# Specifies the EntityKind name for this entity
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[string] $EntityKindName
 	,
 	# Specify the attributes of the entity to return
 	[Parameter(Mandatory = $false)]
@@ -225,11 +214,6 @@ PARAM
 	[Alias('Convert')]
 	[switch] $ConvertFromJson
 	,
-	# Limits the output to the specified number of entries
-	[Parameter(Mandatory = $false)]
-	[Alias('top')]
-	[int] $First
-	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
@@ -239,27 +223,17 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
 	[switch] $ListAvailable = $false
 	,
-	# Indicates to return child information
+	# Indicates to return node information
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias('ExpandChildNodes')]
-	[switch] $ExpandChildren = $false
+	[switch] $ExpandNode = $false
 	,
 	# Indicates to return job information
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[Alias('ExpandStatus')]
-	[switch] $ExpandJob = $false
-	,
-	# Indicates to return available actions information
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[switch] $ExpandAvailableActions = $false
-	,
-	# Indicates to return externalnodes
-	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
-	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
-	[switch] $ExpandExternalNodes = $false
+	[Alias('ExpandExternalNodeAttributes')]
+	[Alias('ExpandAttributes')]
+	[switch] $ExpandBags = $false
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
@@ -276,10 +250,10 @@ Begin
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	$EntitySetName = 'Nodes';
+	$EntitySetName = 'ExternalNodes';
 	
 	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet";	
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
 	Contract-Requires (1 -ge ($PSBoundParameters.GetEnumerator() | Where { $_.Key -match 'Expand' -and $_.Value -eq $true}).Count) "You can specify only one 'Expand...' param.";
 	
 	if($Select) 
@@ -302,18 +276,13 @@ Process
 
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
-		if($PSBoundParameters.ContainsKey('First'))
-		{
-			$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name').AddQueryOption('$top', $First) | Select;
-		}
-		else
-		{
-			$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-		}
-		
 		if($Select) 
 		{
-			$Response = $Response | Select -Property $Select;
+			$Response = $svc.Core.$EntitySetName | Select -Property $Select;
+		}
+		else 
+		{
+			$Response = $svc.Core.$EntitySetName | Select;
 		}
 	} 
 	else 
@@ -327,92 +296,70 @@ Process
 		{ 
 			$Exp += ("tolower(Name) eq '{0}'" -f $Name.ToLower());
 		}
-		if($ParentId)
-		{
-			$Exp += ("ParentId eq {0}" -f $ParentId);
+		if($ExternalType) 
+		{ 
+			$Exp += ("tolower(ExternalType) eq '{0}'" -f $ExternalType.ToLower());
+		}
+		if($ExternalId) 
+		{ 
+			$Exp += ("tolower(ExternalId) eq '{0}'" -f $ExternalId.ToLower());
+		}
+		if($NodeId) 
+		{ 
+			$Exp += ("NodeId eq {0}" -f $NodeId);
+		}
+		if($CreatedBy) 
+		{ 
+			$CreatedById = Get-User -svc $svc $CreatedBy -Select Id -ValueOnly;
+			if ( !$CreatedById )
+			{
+				# User not found
+				return;
+			}
+			$Exp += ("(CreatedById eq {0})" -f $CreatedById);
 		}
 		if($ModifiedBy)
 		{ 
 			$ModifiedById = Get-User -svc $svc $ModifiedBy -Select Id -ValueOnly;
-			Contract-Assert ( !!$ModifiedById ) 'User not found';
+			if ( !$ModifiedById ) 
+			{
+				# User not found
+				return;
+			}			
 			$Exp += ("(ModifiedById eq {0})" -f $ModifiedById);
-		}
-		if($EntityKindName)
-		{
-			$EntityKindId = Get-EntityKind -Name $EntityKindName -svc $svc -Select Id -ValueOnly;
-			Contract-Assert ( !!$EntityKindId ) 'EntityKind not found';
-		}
-		if($EntityKindId)
-		{
-			$Exp += ("(EntityKindId eq {0})" -f $EntityKindId);
 		}
 		$FilterExpression = [String]::Join(' and ', $Exp);
 	
-		if($PSBoundParameters.ContainsKey('First'))
-		{
-			if(!$ExpandChildren)
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top', $First) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$expand', 'Children').AddQueryOption('$top', $First) | Select;
-			}
-		}
-		else
-		{
-			if(!$ExpandChildren)
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
-			}
-			else
-			{
-				$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$expand', 'Children') | Select;
-			}
-		}
-	
 		if($Select) 
 		{
-			$Response = $Response | Select -Property $Select;
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select -Property $Select;
 		}
 		else 
 		{
-			if ( $ExpandJob )
-			{
+			$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+			
+			if ( $ExpandNode )
+			{				
 				$ResponseTemp = New-Object System.Collections.ArrayList;
 				foreach ($item in $Response)
 				{
 					if ( $item )
 					{
-						$Response_ = $svc.Core.InvokeEntityActionWithSingleResult($item, 'Status', [System.Object], $null);
+						$Response_ = Get-Node -Id $item.NodeId -svc $svc;
 						$null = $ResponseTemp.Add($Response_);
 					}
 				}
 				$Response = $ResponseTemp.ToArray();
 			}
 			
-			if ( $ExpandAvailableActions )
-			{
+			if ( $ExpandBags )
+			{				
 				$ResponseTemp = New-Object System.Collections.ArrayList;
 				foreach ($item in $Response)
 				{
 					if ( $item )
 					{
-						$Response_ = $svc.Core.InvokeEntityActionWithListResult($item, 'AvailableActions', [string], $null);
-						$null = $ResponseTemp.Add($Response_);
-					}
-				}
-				$Response = $ResponseTemp.ToArray();
-			}
-			
-			if ( $ExpandExternalNodes )
-			{
-				$ResponseTemp = New-Object System.Collections.ArrayList;
-				foreach ($item in $Response)
-				{
-					if ( $item )
-					{
-						$Response_ = $svc.Core.ExternalNodes.AddQueryOption('$filter', 'NodeId eq {0}' -f $item.Id);
+						$Response_ = $svc.Core.ExternalNodeBags.AddQueryOption('$filter', 'ExternaldNodeId eq {0}' -f $item.Id);
 						$null = $ResponseTemp.Add($Response_);
 					}
 				}
@@ -465,7 +412,7 @@ return $OutputParameter;
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Node; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-ExternalNode; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH

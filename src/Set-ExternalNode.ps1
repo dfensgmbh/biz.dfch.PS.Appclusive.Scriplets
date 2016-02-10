@@ -1,20 +1,137 @@
-function Get-Time {
+function Set-ExternalNode {
+<#
+.SYNOPSIS
+Sets or creates a ExternalNode entry in Appclusive.
+
+
+.DESCRIPTION
+Sets or creates a ExternalNode entry in Appclusive.
+
+By updating a ExternalNode entry you can specify if you want to update the Name.
+
+
+.OUTPUTS
+default
+
+
+.EXAMPLE
+Set-ExternalNode Srv01 -ExternalType com.swisscom.cms.rhel7 -CreateIfNotExist
+
+Parameters     : {}
+ExternalId   : 29
+NodeId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv01
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+
+Create a new ExternalNode entry if it does not exists.
+
+
+.EXAMPLE
+Set-ExternalNode -Name Srv01 -NewName Srv02
+
+Parameters     : {}
+ExternalId   : 29
+NodeId       : 1
+Id             : 1442
+Tid            : 22222222-2222-2222-2222-222222222222
+Name           : Srv02
+Description    : 
+CreatedById    : 60
+ModifiedById   : 60
+Created        : 05.01.2016 15:35:06 +01:00
+Modified       : 05.01.2016 15:35:06 +01:00
+RowVersion     : {0, 0, 0, 0...}
+Parent         :
+EntityKind     :
+Children       : {}
+IncomingAssocs : {}
+OutgoingAssocs : {}
+Tenant         :
+CreatedBy      :
+ModifiedBy     :
+
+Update an existing ExternalNode with new name.
+
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-ExternalNode/
+Set-ExternalNode: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ExternalNode/
+
+
+.NOTES
+See module manifest for dependencies and further requirements.
+
+
+#>
 [CmdletBinding(
     SupportsShouldProcess = $false
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Time/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-ExternalNode/'
 )]
-PARAM 
+Param 
 (
+	# Specifies the name to modify
+	[Parameter(Mandatory = $true, Position = 0)]
+	[Alias('n')]
+	[string] $Name
+	,
+	# Specifies the new name name
+	[Parameter(Mandatory = $false)]
+	[string] $NewName
+	,
+	# Specifies the Parent id for this entity
+	[Parameter(Mandatory = $false)]
+	[int] $NodeId
+	,
+	# Specifies the description
+	[Parameter(Mandatory = $false)]
+	[Alias("d")]
+	[string] $Description
+	,
+	# Specifies the EntityKind id for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalId
+	,
+	# Specifies the EntityKind name for this entity
+	[Parameter(Mandatory = $false)]
+	[string] $ExternalType
+	,
+	# Specifies the attributes for this entity
+	[Parameter(Mandatory = $false)]
+	[Alias("Parameters")]
+	[Alias("Bags")]
+	[hashtable] $Attributes = @{}
+	,
+	# Specifies to create a entity if it does not exist
+	[Parameter(Mandatory = $false)]
+	[Alias("c")]
+	[switch] $CreateIfNotExist = $false
+	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
 	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty', 'DateTimeOffset')]
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
@@ -27,38 +144,152 @@ Begin
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-	
-	$EntitySetName = 'Endpoints';
-	
+
 	# Parameter validation
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	Contract-Requires ($NodeId -ne $null)
+	Contract-Requires ($NodeId -ne 0)
+	Contract-Requires (![string]::IsNullOrWhiteSpace($ExternalId))
+	
+	$EntitySetName = 'ExternalNodes';
 }
 # Begin
 
 Process 
 {
 
-	trap { Log-Exception $_; break; }
+# Default test variable for checking function response codes.
+[Boolean] $fReturn = $false;
+# Return values are always and only returned via OutputParameter.
+$OutputParameter = $null;
+$AddedEntity = $null;
 
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
-
-	# Parameter validation
-	# N/A
+try 
+{
+	$Exp = @();
+	$Exp += "(tolower(Name) eq '{0}')" -f $Name.toLower();
+	$Exp += "(tolower(ExternalId) eq '{0}')" -f $ExternalId.toLower();
+	$Exp += "(NodeId eq {0})" -f $NodeId;
+	$FilterExpression = [String]::Join(' and ', $Exp);
+	$entity = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
+	if(!$CreateIfNotExist -And !$entity) 
+	{
+		$msg = "Name: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $Name;
+		$e = New-CustomErrorRecord -m $msg -cat ObjectNotFound -o $Name;
+		throw($gotoError);
+	}
+	if(!$entity) 
+	{		
+		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNode;
+		$svc.Core.AddToExternalNodes($entity);
+		$AddedEntity = $entity;
+		$entity.Name = $Name;
+		$entity.Created = [System.DateTimeOffset]::Now;
+		$entity.Modified = $entity.Created;
+		$entity.CreatedById = 0;
+		$entity.ModifiedById = 0;
+		$entity.ExternalType = $ExternalType;
+		$entity.ExternalId = $ExternalId;
+		$entity.NodeId = $NodeId;
+	}
 	
-	$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Time', [string], $null);
+	if($PSBoundParameters.ContainsKey('Description'))
+	{
+		$entity.Description = $Description;
+	}
+	if($NewName)
+	{ 
+		$entity.Name = $NewName; 
+	}
+		
+	$svc.Core.UpdateObject($entity);
+	$r = $svc.Core.SaveChanges();
+	
+	Contract-Assert ($r.StatusCode -eq 201 -or $r.StatusCode -eq 204);
+	Contract-Assert ($entity.NodeId -eq $NodeId);
+	
+	if($PSBoundParameters.ContainsKey('Attributes'))
+	{
+		foreach($attribute in $Attributes.Keys)
+		{
+			$Exp = @();
+			$Exp += "(tolower(Name) eq '{0}')" -f $attribute.toLower();
+			$Exp += "(ExternaldNodeId eq {0})" -f $entity.Id;
+			$FilterExpression = [String]::Join(' and ', $Exp);
+			$extAttr = $svc.Core.ExternalNodeBags.AddQueryOption('$filter', $FilterExpression) | Select;
+			if(!$extAttr) 
+			{
+				$extAttr = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNodeBag;
+				$extAttr.Name = $attribute;
+				$extAttr.ExternaldNodeId = $entity.Id;
+				$svc.Core.AddToExternalNodeBags($extAttr);
+			}
+			$extAttr.Value = $Attributes.Item($attribute);
+			$svc.Core.UpdateObject($extAttr);
+		}
 
-	if($As -eq 'DateTimeOffset')
-	{
-		$OutputParameter = [System.DateTimeOffset]::Parse($Response);
+		$ra = $svc.Core.SaveChanges();
+		Contract-Assert ($ra.StatusCode.Count -eq $Attributes.Keys.Count);
+		
+		for($i=0; $i -lt $Attributes.Keys.Count; $i++)
+		{
+			Contract-Assert ($ra.StatusCode[$i] -eq 201 -or $ra.StatusCode[$i] -eq 204)
+			Contract-Assert ($ra.Descriptor[$i].Entity.ExternaldNodeId -eq $entity.Id)
+		}
 	}
-	else
-	{
-		$OutputParameter = Format-ResultAs $Response $As
-	}
+	
+	$r = $entity;
+	$OutputParameter = Format-ResultAs $r $As;
 	$fReturn = $true;
+
+}
+catch 
+{
+	if($gotoSuccess -eq $_.Exception.Message) 
+	{
+		$fReturn = $true;
+	} 
+	else 
+	{
+		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
+		$ErrorText += (($_ | fl * -Force) | Out-String);
+		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
+		$ErrorText += (Get-PSCallStack | Out-String);
+		
+		if($_.Exception -is [System.Net.WebException]) 
+		{
+			Log-Critical $fn ("[WebException] Request FAILED with Status '{0}'. [{1}]." -f $_.Exception.Status, $_);
+			Log-Debug $fn $ErrorText -fac 3;
+		}
+		else 
+		{
+			Log-Error $fn $ErrorText -fac 3;
+			if($gotoError -eq $_.Exception.Message) 
+			{
+				Log-Error $fn $e.Exception.Message;
+				$PSCmdlet.ThrowTerminatingError($e);
+			} 
+			elseif($gotoFailure -ne $_.Exception.Message) 
+			{ 
+				Write-Verbose ("$fn`n$ErrorText"); 
+			} 
+			else 
+			{
+				# N/A
+			}
+		}
+		$fReturn = $false;
+		$OutputParameter = $null;
+		
+		if($AddedEntity) { $svc.Core.DeleteObject($AddedEntity); }
+	}
+}
+finally 
+{
+	# Clean up
+	# N/A
+}
+
 }
 # Process
 
@@ -74,9 +305,8 @@ return $OutputParameter;
 }
 # End
 
-} # function
-
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Time; } 
+}
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-ExternalNode; } 
 
 # 
 # Copyright 2014-2015 d-fens GmbH
@@ -97,8 +327,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Time; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBCiisVz2YEkvP9UVUlfK8Ykh
-# hfugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPY1h6RDmAzlBEHfAU0/EY1Jl
+# rVGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -197,26 +427,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Time; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRKzEOJ0fHOgn+m
-# 9Xu2V3UH78R44zANBgkqhkiG9w0BAQEFAASCAQDBAeLefMTNcaJr8hlep/fGQqyD
-# RnQCgt+rQCAHporP8iIIBnWZLONpyPEnnTR+OwvvJat9fskpLtGNBbP89nbGKuPg
-# 7laqn2A0d600JN32ObjdX3BjiEYIp/ksYEdMXJ6CCiCFiIi2m+8twyBj8H10dy4r
-# uB1rQMk4zqzSQLoHmiJOEj9L2iQ39vzE+cHR628pv7grlaxw/SfQNL4oFDMIUlI+
-# DxbciTBN5W0iMEfOnA8SYhM9WS8IlchGsVA4h32dr3v7EmNSMYvj71rTETrxUs0a
-# LiEBs8wd4Fc8mWxwMlYENGqJ8p3b5VNe0FZLXIuOcl/TCzaRaD3s9rmq5zOmoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQunZNOc8mAczII
+# mdgmWlMvmRDuiTANBgkqhkiG9w0BAQEFAASCAQBCaD+P59CWyKuD8G5xz3Zucv3D
+# KfK/f6PkhPtTIf8BZKfKVyUIgRTBZMKZ7xsKbk5kwqZhoH/slUYh4BwKTMPf+vfd
+# QPAc1ZnG5J4ax/AwxTGyaudgg5T+yXxShr3Aq/XUqcnI//ikMyr2PxOEmZN+U9gI
+# Ey3iYjLPYk5J2ndLMfUC0bW3d+ZXpnd/493eALII37ZEKTitKVBi+GOxmLAmDwZF
+# a0BXlmu0PUr9QOdRenJueLzjCs63NhhWUduRiQQKrBNzi1VDd3m8uP4qI/dJEVoE
+# 8ZTng/1kmGAdnxoUa6y6rsCO3n/LN+gbB++Zor66Jl6hBy8du4Wb9DmYXwldoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
-# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDExNjExNDYxMFowIwYJKoZIhvcNAQkEMRYEFOyjwsjFg4+1ewAu9diq1O01TKe7
+# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
+# MTIyMjExMTM0OFowIwYJKoZIhvcNAQkEMRYEFGEQqNfS+gI6/zOSqyCYCzEMeHF8
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBqyi4YM1XRdJaCTnPt
-# OxIIFetMbJFCInpwe0s9yr/hYmF3rQ16A7tE+Gro/qp+ckrHgzEznrbn6e2ISxT6
-# CZEaF92WF09BSA/KhzZE3skgOpc4FZoNkTiOresP00nKWnkMqUFmWppMSNR0uR1k
-# mwpApNmgtvNj3V5F77l5AW8BCVmRMwDdS4ihEQP1VgIwuNfTPU6bu4xJYqbTXQG4
-# GG523ppgr9jO9rbWf2wGcfu2AOrEeYerbdQozy3QQO1qzOgKqzW+3pNULS2bCVVX
-# aTsAmGNMxn44dNxjL8om5suxKXnHykEnO0keddplsPwue4Bln8D+pdzg/qVi2CjW
-# hXb2
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCaBkijldXGj0mPm9tY
+# 0O5KWb8fvhQ7vALhUomwPNpKG1W7WK54wFBWV6fEfvgEaKBVuQB7cqSEetZRwNl4
+# LIvqshmWsdyIad588yP7R/x4kEPF8C5xtnQOtYIiLpmBQcBx8D8rTwp67st38hqf
+# uj9yTtbezuu94l64acv1jjbSiLVcsQyK6ySggsbQC1wPK3KQeXPqBakjTm9Pl/hz
+# A0S5zJyxUyDf/UQcDN7HURdndxsFQxL7Or5h5LvlakXj1uizrWyx1casgRFL8EVu
+# hLdPjFNWTLt5g9tXRYpHU9E8fGMDJzEAsYQx5934y+MoKBFS8hEzOEWmhsm8gYRe
+# PLS1
 # SIG # End signature block

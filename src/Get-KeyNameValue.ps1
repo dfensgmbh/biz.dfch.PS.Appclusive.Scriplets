@@ -376,7 +376,7 @@ try
 		}
 		if($Name) 
 		{ 
-			$Key = $Name.ToLower();
+			$Name = $Name.ToLower();
 			$Exp += ("(tolower(Name) eq '{0}')" -f $Name);
 		}
 		if($Value) 
