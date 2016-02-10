@@ -107,6 +107,7 @@ Param
 	# Specifies the attributes for this entity
 	[Parameter(Mandatory = $false)]
 	[Alias("Parameters")]
+	[Alias("Bags")]
 	[hashtable] $Attributes
 	,
 	# Specifies the description for this entity

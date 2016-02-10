@@ -117,6 +117,7 @@ Param
 	# Specifies the attributes for this entity
 	[Parameter(Mandatory = $false)]
 	[Alias("Parameters")]
+	[Alias("Bags")]
 	[hashtable] $Attributes = @{}
 	,
 	# Specifies to create a entity if it does not exist
@@ -215,13 +216,13 @@ try
 			$Exp += "(tolower(Name) eq '{0}')" -f $attribute.toLower();
 			$Exp += "(ExternaldNodeId eq {0})" -f $entity.Id;
 			$FilterExpression = [String]::Join(' and ', $Exp);
-			$extAttr = $svc.Core.ExternalNodeAttributes.AddQueryOption('$filter', $FilterExpression) | Select;
+			$extAttr = $svc.Core.ExternalNodeBags.AddQueryOption('$filter', $FilterExpression) | Select;
 			if(!$extAttr) 
 			{
-				$extAttr = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNodeAttribute;
+				$extAttr = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNodeBag;
 				$extAttr.Name = $attribute;
 				$extAttr.ExternaldNodeId = $entity.Id;
-				$svc.Core.AddToExternalNodeAttributes($extAttr);
+				$svc.Core.AddToExternalNodeBags($extAttr);
 			}
 			$extAttr.Value = $Attributes.Item($attribute);
 			$svc.Core.UpdateObject($extAttr);

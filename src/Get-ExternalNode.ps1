@@ -232,7 +232,8 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'name')]
 	[Parameter(Mandatory = $false, ParameterSetName = 'id')]
 	[Alias('ExpandExternalNodeAttributes')]
-	[switch] $ExpandAttributes = $false
+	[Alias('ExpandAttributes')]
+	[switch] $ExpandBags = $false
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
@@ -351,14 +352,14 @@ Process
 				$Response = $ResponseTemp.ToArray();
 			}
 			
-			if ( $ExpandAttributes )
+			if ( $ExpandBags )
 			{				
 				$ResponseTemp = New-Object System.Collections.ArrayList;
 				foreach ($item in $Response)
 				{
 					if ( $item )
 					{
-						$Response_ = $svc.Core.ExternalNodeAttributes.AddQueryOption('$filter', 'ExternaldNodeId eq {0}' -f $item.Id);
+						$Response_ = $svc.Core.ExternalNodeBags.AddQueryOption('$filter', 'ExternaldNodeId eq {0}' -f $item.Id);
 						$null = $ResponseTemp.Add($Response_);
 					}
 				}
