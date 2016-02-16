@@ -44,6 +44,10 @@
               <S N="Key">Diagnostics</S>
               <S N="Value">Diagnostics</S>
             </En>
+			<En>
+              <S N="Key">CMP</S>
+              <S N="Value">CMP</S>
+            </En>
           </DCT>
         </Obj>
       </En>
