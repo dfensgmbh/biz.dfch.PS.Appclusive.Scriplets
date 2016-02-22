@@ -103,9 +103,9 @@ try
 			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
 			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
 		}
-		'CMP' 
+		'Cmp' 
 		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.CMP.CMP($UriService.AbsoluteUri);
+			$o = New-Object biz.dfch.CS.Appclusive.Api.Cmp.Cmp($UriService.AbsoluteUri);
 			$o.Credentials = $Credential;
 			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
 			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;

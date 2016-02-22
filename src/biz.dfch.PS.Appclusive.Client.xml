@@ -45,8 +45,8 @@
               <S N="Value">Diagnostics</S>
             </En>
 			<En>
-              <S N="Key">CMP</S>
-              <S N="Value">CMP</S>
+              <S N="Key">Cmp</S>
+              <S N="Value">Cmp</S>
             </En>
           </DCT>
         </Obj>

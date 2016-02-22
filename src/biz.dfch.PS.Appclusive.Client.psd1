@@ -8,7 +8,7 @@
 RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
 
 # Version number of this module.
-ModuleVersion = '2.0.0.20160210'
+ModuleVersion = '2.0.5.20160222'
 
 # ID used to uniquely identify this module
 GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
@@ -20,7 +20,7 @@ Author = 'Ronald Rink'
 CompanyName = 'd-fens GmbH'
 
 # Copyright statement for this module
-Copyright = '(c) 2015 d-fens GmbH. Distributed under Apache 2.0 license.'
+Copyright = '(c) 2016 d-fens GmbH. Distributed under Apache 2.0 license.'
 
 # Description of the functionality provided by this module
 Description = 'PowerShell module for the Appclusive Framework and Middleware'
@@ -193,7 +193,7 @@ DefaultCommandPrefix = 'Apc'
 }
 
 # 
-# Copyright 2014-2015 d-fens GmbH
+# Copyright 2014-2016 d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
