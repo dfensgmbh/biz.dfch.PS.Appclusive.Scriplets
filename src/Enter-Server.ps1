@@ -103,6 +103,13 @@ try
 			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
 			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
 		}
+		'Cmp' 
+		{
+			$o = New-Object biz.dfch.CS.Appclusive.Api.Cmp.Cmp($UriService.AbsoluteUri);
+			$o.Credentials = $Credential;
+			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
+			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
+		}
 		default 
 		{
 			Log-Error $fn ("Unknown service '{0}': '{1}'. Skipping ..." -f $k, $UriService.AbsoluteUri);
@@ -195,8 +202,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMITtt8cOEfXqnI0FNHQYNyIX
-# IBCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUFhcO/gdGQlog4dhepJkjUZ40
+# FPqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -295,26 +302,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRlJEKoO8yv3riH
-# vOCiI6rUi2djKjANBgkqhkiG9w0BAQEFAASCAQAG7wUoTin8KtxGZwk6wDtA8XDx
-# AIT+GsKOMfBqio/i7m5YaoCn98g9oIu0+TEY3u0JN6Y3tfcZbGKm53YNWFtwWuhv
-# eWjqEcpxxEGaaGBdGsLxjcD1rFnqUIV/6fQsb9O6HX1EDNFKvQSJI6sZ9Ci8upyD
-# Xg0h2l37UwkPcHth5HLcdD2CGMEf4GzPgCVIwg+0S0cx719o+B2AubKSDUWcYNJ2
-# 4od3/g294blzo1radAN1/VmzE8EIsc/yQdqDfYFZoOQLinjDtxzF+Zsu9Qo6XNU9
-# gZsIf7J9Mh7u8GwYl6N8N+TQj6dDXOYaBghrOogX9mVDikzS8oF5wv/kQKC9oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRKxbfLZz8kJkl5
+# +/F7SkbXsgnx6zANBgkqhkiG9w0BAQEFAASCAQAPqNT5Hj/7JyvHJoz/QGUlX58B
+# RjxSEpMTfYDC88NIlNmFF2ZKCZEgvzhQ4qDw4A7jmChHmPV7bnOVzXFcbHZA0/Oo
+# kaf50J50VIAwW2z9BtY98MVmRQXof3w/NjjfsnNVm/e3KYZkcwccGIDjqua3x3cp
+# CJHdUqxZTZTlqo2j7UAQ6B004usaGO497S/MvnxFf6Nfvx2MOR+UZGdAe3bwm0UV
+# VC3JLoFzV5SfVk1mtw7utgyhRsh867bYAH2lbGb+xXUvwKLvfYZDIR3KtMFr9GD/
+# lzLiJWsT8jqqCS+VpHf4OaQbvm1hvGf6zv78e0c6PV2DLi9mDU9qEMsoX1RToYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
-# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMDIyMzUwOVowIwYJKoZIhvcNAQkEMRYEFMzndWOIuHbREK92YCgTw0LXHnDJ
+# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
+# MDIyMjA3MjUzM1owIwYJKoZIhvcNAQkEMRYEFCN0mVTKR+eDIsYpzOXhEmaD7fHF
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQB9Wwy/voFbT467gxxU
-# +Eg88cg2+M98deJzTxBMsOmv63xButfe2LJvhP9JrrV9aCZxoYBA5vxs68HEImzN
-# WUTpIZ3o4cyjCYhzOBy1KTVqRhpbsWk37bdxtv1r1E5z5Rebjy6nQ/lF8kvBcV55
-# S++VBRrrAbDe95NGjRWk+XDSTR+w/RrGXmFf+Y1UYeLB9XZL2CxaBGtY0ExLnq8I
-# Axkdl0gEFGLDN0SaxvoVlOUQCIhrQXaSoxQgSoEDDu9LD5oT5pB3vGskk98mIIlC
-# 37f8e/wPBQHq+/q8IAI79tAIT2PDLsIh2o0tK5etSRsKWxMIGOoQoXOfdK+UFVcu
-# wyCr
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBx+YKtsoWT4+MHtkKa
+# V8iDQbeXaRPzGvNHd0bG/iA9U6J4HzmMK2yqvevMcJiOre03ZIQ79nmS4hFE2PpH
+# f2EbcUZWpKRmq0HSyJ92ySkW6iml227ErQUzUy+rD6ZNDxPMOHeCvcYMSP+QJkQX
+# q0IIwewyOi3Q/OjmGciQsUs7irY+MiRKbmnvE3GbrK2B0S9P5797C3YFKvMHkyPV
+# IBTJ58TnMIMyn/yPTrLkajAosgRKGlCu+IKaL4vLMkKk4ybscJuI7p1RYEaKVMRb
+# oI7FhXHpPkBaC34THvz1H7VpLIEcovLnsRpruf535XuyeZBleH/VrH75+G0WKwA/
+# uePl
 # SIG # End signature block
