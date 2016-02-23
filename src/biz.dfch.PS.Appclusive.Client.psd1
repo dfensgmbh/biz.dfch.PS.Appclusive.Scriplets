@@ -139,6 +139,14 @@ NestedModules = @(
 	'New-ExternalNode.ps1'
 	,
 	'Set-ExternalNode.ps1'
+	,
+	'Get-CimiTarget.ps1'
+	,
+	'New-Order.ps1'
+	,
+	'Get-Product.ps1'
+	,
+	'Get-CatalogueItem.ps1'
 )
 
 # Functions to export from this module
