@@ -8,7 +8,7 @@
 RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
 
 # Version number of this module.
-ModuleVersion = '2.0.5.20160222'
+ModuleVersion = '2.1.3.20160315'
 
 # ID used to uniquely identify this module
 GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
@@ -139,6 +139,14 @@ NestedModules = @(
 	'New-ExternalNode.ps1'
 	,
 	'Set-ExternalNode.ps1'
+	,
+	'Get-CimiTarget.ps1'
+	,
+	'New-Order.ps1'
+	,
+	'Get-Product.ps1'
+	,
+	'Get-CatalogueItem.ps1'
 )
 
 # Functions to export from this module
