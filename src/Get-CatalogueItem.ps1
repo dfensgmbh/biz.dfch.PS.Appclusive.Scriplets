@@ -210,7 +210,7 @@ PARAM
 	# Full name or part of it, for the item you want to search - this is not case sensitive
 	[Parameter(Mandatory = $false, ParameterSetName = 'SearchByName')]
 	[ValidateNotNullOrEmpty()]
-	[String] $SearchByName = $null
+	[String] $Name = $null
 	,
 	# Id of the product
 	[Parameter(Mandatory = $false, ParameterSetName = 'ProductId')]
@@ -267,7 +267,7 @@ Process
 		
 		If ($PSCmdlet.ParameterSetName -eq 'SearchByName') 
 		{
-			$Exp += ("substringof('{0}', tolower(Name))" -f $SearchByName.ToLower());
+			$Exp += ("substringof('{0}', tolower(Name))" -f $Name.ToLower());
 		}
 		
 		If ($PSCmdlet.ParameterSetName -eq 'ProductId') 

@@ -121,7 +121,9 @@ Process
 		if(!$bShouldProcess) { break; };
 
 		# Job entity
-		$jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
+		# $jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
+		# Workaroud because singele action status does not work properly
+		$jobentity = $svc.Core.Jobs.AddQueryOption('$filter',("RefId eq '{0}'" -f $item.Id)) | Select;
 		if ($jobentity)
 		{
 			$itemString = "Referenced Job '{0}' in Status '{1}'" -f $jobentity.Id, $jobentity.Status;

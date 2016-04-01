@@ -147,6 +147,10 @@ NestedModules = @(
 	'Get-Product.ps1'
 	,
 	'Get-CatalogueItem.ps1'
+	,
+	'Get-Tenant.ps1'
+	,
+	'Set-SessionTenant.ps1'
 )
 
 # Functions to export from this module
