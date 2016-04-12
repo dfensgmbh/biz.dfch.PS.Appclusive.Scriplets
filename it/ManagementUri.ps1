@@ -1,42 +1,7 @@
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
-
-function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
-{
-	$msg = $message;
-	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
-	$PSCmdlet.ThrowTerminatingError($e);
-}
-
-Describe -Tags "Gate.Tests" "Gate.Tests" {
-
-	Mock Export-ModuleMember { return $null; }
-	
-	Context "#CLOUDTCL-1882-GateTests" {
-		
-		BeforeEach {
-			$moduleName = 'biz.dfch.PS.Appclusive.Client';
-			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			Import-Module $moduleName;
-			$svc = Enter-ApcServer;
-		}
-		
-		It "TestName" -Test {
-			# Arrange
-			
-			
-			# Act
-			
-			
-			# Assert	
-			
-			
-		}
-	}
-}
+# This file intentionally left blank
 
 #
-# Copyright 2015 d-fens GmbH
+# Copyright 2016 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,8 +19,8 @@ Describe -Tags "Gate.Tests" "Gate.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZGRsHQQB158UTWtUT9nXlEY2
-# XdmgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdHPrMeSoVpJ04wMng86a9NBd
+# iaegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -154,26 +119,26 @@ Describe -Tags "Gate.Tests" "Gate.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRWBCgOHZ1ixF7s
-# 7lGAUc45irdRijANBgkqhkiG9w0BAQEFAASCAQActSrPzZEvqK5IdcY4M7ORysnZ
-# g4DDwmcVfRh6maXb9eTsfysGpWOp+cJzClMozuvlb32pt5J2Ypk69v+mFc4YRLka
-# Ptt23FoDfIc+zc3r8P+ImcYh3jfRvskG2QGJNKTSXhrEXUDbo6M3Z9+Y1BZd1OMe
-# z6AkCpqwxJtavsZk8bYIV1qSAF0TxblW7brQX6NhU8h1CA9fEp8BpfwQ/rOTWrqA
-# sf+6g8Taf8OZbwR4rCFi9i5iDe8b2BjIjfk08JcoZiEEo4RnizQg3+hbtzqXWKx1
-# Tssl4WJsqCbBAfGuzC4Yt0ZQHWditmiG5r/57ovl6t72HHcOlt0BSWp4TwXooYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSpdd1GiJIG56cG
+# ARoUg901co1J0zANBgkqhkiG9w0BAQEFAASCAQAuXIf6S010BucZT3sj1oKIIAMq
+# uuN+5NFp8BronO5vRiiJFbUsHfgGzmblQQpbczOxNVk5qUFbCmGJoedOUQLKZ2wl
+# 7r2AV30NWLsxtx3iB+YBvK5wG2F/bKCkqdhVHtsY/7LXCrWzeoe/fbqtORVQtsfy
+# fEwBn7dw3W7hpp0Xy+QqS69KqpbRd7JRStroH7VtJ8z3zH8inDVPpF/S9AONjJm0
+# BjmsqB4Oi9fkZhe6Vw0fSbtohi91jTH8IJYEB7pA0Mp1EIPAvnP50OqLSKwyXB71
+# aEv2V8AWN34yF5Y8aFI9hfjM2KyxxFTkgTdM98lJ+fUgQ6fwdi/5XAG+6g+hoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM1NlowIwYJKoZIhvcNAQkEMRYEFG+Ri8YYwhBwLHHb4Ha/F8vB5Nkh
+# MTIyMjExMTM1NlowIwYJKoZIhvcNAQkEMRYEFCq1S/CHs8Hy44XeHKTv1RB4nLIN
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAQP2l+9zmHFEwreEzL
-# C9nb4kITcro6pBhdQ+G1mnDREC1PUvQJsxGsdNYB2ywxrSNYDxbGq//TBUjwyDKc
-# 7vOhntj0t+LiI1i3mAOq42S4HMdsIfKELBeCpREkNf9jqwdp4lKuIC6RitfEvP7Y
-# 8SYtPgKGlrNwPzpwx3Z2No8IsyA9e4ULMaf/LCfxdXUALp6gLBSt3g9f+tW8gBRh
-# hkaEKmZefPE91/P1WtNPsupyZWvC2iNh4IFyd0/669EeduaeoFmWWswvx2On3xjV
-# QjPLhT2HxbEMrG1QZt/re9h9LP6fjeBL62Td+o/rEfrfLLNZ8or5Xe1SVqvdh+zV
-# S0xi
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQBZE+/jlqTi13ZGv65V
+# /LtTlimG1C5WG1bBqe4lUHnrHSu/6UYcXa2w5nuToMgjzgK2900QlZLS2s0qn/ob
+# fimxcvdxD7kd85jODqndvCMR8hi1o7OGlLPOB97oFVVVIHbEtINwQY5LH1gDmk01
+# s9Fcfe9JC+MJCFRUOQXFNFvis3wuvK1NNbgc70eEtPCD8uUcz9pOb/2+jM/LEW/+
+# CablWs/drqiwktnehnmuq6XGQI+UoE0glf2i6AmS024M1r0WCxkFXBYgy0A30QQs
+# 2SAdXBNlzec8QxHlQA8neHn4S/tdq2XO93Fqd8w2parbS5L4TNgDZhs32Qqb7SsJ
+# RsmP
 # SIG # End signature block

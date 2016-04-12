@@ -8,11 +8,11 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "Gate.Tests" "Gate.Tests" {
+Describe -Tags "ContractMapping.Tests" "ContractMapping.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
-	Context "#CLOUDTCL-1882-GateTests" {
+	Context "#CLOUDTCL-1882-ContractMappingTests" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
@@ -36,7 +36,7 @@ Describe -Tags "Gate.Tests" "Gate.Tests" {
 }
 
 #
-# Copyright 2015 d-fens GmbH
+# Copyright 2016 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
