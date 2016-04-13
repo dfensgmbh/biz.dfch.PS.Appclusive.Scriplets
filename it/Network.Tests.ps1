@@ -21,12 +21,7 @@ Describe -Tags "Network.Tests" "Network.Tests" {
 			$svc = Enter-ApcServer;
 		}
 	
-		# DFTODO - TEMPLATE
-		# DFTODO - GET *
-		# DFTODO - GET BY ID
-		# DFTODO - POST
-		# DFTODO - DELETE
-		
+
 		It "TestName" -Test {
 			# Arrange
 			
