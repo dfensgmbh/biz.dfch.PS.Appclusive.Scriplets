@@ -33,7 +33,7 @@ Describe -Tags "Network.Tests" "Network.Tests" {
 			$networkTemplate.Tid | Should Be '22222222-2222-2222-2222-222222222222';
 		}
 
-		It "GettingNetwork-ReturnsListOfNetworks" -Test {
+		It "GettingNetworks-ReturnsListOfNetworks" -Test {
 			
 			# Arrange
 			$testNetwork = CreateNetwork -Svc $svc;
