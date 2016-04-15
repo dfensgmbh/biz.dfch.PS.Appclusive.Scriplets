@@ -12,6 +12,8 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
+	. "$here\$sut";
+	
 	Context "#CLOUDTCL-1882-MachineTests" {
 		
 		BeforeEach {
@@ -21,7 +23,41 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 			$svc = Enter-ApcServer;
 		}
 		
-		It "TestName" -Test {
+		It "MachineTemplate-ReturnsExpectedTemplate" -Test {
+			
+			# Act
+			$machineTemplate = $svc.Infrastructure.InvokeEntitySetActionWithSingleResult("Machines", "Template", [biz.dfch.CS.Appclusive.Api.Infrastructure.Machine], $null);
+			
+			# Assert	
+			$machineTemplate | Should Not Be $null;
+			$machineTemplate.Tid | Should Be '22222222-2222-2222-2222-222222222222';
+		}
+		
+		It "GettingMachines-ReturnsListOfMachines" -Test {
+			
+			# Arrange
+						
+			# Act
+			$machines = $svc.Infrastructure.Machines | Select;
+			
+			# Assert
+			$machines.Count -gt 0 | Should Be $true;
+		}
+		
+		It "RestartMachine-Succeeds" -Test {
+			
+			# Arrange
+
+			
+			# Act
+
+			
+			# Assert
+			
+		}
+		
+		It "QuickCreateMachine-Succeeds" -Test {
+
 			# Arrange
 			
 			
