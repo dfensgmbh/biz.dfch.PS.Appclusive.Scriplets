@@ -11,6 +11,8 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 Describe -Tags "Network.Tests" "Network.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
+
+	. "$here\$sut";
 	
 	Context "#CLOUDTCL-1882-NetworkTests" {
 		
@@ -20,18 +22,84 @@ Describe -Tags "Network.Tests" "Network.Tests" {
 			Import-Module $moduleName;
 			$svc = Enter-ApcServer;
 		}
-	
 
-		It "TestName" -Test {
-			# Arrange
-			
+		It "NetworkTemplate-ReturnsExpectedTemplate" -Test {
 			
 			# Act
-			
+			$networkTemplate = $svc.Infrastructure.InvokeEntitySetActionWithSingleResult("Networks", "Template", [biz.dfch.CS.Appclusive.Api.Infrastructure.Network], $null);
 			
 			# Assert	
+			$networkTemplate | Should Not Be $null;
+			$networkTemplate.Tid | Should Be '22222222-2222-2222-2222-222222222222';
+		}
+
+		It "GettingNetworks-ReturnsListOfNetworks" -Test {
 			
+			# Arrange
+			$testNetwork = CreateNetwork -Svc $svc;
 			
+			Start-Sleep -s 3;
+			
+			# Act
+			$networks = $svc.Infrastructure.Networks | Select;
+			
+			# Assert
+			$networks.Count -gt 0 | Should Be $true;
+			
+			# Cleanup
+			$query = "Id eq {0}" -f $testNetwork.Id;
+			$testNetworkJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			$query = "Id eq {0}" -f $testNetworkJob.RefId | Select;
+			$testNetwork = $svc.Infrastructure.Networks.AddQueryOption('$filter', $query) | Select;
+			$svc.Infrastructure.DeleteObject($testNetwork);
+			$result = $svc.Infrastructure.SaveChanges();
+			$result.StatusCode | Should Be 204;
+		}
+		
+		It "CreateNetworkWithNonNetworkEntityKind-Fails" -Test {
+			
+			# Arrange
+			$currentUser = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
+			$query = "Id eq guid'{0}'" -f $currentUser.Tid;
+			$tenant = $svc.core.Tenants.AddQueryOption('$filter', $query) | Select;
+			$tenantInformation = $svc.Core.InvokeEntityActionWithSingleResult($tenant, "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+			
+			$testNetwork = New-Object biz.dfch.CS.Appclusive.Api.Infrastructure.Network;
+			$testNetwork.EntityKindId = 999;
+			$testNetwork.ParentId = $tenantInformation.NodeId;
+			$svc.Infrastructure.AddToNetworks($testNetwork);
+			
+			try 
+			{
+				$result = $svc.Infrastructure.SaveChanges();
+				$null | Should Be 'SaveChanges() has to fail!!!';
+			}
+			catch
+			{
+				
+			}
+		}
+		
+		It "DeleteNetwork-Succeeds" -Test {
+			
+			# Arrange
+			$testNetwork = CreateNetwork -Svc $svc;
+			Start-Sleep -s 3;
+			
+			# Act
+			$networks = $svc.Infrastructure.Networks | Select;
+			
+			$networks.Count -gt 0 | Should Be $true;
+			
+			$query = "Id eq {0}" -f $testNetwork.Id;
+			$testNetworkJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			$query = "Id eq {0}" -f $testNetworkJob.RefId | Select;
+			$testNetwork = $svc.Infrastructure.Networks.AddQueryOption('$filter', $query) | Select;
+			$svc.Infrastructure.DeleteObject($testNetwork);
+			$result = $svc.Infrastructure.SaveChanges();
+			
+			# Assert
+			$result.StatusCode | Should Be 204;
 		}
 	}
 }

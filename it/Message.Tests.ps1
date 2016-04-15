@@ -46,7 +46,6 @@ Describe -Tags "Message.Tests" "Message.Tests" {
 			
 			$result = Invoke-RestMethod -Method DELETE 'http://appclusive/api/Diagnostics/Messages($($result.Id))' -Credential $cred
 		}
-	}
 
 		It "CreatingMessageWithParameters-Succeeds" -Test {
 			

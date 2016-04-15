@@ -12,6 +12,8 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 	
+	. "$here\$sut";
+	
 	Context "#CLOUDTCL-1882-MachineTests" {
 		
 		BeforeEach {
@@ -21,7 +23,79 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 			$svc = Enter-ApcServer;
 		}
 		
-		It "TestName" -Test {
+		It "MachineTemplate-ReturnsExpectedTemplate" -Test {
+			
+			# Act
+			$machineTemplate = $svc.Infrastructure.InvokeEntitySetActionWithSingleResult("Machines", "Template", [biz.dfch.CS.Appclusive.Api.Infrastructure.Machine], $null);
+			
+			# Assert	
+			$machineTemplate | Should Not Be $null;
+			$machineTemplate.Tid | Should Be '22222222-2222-2222-2222-222222222222';
+		}
+		
+		It "GettingMachines-ReturnsListOfMachines" -Test {
+			
+			# Arrange
+						
+			# Act
+			$machines = $svc.Infrastructure.Machines | Select;
+			
+			# Assert
+			$machines.Count -gt 0 | Should Be $true;
+		}
+		
+		It "RestartMachine-Succeeds" -Test {
+			
+			# Arrange
+			# DFTODO - Replace lookup with quick creation of a machine
+			$query = $svc.Infrastructure.Machines;
+			$machines = $query.Execute();
+
+			while($true) 
+			{
+				foreach($machine in $machines)
+				{
+					$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("RefId eq '{0}' and EntityKindId eq 1" -f $machine.Id)) | Select;
+					
+					if ($machineJob.Status -eq 'Running')
+					{
+						$machineFound = $true;
+					}
+				}
+				
+				if ($machineFound)
+				{
+					break;
+				}
+				
+				$continuation = $machines.GetContinuation();
+				if ($continuation -eq $null)
+				{
+					{ throw "No machine in status 'Running' found" } | Should Not Throw;
+				}
+				
+				$machines = $svc.core.Execute($continuation);
+			}
+			
+			# Act
+			$svc.Infrastructure.InvokeEntitySetActionWithVoidResult("Machines", "Restart", [biz.dfch.CS.Appclusive.Api.Core.Job], $null);
+			
+			# Assert
+			$svc = Enter-Apc;
+			$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("Id eq {0}" -f $machineJob.Id)) | Select;
+			$machineJob.Condition | ShouldBe "Restart";
+			$machineJob.ConditionParameters | ShouldBe "";
+
+			Start-Sleep 15;
+			
+			$svc = Enter-Apc;
+			$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("Id eq {0}" -f $machineJob.Id)) | Select;
+			$machineJob.Condition | ShouldBe "";
+			$machineJob.ConditionParameters | ShouldBe "";
+		}
+		
+		It "QuickCreateMachine-Succeeds" -Test {
+
 			# Arrange
 			
 			

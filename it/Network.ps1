@@ -1,4 +1,20 @@
-# This file intentionally left blank
+function CreateNetwork($svc) 
+{
+	$currentUser = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
+	$query = "Id eq guid'{0}'" -f $currentUser.Tid;
+	$tenant = $svc.core.Tenants.AddQueryOption('$filter', $query) | Select;
+	$tenantInformation = $svc.Core.InvokeEntityActionWithSingleResult($tenant, "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+	
+	$network = New-Object biz.dfch.CS.Appclusive.Api.Infrastructure.Network;
+	$network.Name = 'Test';
+	$network.Parameters = '{}';
+	$network.EntityKindId = 38;
+	$network.ParentId = $tenantInformation.NodeId;
+	$svc.Infrastructure.AddToNetworks($network);
+	$null = $svc.Infrastructure.SaveChanges();
+	
+	return $network;
+}
 
 #
 # Copyright 2016 d-fens GmbH
