@@ -29,7 +29,7 @@ d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
 
 ## Installation
 
-1. Exeucte `nuget.exe install biz.dfch.PS.Appclusive.Client -Version 0.1.7`
+1. Exeucte `nuget.exe install biz.dfch.PS.Appclusive.Client -Version 2.4.0`
 2. Execute `.\Install.ps1` in downloaded package folder
 
 

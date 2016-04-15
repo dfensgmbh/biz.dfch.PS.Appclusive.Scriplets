@@ -48,7 +48,7 @@ Status       : Impelented
 Return all machines with a bunch of information
 
 .EXAMPLE
-Get-CimiTarget -cimiID "06ffa86b-e5e7-49d3-9f6a-72d79416bce6"
+Get-CimiTarget -CimiId "06ffa86b-e5e7-49d3-9f6a-72d79416bce6"
 
 CimiID       : https://cmabrmp-lab3ch-1.mgmt.sccloudpoc.net:9001/v1/cimi/2/machines/06ffa86b-e5e7-49d3-9f6a-72d79416bce6
 Name         : TestProdukteJuergRHEL7
@@ -60,7 +60,7 @@ Retrieves the cimi machine with ID 06ffa86b-e5e7-49d3-9f6a-72d79416bce6 and retu
 
 
 .EXAMPLE
-Get-CimiTarget -ServerName "-ServerName "hipatest19.6""
+Get-CimiTarget -ServerName "hipatest19.6"
 
 CimiID       : https://cmabrmp-lab3ch-1.mgmt.sccloudpoc.net:9001/v1/cimi/2/machines/47019f6a-0038-4d40-a92a-56d8873fd405
 Name         : hipatest19.6
@@ -84,28 +84,28 @@ See module manifest for required software versions and dependencies.
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-CimiTarget/'
 	,
-	DefaultParameterSetName = 'CimiID'
+	DefaultParameterSetName = 'ListAvailable'
 )]
 PARAM 
 (
 	# Lists all available CIMI-Machines
-	[Parameter(Mandatory = $true, ParameterSetName = 'ListAvailable')]
-	[Switch] $ListAvailable = $false
+	[Parameter(Mandatory = $false, ParameterSetName = 'ListAvailable')]
+	[Switch] $ListAvailable = $true
 	,
-	# List of Cimi IDs to check if they are available
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'CimiID')]
+	# CimiId or part of it to check if the machine is available
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'CimiId')]
 	[ValidateNotNullOrEmpty()]
-	[string[]] $cimiID = $null
+	[string] $CimiId = $null
 	,
-	# List of server names to check if they are available
+	# Server name or part of it to check if the machine is available
 	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'ServerName')]
 	[ValidateNotNullOrEmpty()]
-	[string[]] $ServerName = $null
+	[string] $Name = $null
 	,
-	# ORCH credentials to connect to Appclusive
-	[Parameter(Mandatory = $false, Position = 1)]
-	[ValidateNotNullOrEmpty()]
-	[System.Management.Automation.PSCredential] $Credentials
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
@@ -122,144 +122,49 @@ Begin
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	# Import-Module biz.dfch.PS.Appclusive.Client -force;
-	
-	# Workaround to load appclusive credentials if it is not passed
-	# if ([string]::IsNullOrEmpty($Credentials))
-	# {
-		# $credFile = (Join-Path -Path $env:USERPROFILE -ChildPath ("appclusiveCred-{0}.xml" -f $env:USERNAME))
-		# If(!(Test-Path $credFile))
-		# {
-			# Write-Warning "Empty credential input and no credential file is available. Abort...";
-			# Exit
-		# }
-		# $Credentials = (Import-Clixml $credFile)
-	# }
-	
-	# $svc = Enter-Apc -Credential $Credentials;
-	
-	# Contract-Requires ($svc.CMP -is [biz.dfch.CS.Appclusive.Api.CMP) "Connect to the server before using the Cmdlet"
-	
-	function checkIntergrationByName ($ServerName) 
-	{
-		$result = Foreach ($server in $ServerName)
-		{
-			$machine = $svc.CMP.CimiTargets.AddQueryOption('$filter',("Name eq '{0}'" -f $server)) | Select
-			
-			If (!([string]::IsNullOrEmpty($machine)))
-			{
-				[PSCustomObject] @{
-					CimiID = $machine.CimiId;
-					Name = $machine.Name;
-					OrchTempID = $machine.Id;
-					OrchTenantID = $machine.Tid;
-					Status = "Impelented"
-				}
-			}
-			else
-			{
-				[PSCustomObject] @{
-					CimiID = "Not found"
-					Name = "Not found";
-					OrchTempID = "Not found";
-					OrchTenantID = "Not found";
-					Status = "Unknown"
-				}
-			}
-		}
-		return $result;
-	}
-	
-	function checkIntergrationByCimiID ($cimiIDs) 
-	{
-		$result = Foreach ($cimiID in $cimiIDs)
-		{
-			$machine = $svc.CMP.CimiTargets.AddQueryOption('$filter',("substringof('{0}', CimiId)" -f $cimiIDs)) | Select
-			
-			If (!([string]::IsNullOrEmpty($machine)))
-			{
-				[PSCustomObject] @{
-					CimiID = $machine.CimiId;
-					Name = $machine.Name;
-					OrchTempID = $machine.Id;
-					OrchTenantID = $machine.Tid;
-					Status = "Impelented"
-				}
-			}
-			else
-			{
-				[PSCustomObject] @{
-					CimiID = "Not found"
-					Name = "Not found";
-					OrchTempID = "Not found";
-					OrchTenantID = "Not found";
-					Status = "Unknown"
-				}
-			}
-		}
-		return $result;
-	}
-	
-	function availableCimiMachines () 
-	{
-		$machines = $svc.CMP.CimiTargets | Select
-		
-		$result = foreach ($machine in $machines)
-		{
-			If (!([string]::IsNullOrEmpty($machine)))
-			{
-				[PSCustomObject] @{
-					CimiID = $machine.CimiId;
-					Name = $machine.Name;
-					OrchTempID = $machine.Id;
-					OrchTenantID = $machine.Tid;
-					Status = "Impelented"
-				}
-			}
-			else
-			{
-				[PSCustomObject] @{
-					CimiID = "Not found"
-					Name = "Not found";
-					OrchTempID = "Not found";
-					OrchTenantID = "Not found";
-					Status = "Unknown"
-				}
-			}
-		}
-		return $result;
-	}
+	Contract-Requires ($svc.Cmp -is [biz.dfch.CS.Appclusive.Api.Cmp.Cmp]) "Connect to the server before using the Cmdlet"
+	$EntitySetName = 'CimiTargets';
 }
 # Begin
 
 Process 
 {
-	If (!([string]::IsNullOrEmpty($cimiID)))
+	trap { Log-Exception $_; break; }
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	
+	if($PSCmdlet.ParameterSetName -eq 'ListAvailable') 
 	{
-		$result = checkIntergrationByCimiID -cimiIDs $cimiID
-	}
-	elseif (!([string]::IsNullOrEmpty($ServerName)))
-	{
-		$result = checkIntergrationByName -ServerName $ServerName
-	}
-	elseif ($ListAvailable)
-	{
-		$result = availableCimiMachines
-	}
+		$Response = $svc.Cmp.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
+	}	
 	else
 	{
-		Write-Warning "Something went wrong - no search parameter fount. Abort..."
-		Exit
+		$Exp = @();
+		If ($PSCmdlet.ParameterSetName -eq 'CimiId') 
+		{
+			$Exp += ("substringof('{0}', CimiId)" -f $CimiId);
+		}
+		
+		If ($PSCmdlet.ParameterSetName -eq 'ServerName') 
+		{
+			$Exp += ("substringof('{0}', tolower(Name))" -f $Name.ToLower());
+		}
+
+		$FilterExpression = [String]::Join(' and ', $Exp);
+		$Response = $svc.Cmp.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 	}
 	
 	# $OutputParameter = $result
-	$OutputParameter = Format-ResultAs $result $As
+	$OutputParameter = Format-ResultAs $Response $As
 	$fReturn = $true;
 }
 # Process
 
 End 
 {
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+	
 	# Return values are always and only returned via OutputParameter.
 	return $OutputParameter;
 }

@@ -59,8 +59,7 @@ See module manifest for required software versions and dependencies.
     ConfirmImpact = 'Low'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-Order/'
-	,
-	DefaultParameterSetName = 'CimiID'
+
 )]
 PARAM 
 (
@@ -70,7 +69,7 @@ PARAM
 	[Int] $CatalogueItemId = $null
 	,
 	# JSON-String with all from the product required parameters
-	[Parameter(Mandatory = $true)]
+	[Parameter(Mandatory = $true, ParameterSetName = 'JSON')]
 	[ValidateNotNullOrEmpty()]
 	[String] $ProductParmeters = $null
 	,
@@ -88,6 +87,11 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[ValidateNotNullOrEmpty()]
 	[Int] $TenantId = $Null
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
 	,
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
@@ -115,16 +119,25 @@ Process
 	If (!(Get-ApcCatalogueItem -Id $CatalogueItemId))
 	{
 		Write-Warning ("No Catalogue Item with Id {0} found. Abort..." -f $CatalogueItemId);
-		Exit
+		Return;
+	}
+	
+	try {
+		$testJSON = ConvertFrom-Json $ProductParmeters;
+	} catch {
+		write-warning "Input is not an JSON-String. Abort..."
+		Return
 	}
 	
 	$cartItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CartItem
 	$cartItem.Quantity = 1;
 	$cartItem.CatalogueItemId = $CatalogueItemId;
-	$cartItem.Parameters = ($ProductParmeters | ConvertTo-Json)
+	$cartItem.Parameters = $ProductParmeters;
 	$cartItem.Id = "0"
 	$cartItem.Name = "Migration"
 	$cartItem.Description = "Migration"
+	
+	write-host ($cartItem  | Out-String) ;
 	
 	$result = $svc.Core.AddToCartItems($cartItem);
 	$result = $svc.Core.SaveChanges()
@@ -138,18 +151,31 @@ Process
 	} 
 	else
 	{
-		$nodeId = Get-ApcNode -Name "tenant root node";
+		$entityRoot = Get-ApcEntityKind -Name biz.dfch.CS.Appclusive.Core.General.TenantRoot
+		
+		If ($svc.Core.TenantID)
+		{
+			$nodeId = $svc.Core.Nodes.AddQueryOption('$filter',("(Tid eq GUID'{0}') and (EntityKindId eq {1})" -f $svc.Core.TenantID,$entityRoot.Id))
+		}
+		else
+		{
+			$nodeId = $svc.Core.Nodes.AddQueryOption('$filter',("EntityKindId eq {0}" -f $entityRoot.Id)).AddQueryOption('$top','1')
+		}
+		
 		$parameterOrder.NodeID = $nodeId.Id;
 	}
 	
+	write-host (($parameterOrder | ConvertTo-Json -Compress).ToString())
+	
 	$order = New-Object biz.dfch.CS.Appclusive.Api.Core.Order
-	$order.Parameters = ($parameterOrder | ConvertTo-Json)
+	$order.Parameters = (($parameterOrder | ConvertTo-Json -Compress).ToString())
 	$order.Name = "test taahaga1"
 	$order.Description = "test taahaga1"
 	
 	$result = $svc.Core.AddToOrders($order)
 	$orderResult = $svc.Core.SaveChanges()
 	
+	write-host (($orderResult | ConvertTo-Json).ToString())
 	# Get the Job from the request return
 	$jobUri = [uri] $orderResult.Headers.Location
 	If (($jobUri.Segments[-1] -match '^Jobs\((?<JobId>\d+)L?\)$'))
@@ -159,25 +185,25 @@ Process
 	else
 	{
 		Write-Warning "Something went wrong - no Job ist created. Abort..."
-		Exit
+		Return;
 	}
 	
 	$orderitemJob = Get-ApcJob -ParentId $job.Id -EntityKindId 21;
 	$nodeJob = Get-ApcJob -ParentId $orderitemJob.Id -EntityKindId 1;
 	$node = Get-ApcNode -Id $nodeJob.RefId;
 	
-	If ($OwnerId)
-	{
-		$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy" , @{EntityId=$node.id;EntitySet="biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node";CreatedById=$OwnerId})
-	}
+	# If ($OwnerId)
+	# {
+		# $svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetCreatedBy" , @{EntityId=$node.id;EntitySet="biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node";CreatedById=$OwnerId})
+	# }
 
-	If ($TenantId)
-	{
-		$svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetTenant" , @{EntityId=$node.id;EntitySet="biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node";TenantId=$TenantId})
-		$svc.Core.Tenants.AddQueryOption('$filter','Name eq "Manage Customer Tenant"')
-	}
+	# If ($TenantId)
+	# {
+		# $svc.Core.InvokeEntitySetActionWithVoidResult("SpecialOperations", "SetTenant" , @{EntityId=$node.id;EntitySet="biz.dfch.CS.Appclusive.Core.OdataServices.Core.Node";TenantId=$TenantId})
+		# $svc.Core.Tenants.AddQueryOption('$filter','Name eq "Manage Customer Tenant"')
+	# }
 	
-	$OutputParameter = Format-ResultAs $job $As
+	$OutputParameter = Format-ResultAs $nodeJob $As
 	$fReturn = $true;
 }
 # Process

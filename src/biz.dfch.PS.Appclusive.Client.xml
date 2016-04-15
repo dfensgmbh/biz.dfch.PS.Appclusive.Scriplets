@@ -48,6 +48,10 @@
               <S N="Key">Cmp</S>
               <S N="Value">Cmp</S>
             </En>
+			<En>
+              <S N="Key">Infrastructure</S>
+              <S N="Value">Infrastructure</S>
+            </En>
           </DCT>
         </Obj>
       </En>

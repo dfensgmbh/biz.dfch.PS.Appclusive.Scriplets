@@ -1,204 +1,61 @@
-function Remove-Node {
-[CmdletBinding(
-    SupportsShouldProcess = $true
-	,
-    ConfirmImpact = 'High'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Remove-Node/'
-	,
-	DefaultParameterSetName = 'o'
-)]
-Param 
-(
-	# The id of the Node to remove
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
-	[int] $Id
-	,
-	# The name of the Node to remove
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'name')]
-	[string] $Name
-	,
-	# Specifies the Node to remove
-	[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'o')]
-	[Alias("Entity")]
-	$InputObject
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false, Position = 1)]
-	[Alias('Services')]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cnmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false, Position = 2)]
-	[alias('ReturnFormat')]
-	[string] $As = 'default'
-)
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-Begin 
+function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
-	trap { Log-Exception $_; break; }
-
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
-	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	$msg = $message;
+	$e = New-CustomErrorRecord -msg $msg -cat OperationStopped -o $msg;
+	$PSCmdlet.ThrowTerminatingError($e);
 }
-# Begin
 
-Process 
-{
-	trap { Log-Exception $_; break; }
+Describe -Tags "CostCentre.Tests" "CostCentre.Tests" {
 
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
-
-	if($PSCmdlet.ParameterSetName -eq 'id')
-	{
-		$InputObject = Get-Node -Id $Id -svc $svc;
-	}
-	if($PSCmdlet.ParameterSetName -eq 'name')
-	{
-		$InputObject = Get-Node -Name $Name -svc $svc;
-	}
-	$r = @();
+	Mock Export-ModuleMember { return $null; }
 	
-	$objectFoundToBeRemoved = $false;
-	foreach($item in $InputObject)
-	{
-		$bShouldProcess = $false;
+	Context "#CLOUDTCL-1882-CostCentreTests" {
 		
-		# Node entity
-		$objectFoundToBeRemoved = $true;
-		$itemString = '{0}' -f $item.Name;
-		$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-		if(!$bShouldProcess) { break; };
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-ApcServer;
+		}
 		
-		# ChildNodes
-		$childNodes = Get-Node -ParentId $item.Id -svc $svc;
-		foreach($childNode in $childNodes)
-		{
-			$itemString = "Referenced ChildNode '{0}'" -f $childNode.Name;
-			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-			if(!$bShouldProcess) { break; };
+		It "TestName" -Test {
+			# Arrange
 			
-			$r += Remove-Node -Id $childNode.Id -svc $svc;
-		}
-		if(!$bShouldProcess) { break; };
-
-		# ExternalNode entity
-		$externalNodes = Get-Node -Id $item.Id -svc $svc -ExpandExternalNodes;
-		foreach($externalNode in $externalNodes)
-		{
-			$itemString = "Referenced ExternalNode '{0}' of Type '{1}'" -f $externalNode.Name, $externalNode.ExternalType;
-			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-			if(!$bShouldProcess) { break; };
-
-			# ExternalNodeAttributes
-			$externalNodeAttributes = Get-ExternalNode -Id $externalNode.Id -svc $svc -ExpandAttributes;
-			foreach($externalNodeAttribute in $externalNodeAttributes)
-			{
-				$itemString = "Referenced ExternalNodeAttribute '{0}', '{1}'" -f $externalNodeAttribute.Name, $externalNodeAttribute.Description;
-				$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-				if(!$bShouldProcess) { break; };
-
-				$r += ($externalNodeAttribute | Select -Property @{ Name="Name"; Expression={'{0} (ExternalNodeAttribute)' -f $item.Name}}, Id);
-				Log-Notice $fn ("Removing ref ExternalNodeAttribute '{0}' ..." -f $externalNodeAttribute.Id);
-				$svc.Core.DeleteObject($externalNodeAttribute);		
-				$null = $svc.Core.SaveChanges();
-			}
-			if(!$bShouldProcess) { break; };
 			
-			$r += ($externalNode | Select -Property @{ Name="Name"; Expression={'{0} (ExternalNode)' -f $item.Name}}, Id);
-			Log-Notice $fn ("Removing ref ExternalNode '{0}' ..." -f $externalNode.Id);
-			$svc.Core.DeleteObject($externalNode);		
-			$null = $svc.Core.SaveChanges();
-		}
-		if(!$bShouldProcess) { break; };
-
-		# Job entity
-		# $jobentity = Get-Node -Id $item.Id -svc $svc -ExpandJob;
-		# Workaroud because singele action status does not work properly
-		$jobentity = $svc.Core.Jobs.AddQueryOption('$filter',("RefId eq '{0}'" -f $item.Id)) | Select;
-		if ($jobentity)
-		{
-			$itemString = "Referenced Job '{0}' in Status '{1}'" -f $jobentity.Id, $jobentity.Status;
-			$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-			if(!$bShouldProcess) { break; };
-
-			# ChildJobs
-			$jobChilds = Get-Job -ParentId $jobentity.Id -svc $svc;
-			foreach($jobChild in $jobChilds)
-			{
-				$itemString = "Referenced ChildJob '{0}' in Status '{1}'" -f $jobChild.Id, $jobChild.Status;
-				$bShouldProcess = $PSCmdlet.ShouldProcess($itemString);
-				if(!$bShouldProcess) { break; };
-				
-				$r += ($jobChild | Select -Property @{ Name="Name"; Expression={'{0} (ChildJob)' -f $item.Name}}, Id);
-				Log-Notice $fn ("Removing ref ChildJob '{0}' ..." -f $jobChild.Id);
-				$svc.Core.DeleteObject($jobChild);		
-				$null = $svc.Core.SaveChanges();
-			}
-			if(!$bShouldProcess) { break; };
+			# Act
 			
-			$r += ($jobentity | Select -Property @{ Name="Name"; Expression={'{0} (Job)' -f $item.Name}}, Id);
-			Log-Notice $fn ("Removing ref Job '{0}' ..." -f $jobentity.Id);
-			$svc.Core.DeleteObject($jobentity);		
-			$null = $svc.Core.SaveChanges();				
+			
+			# Assert	
+			
+			
 		}
-		if(!$bShouldProcess) { break; };
-	
-		# Node entity
-		$r += ($item | Select -Property Name, Id);
-		Log-Notice $fn ("Removing '{0}' ..." -f $itemString);
-		$svc.Core.DeleteObject($item);
-		$null = $svc.Core.SaveChanges();
 	}
-	Contract-Assert ($objectFoundToBeRemoved)
-
-	$OutputParameter = Format-ResultAs $r $As;
-	$fReturn = $true;
 }
-# Process
 
-End 
-{
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-}
-# End
-
-}
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-Node; } 
-
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+#
+# Copyright 2016 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU9BAd70zYskqX/FUdkpVwymsF
-# U4+gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZGRsHQQB158UTWtUT9nXlEY2
+# XdmgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -297,26 +154,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Remove-Node; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQQ5Pi6q/BaR4JQ
-# 9toy/0d31gsCbjANBgkqhkiG9w0BAQEFAASCAQAFKwty0nbXuICCKylojeyV5hd7
-# T4rBe2HXi21zvjisEtU4JsGFRUHZTfFFfGI+GdPEaUYeUUJeFEsV5+ry3vgM2z7s
-# U5GbCdrw7LfjrAV126d0huty6mchQyAt7G3U8smmNS6bTDDrnjQ9Qc+eVFfN0pMQ
-# Och9mJ6MR1rCo6gllOhbhsPjlx3hhhmoMhjICSuABLDLPN6jPha4s4b2bU+U7pse
-# 8d8mNcxQV89F26nGYqgjc0t4YzAuQXgpaKTSbrxn0e9QJPF1Wg1H1XdVoTgTOShG
-# zxR1iWja7+gfyE7R/243mXDaxdbTyzUL29PzanXxtASjTu6Ef3wfA2EcEa2hoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRWBCgOHZ1ixF7s
+# 7lGAUc45irdRijANBgkqhkiG9w0BAQEFAASCAQActSrPzZEvqK5IdcY4M7ORysnZ
+# g4DDwmcVfRh6maXb9eTsfysGpWOp+cJzClMozuvlb32pt5J2Ypk69v+mFc4YRLka
+# Ptt23FoDfIc+zc3r8P+ImcYh3jfRvskG2QGJNKTSXhrEXUDbo6M3Z9+Y1BZd1OMe
+# z6AkCpqwxJtavsZk8bYIV1qSAF0TxblW7brQX6NhU8h1CA9fEp8BpfwQ/rOTWrqA
+# sf+6g8Taf8OZbwR4rCFi9i5iDe8b2BjIjfk08JcoZiEEo4RnizQg3+hbtzqXWKx1
+# Tssl4WJsqCbBAfGuzC4Yt0ZQHWditmiG5r/57ovl6t72HHcOlt0BSWp4TwXooYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
-# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDIyMjA3MjU0NlowIwYJKoZIhvcNAQkEMRYEFKWyG7T3GFRmiUuSKJxPvGcZPwi6
+# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
+# MTIyMjExMTM1NlowIwYJKoZIhvcNAQkEMRYEFG+Ri8YYwhBwLHHb4Ha/F8vB5Nkh
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCo5D4rTkF/MgpjHPKL
-# i8AwDzmp5AVNlULmYZYXoW9LTLKLRkIEwBstkLvSBEM1xn3fz4/a/y7yQIN00bpK
-# cRAp9/WkmaZPIjW5aQxjHotyBk2YkIj0HA3zD/Begv6BMwU+I71ZJ+K6ABYzTvgm
-# eGIuFWG6NyH3UekNX4e/YoxSMXKJUYpWmWnik40algegez/OVEt3RRA6LRSlfOFS
-# VDlkeyXbQJCQQQEpLC71jqZz5UCgR27wbHCdFqkflqbpEkxw2/wMR2yTMFM0zhmB
-# s7xZUtRSev5CmALNrZzOvfAYPLiIapw8P7LrrCVIS/igIfuUyKBYylT0hKut8eIf
-# edHP
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAQP2l+9zmHFEwreEzL
+# C9nb4kITcro6pBhdQ+G1mnDREC1PUvQJsxGsdNYB2ywxrSNYDxbGq//TBUjwyDKc
+# 7vOhntj0t+LiI1i3mAOq42S4HMdsIfKELBeCpREkNf9jqwdp4lKuIC6RitfEvP7Y
+# 8SYtPgKGlrNwPzpwx3Z2No8IsyA9e4ULMaf/LCfxdXUALp6gLBSt3g9f+tW8gBRh
+# hkaEKmZefPE91/P1WtNPsupyZWvC2iNh4IFyd0/669EeduaeoFmWWswvx2On3xjV
+# QjPLhT2HxbEMrG1QZt/re9h9LP6fjeBL62Td+o/rEfrfLLNZ8or5Xe1SVqvdh+zV
+# S0xi
 # SIG # End signature block
