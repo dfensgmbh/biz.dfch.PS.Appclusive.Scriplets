@@ -47,12 +47,40 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 		It "RestartMachine-Succeeds" -Test {
 			
 			# Arrange
+			$query = $svc.Infrastructure.Machines;
+			$machines = $query.Execute();
 
+			while($true) 
+			{
+				foreach($machine in $machines)
+				{
+					$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("RefId eq '{0}' and EntityKindId eq 1" -f $machine.Id)) | Select;
+					
+					if ($machineJob.Status -eq 'Running')
+					{
+						$machineFound = $true;
+					}
+				}
+				
+				if ($machineFound)
+				{
+					break;
+				}
+				
+				$continuation = $machines.GetContinuation();
+				if ($continuation -eq $null)
+				{
+					{ throw "No machine in state 'Running' found" } | Should Not Throw;
+				}
+				
+				$machines = $svc.core.Execute($continuation);
+			}
 			
 			# Act
-
+			$svc.Infrastructure.InvokeEntitySetActionWithVoidResult("Machines", "Restart", [biz.dfch.CS.Appclusive.Api.Core.Job], $null);
 			
 			# Assert
+			# DFTODO - Check status for Running again
 			
 		}
 		
