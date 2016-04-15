@@ -11,6 +11,8 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 Describe -Tags "Network.Tests" "Network.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
+
+	. "$here\$sut";
 	
 	Context "#CLOUDTCL-1882-NetworkTests" {
 		
@@ -34,18 +36,7 @@ Describe -Tags "Network.Tests" "Network.Tests" {
 		It "GettingNetwork-ReturnsListOfNetworks" -Test {
 			
 			# Arrange
-			$currentUser = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
-			$query = "Id eq guid'{0}'" -f $currentUser.Tid;
-			$tenant = $svc.core.Tenants.AddQueryOption('$filter', $query) | Select;
-			$tenantInformation = $svc.Core.InvokeEntityActionWithSingleResult($tenant, "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
-			
-			$testNetwork = New-Object biz.dfch.CS.Appclusive.Api.Infrastructure.Network;
-			$testNetwork.Name = 'Test';
-			$testNetwork.Parameters = '{}';
-			$testNetwork.EntityKindId = 38;
-			$testNetwork.ParentId = $tenantInformation.NodeId;
-			$svc.Infrastructure.AddToNetworks($testNetwork);
-			$null = $svc.Infrastructure.SaveChanges();
+			$testNetwork = CreateNetwork -Svc $svc;
 			
 			Start-Sleep -s 3;
 			
@@ -87,6 +78,28 @@ Describe -Tags "Network.Tests" "Network.Tests" {
 			{
 				
 			}
+		}
+		
+		It "DeleteNetwork-Succeeds" -Test {
+			
+			# Arrange
+			$testNetwork = CreateNetwork -Svc $svc;
+			Start-Sleep -s 3;
+			
+			# Act
+			$networks = $svc.Infrastructure.Networks | Select;
+			
+			$networks.Count -gt 0 | Should Be $true;
+			
+			$query = "Id eq {0}" -f $testNetwork.Id;
+			$testNetworkJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			$query = "Id eq {0}" -f $testNetworkJob.RefId | Select;
+			$testNetwork = $svc.Infrastructure.Networks.AddQueryOption('$filter', $query) | Select;
+			$svc.Infrastructure.DeleteObject($testNetwork);
+			$result = $svc.Infrastructure.SaveChanges();
+			
+			# Assert
+			$result.StatusCode | Should Be 204;
 		}
 	}
 }
