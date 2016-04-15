@@ -47,6 +47,7 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 		It "RestartMachine-Succeeds" -Test {
 			
 			# Arrange
+			# DFTODO - Replace lookup with quick creation of a machine
 			$query = $svc.Infrastructure.Machines;
 			$machines = $query.Execute();
 
@@ -70,7 +71,7 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 				$continuation = $machines.GetContinuation();
 				if ($continuation -eq $null)
 				{
-					{ throw "No machine in state 'Running' found" } | Should Not Throw;
+					{ throw "No machine in status 'Running' found" } | Should Not Throw;
 				}
 				
 				$machines = $svc.core.Execute($continuation);
@@ -80,8 +81,17 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 			$svc.Infrastructure.InvokeEntitySetActionWithVoidResult("Machines", "Restart", [biz.dfch.CS.Appclusive.Api.Core.Job], $null);
 			
 			# Assert
-			# DFTODO - Check status for Running again
+			$svc = Enter-Apc;
+			$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("Id eq {0}" -f $machineJob.Id)) | Select;
+			$machineJob.Condition | ShouldBe "Restart";
+			$machineJob.ConditionParameters | ShouldBe "";
+
+			Start-Sleep 15;
 			
+			$svc = Enter-Apc;
+			$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("Id eq {0}" -f $machineJob.Id)) | Select;
+			$machineJob.Condition | ShouldBe "";
+			$machineJob.ConditionParameters | ShouldBe "";
 		}
 		
 		It "QuickCreateMachine-Succeeds" -Test {
