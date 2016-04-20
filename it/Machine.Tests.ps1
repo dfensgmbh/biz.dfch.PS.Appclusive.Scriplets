@@ -96,7 +96,16 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 		It "QuickCreateMachine-Succeeds" -Test {
 
 			# Arrange
-			$quickCreateParameters = @{"Infrastructure_Machine_Name"="SampleMachine"; "Infrastructure_Compute_Cpu_Count"=2;"Infrastructure_Compute_Memory_SizeGB"=16; "Infrastructure_Storage_Disk00_SizeGB"=80; "Infrastructure_Storage_Disk01_SizeGB"=20; "Infrastructure_Storage_Disk02_SizeGB"=20; "Infrastructure_Storage_Disk03_SizeGB"=20;"Infrastructure_Network_Network00_Id"=0};
+			$quickCreateParameters = @{
+				"Infrastructure_Machine_Name" = "SampleMachine";
+				"Infrastructure_Compute_Cpu_Count" = 2;
+				"Infrastructure_Compute_Memory_SizeGB" = 16;
+				"Infrastructure_Storage_Disk00_SizeGB" = 80;
+				"Infrastructure_Storage_Disk01_SizeGB" = 20;
+				"Infrastructure_Storage_Disk02_SizeGB" = 20;
+				"Infrastructure_Storage_Disk03_SizeGB" = 20;
+				"Infrastructure_Network_Network00_Id" = 0;
+			};
 			
 			# Act
 			$result = $svc.Infrastructure.InvokeEntitySetActionWithSingleResult("Machines", "QuickCreate", [biz.dfch.CS.Appclusive.Core.OdataServices.Core.JobResponse], $quickCreateParameters);
