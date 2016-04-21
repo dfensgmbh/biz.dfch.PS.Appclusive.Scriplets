@@ -110,8 +110,19 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 			# Act
 			$result = $svc.Infrastructure.InvokeEntitySetActionWithSingleResult("Machines", "QuickCreate", [biz.dfch.CS.Appclusive.Core.OdataServices.Core.JobResponse], $quickCreateParameters);
 			
-			# Assert	
+			$query = "Id eq {0}" -f $result.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
 			
+			while(($job.Condition -eq 'Initialise') -and ($job.Error -eq ''))
+			{
+				Start-Sleep 30;
+				$svc = Enter-Apc;
+				$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			}
+			
+			# Assert
+			$job.Error | ShouldBe "";
+			$job.Status | ShouldBe "Running";
 		}
 	}
 }
