@@ -47,11 +47,10 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 		It "RestartMachine-Succeeds" -Test {
 			
 			# Arrange
-			# DFTODO - Replace lookup with quick creation of a machine
 			$query = $svc.Infrastructure.Machines;
 			$machines = $query.Execute();
 
-			while($true) 
+			:outer while($true)
 			{
 				foreach($machine in $machines)
 				{
@@ -59,13 +58,8 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 					
 					if ($machineJob.Status -eq 'Running')
 					{
-						$machineFound = $true;
+						break outer;
 					}
-				}
-				
-				if ($machineFound)
-				{
-					break;
 				}
 				
 				$continuation = $machines.GetContinuation();
@@ -78,33 +72,154 @@ Describe -Tags "Machine.Tests" "Machine.Tests" {
 			}
 			
 			# Act
-			$svc.Infrastructure.InvokeEntitySetActionWithVoidResult("Machines", "Restart", [biz.dfch.CS.Appclusive.Api.Core.Job], $null);
+			$result = $svc.Infrastructure.InvokeEntityActionWithSingleResult($machine, "Restart", [biz.dfch.CS.Appclusive.Core.OdataServices.Core.JobResponse], $null);
+			
+			$svc = Enter-Apc;
+			$query = "Id eq {0}" -f $result.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			
+			while(($job.Condition -eq 'Restart') -and ($job.Error -eq ''))
+			{
+				Start-Sleep 30;
+				$svc = Enter-Apc;
+				$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			}
 			
 			# Assert
-			$svc = Enter-Apc;
-			$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("Id eq {0}" -f $machineJob.Id)) | Select;
-			$machineJob.Condition | ShouldBe "Restart";
-			$machineJob.ConditionParameters | ShouldBe "";
+			$job.Error | Should Be "";
+			$job.Status | Should Be "Running";
+			$job.Condition | Should Be "";
+			$job.ConditionParameters | Should Be "";
+		}
+		
+		It "StartMachine-Succeeds" -Test {
+			
+			# Arrange
+			$query = $svc.Infrastructure.Machines;
+			$machines = $query.Execute();
 
-			Start-Sleep 15;
+			:outer while($true)
+			{
+				foreach($machine in $machines)
+				{
+					$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("RefId eq '{0}' and EntityKindId eq 1" -f $machine.Id)) | Select;
+					
+					if ($machineJob.Status -eq 'Stopped')
+					{
+						break outer;
+					}
+				}
+				
+				$continuation = $machines.GetContinuation();
+				if ($continuation -eq $null)
+				{
+					{ throw "No machine in status 'Stopped' found" } | Should Not Throw;
+				}
+				
+				$machines = $svc.core.Execute($continuation);
+			}
+			
+			# Act
+			$result = $svc.Infrastructure.InvokeEntityActionWithSingleResult($machine, "Start", [biz.dfch.CS.Appclusive.Core.OdataServices.Core.JobResponse], $null);
 			
 			$svc = Enter-Apc;
-			$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("Id eq {0}" -f $machineJob.Id)) | Select;
-			$machineJob.Condition | ShouldBe "";
-			$machineJob.ConditionParameters | ShouldBe "";
+			$query = "Id eq {0}" -f $result.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			
+			while(($job.Condition -eq 'Start') -and ($job.Error -eq ''))
+			{
+				Start-Sleep 30;
+				$svc = Enter-Apc;
+				$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			}
+			
+			# Assert
+			$job.Error | Should Be "";
+			$job.Status | Should Be "Running";
+			$job.Condition | Should Be "";
+			$job.ConditionParameters | Should Be "";
+		}
+		
+		It "StopMachine-Succeeds" -Test {
+			
+			# Arrange
+			$query = $svc.Infrastructure.Machines;
+			$machines = $query.Execute();
+
+			:outer while($true)
+			{
+				foreach($machine in $machines)
+				{
+					$machineJob = $svc.Core.Jobs.AddQueryOption('$filter', ("RefId eq '{0}' and EntityKindId eq 1" -f $machine.Id)) | Select;
+					
+					if ($machineJob.Status -eq 'Running')
+					{
+						break outer;
+					}
+				}
+				
+				$continuation = $machines.GetContinuation();
+				if ($continuation -eq $null)
+				{
+					{ throw "No machine in status 'Running' found" } | Should Not Throw;
+				}
+				
+				$machines = $svc.core.Execute($continuation);
+			}
+			
+			# Act
+			$result = $svc.Infrastructure.InvokeEntityActionWithSingleResult($machine, "Stop", [biz.dfch.CS.Appclusive.Core.OdataServices.Core.JobResponse], @{Force = $True});
+			
+			$svc = Enter-Apc;
+			$query = "Id eq {0}" -f $result.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			
+			while(($job.Condition -eq 'Stop') -and ($job.Error -eq ''))
+			{
+				Start-Sleep 30;
+				$svc = Enter-Apc;
+				$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			}
+			
+			# Assert
+			$job.Error | Should Be "";
+			$job.Status | Should Be "Stopped";
+			$job.Condition | Should Be "";
+			$job.ConditionParameters | Should Be "";
 		}
 		
 		It "QuickCreateMachine-Succeeds" -Test {
 
 			# Arrange
-			
+			$quickCreateParameters = @{
+				"Infrastructure_Machine_Name" = "SampleMachine";
+				"Infrastructure_Compute_Cpu_Count" = 2;
+				"Infrastructure_Compute_Memory_SizeGB" = 16;
+				"Infrastructure_Storage_Disk00_SizeGB" = 80;
+				"Infrastructure_Storage_Disk01_SizeGB" = 20;
+				"Infrastructure_Storage_Disk02_SizeGB" = 20;
+				"Infrastructure_Storage_Disk03_SizeGB" = 20;
+				"Infrastructure_Network_Network00_Id" = 0;
+			};
 			
 			# Act
+			$result = $svc.Infrastructure.InvokeEntitySetActionWithSingleResult("Machines", "QuickCreate", [biz.dfch.CS.Appclusive.Core.OdataServices.Core.JobResponse], $quickCreateParameters);
 			
+			$query = "Id eq {0}" -f $result.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
 			
-			# Assert	
+			while(($job.Condition -eq 'Initialise') -and ($job.Error -eq ''))
+			{
+				Start-Sleep 30;
+				$svc = Enter-Apc;
+				$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			}
 			
-			
+			# Assert
+			$job.Error | Should Be "";
+			$job.Status | Should Be "Running";
+			$job.Condition | Should Be "";
+			$job.ConditionParameters | Should Be "";
 		}
 	}
 }
