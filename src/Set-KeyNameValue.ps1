@@ -198,7 +198,7 @@ try
 			$queryStringLength = $FilterExpression.Length + '$filter='.Length;
 			$msg = "Key/Name/Value: Filter expression to query for existing entity exceeds maxQueryString (Length: '{0}'). To avoid this exception increase the maximum URL length on the IIS server." -f $queryStringLength;
 			$e = New-CustomErrorRecord -m $msg -cat LimitsExceeded -o "maxQueryString";
-			throw($e);
+			throw($gotoError);
 		}
 		
 		throw;
