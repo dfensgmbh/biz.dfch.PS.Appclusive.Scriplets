@@ -7,8 +7,11 @@ Describe -Tags "Remove-Node" "Remove-Node" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-Job.ps1"
+	. "$here\Get-Node.ps1"
 	. "$here\New-Node.ps1"
 	. "$here\Set-Node.ps1"
+	. "$here\Get-EntityKind.ps1"
 	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
@@ -21,15 +24,22 @@ Describe -Tags "Remove-Node" "Remove-Node" {
 		It "Remove-Node-ShouldReturnDeletedEntity" -Test {
 			# Arrange
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$result1 = New-Node -svc $svc -Name $Name -EntityKindId 1;
-			$result1 | Should Not Be $null;
+			$creationResult = New-Node -svc $svc -Name $Name -ParentId 1 -EntityKindId 1;
+
+			$creationResult | Should Not Be $null;
+			$creationResult.Name | Should Be $Name;
 			
 			# Act
-			$result = Remove-Node -svc $svc -Confirm:$false -Name $Name;
-
+			$deletionResult = Remove-ApcEntity -svc $svc -Id $creationResult.Id -EntitySetName 'Nodes' -Force -Confirm:$false;
+			
 			# Assert
-			$result | Should Not Be $null;
-			$result.Name | Should Be $Name;
+			$deletionResult | Should Not Be $null;
+			$deletionResult.StatusCode | Should Be 204;
+			
+			# Cleanup
+			$query = "RefId eq '{0}' and EntityKindId eq 1" -f $creationResult.Id;
+			$nodeJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			Remove-ApcEntity -svc $svc -Id $nodeJob.Id -EntitySetName 'Jobs' -Force -Confirm:$false;
 		}
 
 		It "Remove-NodeThatDoesNotExist-ShouldReturnNull" -Test {

@@ -93,7 +93,7 @@ Param
 	[Alias('n')]
 	[string] $Name
 	,
-	# Specifies the new name name
+	# Specifies the new name
 	[Parameter(Mandatory = $false)]
 	[string] $NewName
 	,
@@ -194,7 +194,6 @@ try
 	
 		$entity = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 		$svc.Core.AddToNodes($entity);
-		$AddedEntity = $entity;
 		$entity.Name = $Name;
 		$entity.Created = [System.DateTimeOffset]::Now;
 		$entity.Modified = $entity.Created;
@@ -203,6 +202,7 @@ try
 		$entity.Tid = [guid]::Empty.ToString();
 		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
 		$entity.EntityKindId = $entityKind.Id;
+		$entity.ParentId = $ParentId;
 	}
 	if($PSBoundParameters.ContainsKey('Description'))
 	{

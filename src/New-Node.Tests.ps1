@@ -7,8 +7,10 @@ Describe -Tags "New-Node" "New-Node" {
 	Mock Export-ModuleMember { return $null; }
 	
 	. "$here\$sut"
+	. "$here\Get-Job.ps1"
+	. "$here\Get-Node.ps1"
 	. "$here\Set-Node.ps1"
-	. "$here\Remove-Entity.ps1"
+	. "$here\Get-EntityKind.ps1"
 	. "$here\Format-ResultAs.ps1"
 	
 	$svc = Enter-ApcServer;
@@ -18,33 +20,43 @@ Describe -Tags "New-Node" "New-Node" {
 		# Context wide constants
 		# N/A
 
-		It "New-Node-ShouldReturnNewEntity" -Test {
+		It "New-Node-ShouldCreateAndReturnNewEntity" -Test {
 			# Arrange
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
 			
 			# Act
-			$result = New-Node -svc $svc -Name $Name -EntityKindId 1;
+			$result = New-Node -svc $svc -Name $Name -ParentId 1 -EntityKindId 1;
 
 			# Assert
 			$result | Should Not Be $null;
 			$result.Name | Should Be $Name;
 			
-			Remove-Entity -svc $svc -Name $Name -EntitySetName 'Nodes' -Force -Confirm:$false;
+			# Cleanup
+			Remove-ApcEntity -svc $svc -Id $result.Id -EntitySetName 'Nodes' -Force -Confirm:$false;
+			
+			$query = "RefId eq '{0}' and EntityKindId eq 1" -f $result.Id;
+			$nodeJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			Remove-ApcEntity -svc $svc -Id $nodeJob.Id -EntitySetName 'Jobs' -Force -Confirm:$false;
 		}
 
 		It "New-NodeDuplicate-ShouldThrow" -Test {
 			# Arrange
 			$Name = "Name-{0}" -f [guid]::NewGuid().ToString();
-			$result1 = New-Node -svc $svc -Name $Name -EntityKindId 1;
-			$result1 | Should Not Be $null;
+			$node = New-Node -svc $svc -Name $Name -ParentId 1 -EntityKindId 1;
+			$node | Should Not Be $null;
 			
 			# Act
-			{ $result = New-Node -svc $svc -Name $Name -EntityKindId 1; } | Should Throw 'Entity does already exist';
+			{ $result = New-Node -svc $svc -Name $Name -ParentId 1 -EntityKindId 1; } | Should Throw 'Entity does already exist';
 
 			# Assert
 			$result | Should Be $null;
 			
-			Remove-Entity -svc $svc -Name $Name -EntitySetName 'Nodes' -Force -Confirm:$false;
+			# Cleanup
+			Remove-ApcEntity -svc $svc -Id $node.Id -EntitySetName 'Nodes' -Force -Confirm:$false;
+			
+			$query = "RefId eq '{0}' and EntityKindId eq 1" -f $node.Id;
+			$nodeJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
+			Remove-ApcEntity -svc $svc -Id $nodeJob.Id -EntitySetName 'Jobs' -Force -Confirm:$false;
 		}
 	}
 }
