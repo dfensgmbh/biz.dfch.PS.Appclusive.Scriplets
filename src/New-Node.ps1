@@ -7,7 +7,7 @@ Creates a Node entry in Appclusive.
 .DESCRIPTION
 Creates a Node entry in Appclusive.
 
-You must specify all three parameters 'Name', 'Username' and 'Password'. If the entry already exists no update of the existing entry is performed.
+You must specify the parameters 'Name' and 'ParentId'. If the entry already exists no update of the existing entry is performed.
 
 
 .OUTPUTS
@@ -42,7 +42,7 @@ Create a new Node entry if it not already exists.
 
 
 .EXAMPLE
-New-Node -Name myName -EntityKindName com.swisscom.cms.rhel7 -Description myDescription
+New-Node -Name myName -ParentId 1 -EntityKindName com.swisscom.cms.rhel7 -Description myDescription
 
 Parameters     : {}
 EntityKindId   : 29
@@ -93,7 +93,7 @@ Param
 	[string] $Name
 	,
 	# Specifies the Parent id for this entity
-	[Parameter(Mandatory = $false)]
+	[Parameter(Mandatory = $true)]
 	[int] $ParentId
 	,
 	# Specifies the EntityKind id for this entity

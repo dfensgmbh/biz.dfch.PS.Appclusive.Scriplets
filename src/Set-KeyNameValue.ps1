@@ -185,8 +185,24 @@ try
 	}
 	$FilterExpression = [String]::Join(' and ', $Exp);
 	$KeyNameValueContentsString = [String]::Join(',', $KeyNameValueContents);
-
-	$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	
+	try
+	{
+		$knv = $svc.Core.KeyNameValues.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
+	}
+	catch
+	{
+		$exceptionMsg = $error[0].Exception.InnerException.InnerException.ToString();
+		if (!!$exceptionMsg -and $exceptionMsg -match "Http Error 404\.15 - Not Found")
+		{
+			$queryStringLength = $FilterExpression.Length + '$filter='.Length;
+			$msg = "Key/Name/Value: Filter expression to query for existing entity exceeds maxQueryString (Length: '{0}'). To avoid this exception increase the maximum URL length on the IIS server." -f $queryStringLength;
+			$e = New-CustomErrorRecord -m $msg -cat LimitsExceeded -o "maxQueryString";
+			throw($gotoError);
+		}
+		
+		throw;
+	}
 	if(!$CreateIfNotExist -And !$knv) 
 	{
 		$msg = "Key/Name/Value: Parameter validation FAILED. Entity does not exist. Use '-CreateIfNotExist' to create resource: '{0}'" -f $KeyNameValueContentsString;

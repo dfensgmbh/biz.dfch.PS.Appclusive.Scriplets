@@ -93,7 +93,7 @@ Param
 	[Alias('n')]
 	[string] $Name
 	,
-	# Specifies the new name name
+	# Specifies the new name
 	[Parameter(Mandatory = $false)]
 	[string] $NewName
 	,
@@ -203,6 +203,7 @@ try
 		$entity.Tid = [guid]::Empty.ToString();
 		$entity.Parameters = $Parameters | ConvertTo-Json -Compress;
 		$entity.EntityKindId = $entityKind.Id;
+		$entity.ParentId = $ParentId;
 	}
 	if($PSBoundParameters.ContainsKey('Description'))
 	{
