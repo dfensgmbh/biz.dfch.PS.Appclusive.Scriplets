@@ -52,6 +52,10 @@
               <S N="Key">Infrastructure</S>
               <S N="Value">Infrastructure</S>
             </En>
+			<En>
+              <S N="Key">Csm</S>
+              <S N="Value">Csm</S>
+            </En>
           </DCT>
         </Obj>
       </En>
