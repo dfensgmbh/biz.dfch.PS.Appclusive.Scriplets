@@ -21,16 +21,48 @@ Describe -Tags "Folder.Tests" "Folder.Tests" {
 			$svc = Enter-ApcServer;
 		}
 		
-		It "TestName" -Test {
+		It "CreateAndDeleteFolderSucceeds" -Test {
 			# Arrange
-			
+			$folder = New-Object biz.dfch.CS.Appclusive.Api.Core.Folder;
+			$folder.Name = "Arbitrary Folder";
+			$folder.Description = "Arbitrary Description";
+			$folder.EntityKindId = 28;
+			$folder.ParentId = 1;
+			$folder.Parameters = '{}';
 			
 			# Act
+			$svc.Core.AddToFolders($folder);
+			$folderCreationResult = $svc.Core.SaveChanges();
 			
+			$folderCreationResult | Should Not Be $null;
+			$folderCreationResult.StatusCode | Should Be 202;
 			
-			# Assert	
+			$query = "Id eq {0} and EntityKindId eq 1" -f $folder.Id;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
 			
+			$query = "Id eq {0}" -f $job.RefId;
+			$createdFolder = $svc.Core.Folders.AddQueryOption('$filter', $query) | Select;
 			
+			try 
+			{
+				#Assert
+				$job | Should Not Be $null;
+				$job.Id | Should Not Be 0;
+				
+				$createdFolder | Should Not Be $null;
+				$createdFolder.Id | Should Not Be 0;
+				$createdFolder.Name | Should Be "Arbitrary Folder";
+				$createdFolder.Description | Should Be "Arbitrary Description";
+				$createdFolder.EntityKindId | Should Be 28;
+			} 
+			finally 
+			{
+				#Cleanup
+				$null = Remove-ApcEntity -Id $job.Id -EntitySetName "Jobs" -Confirm:$false;
+				$deletionResult = Remove-ApcEntity -Id $createdFolder.Id -EntitySetName "Folders" -Confirm:$false;
+				
+				$deletionResult.StatusCode | Should Be 204;
+			}
 		}
 	}
 }

@@ -28,10 +28,14 @@ d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
 
 ## Installation
 
-1. Exeucte `nuget.exe install biz.dfch.PS.Appclusive.Client -Version 2.5.7`
+1. Exeucte `nuget.exe install biz.dfch.PS.Appclusive.Client -Version 2.7.3`
 2. Execute `.\Install.ps1` in downloaded package folder
 
 
 ## Description
 
 PowerShell module for the Appclusive Framework and Middleware
+
+[![TeamCity Logo](https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/blob/develop/TeamCity.png)](https://www.jetbrains.com/teamcity/)
+
+Released with TeamCity
