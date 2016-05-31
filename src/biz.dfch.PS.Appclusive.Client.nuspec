@@ -97,5 +97,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
     <file src="..\packages\biz.dfch.CS.Appclusive.Api.2.8.0\lib\biz.dfch.CS.Appclusive.Api.dll" target="tools\biz.dfch.CS.Appclusive.Api.dll" />
 	<file src="..\packages\biz.dfch.CS.Appclusive.Public.2.8.0\lib\biz.dfch.CS.Appclusive.Public.dll" target="tools\biz.dfch.CS.Appclusive.Public.dll" />
     <file src="..\packages\biz.dfch.CS.Appclusive.Public.2.8.0\lib\Newtonsoft.Json.dll" target="tools\Newtonsoft.Json.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Public.2.8.0\lib\System.Net.Http.Formatting.dll" target="tools\System.Net.Http.Formatting.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Public.2.8.0\lib\System.Web.Http.dll" target="tools\System.Web.Http.dll" />
   </files>
 </package>
