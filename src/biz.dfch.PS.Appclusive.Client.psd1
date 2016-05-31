@@ -35,7 +35,7 @@ PowerShellVersion = '3.0'
 # PowerShellHostVersion = ''
 
 # Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.5'
+DotNetFrameworkVersion = '4.6'
 
 # Minimum version of the common language runtime (CLR) required by this module
 # CLRVersion = ''
@@ -59,6 +59,10 @@ RequiredAssemblies = @(
 	'System.Web'
 	,
 	'System.Web.Extensions'
+	,
+	'biz.dfch.CS.Appclusive.Contracts.dll'
+	,
+	'Newtonsoft.Json.dll'
 )
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
@@ -205,7 +209,7 @@ DefaultCommandPrefix = 'Apc'
 }
 
 # 
-# Copyright 2014-2016 d-fens GmbH
+# Copyright 2015-2016 d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
