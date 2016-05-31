@@ -60,7 +60,7 @@ RequiredAssemblies = @(
 	,
 	'System.Web.Extensions'
 	,
-	'biz.dfch.CS.Appclusive.Contracts.dll'
+	'biz.dfch.CS.Appclusive.Public.dll'
 	,
 	'Newtonsoft.Json.dll'
 )
