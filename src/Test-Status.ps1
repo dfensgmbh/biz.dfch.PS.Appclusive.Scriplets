@@ -60,13 +60,44 @@ Process
 	{
 		if($Authenticate)
 		{
-			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'AuthenticatedPing', $null);
+			try
+			{
+				$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'AuthenticatedPing', $null);
+			}
+			catch
+			{
+				$er = $_;
+				if($er.Exception -And $er.Exception.InnerException -And $er.Exception.InnerException.InnerException) 
+				{ 
+					$innerException = $er.Exception.InnerException.InnerException;
+					if($innerException.PSBase.Message)
+					{
+						[xml] $HtmlResponse = $innerException.PSBase.Message;
+						if($HtmlResponse.html.head.title)
+						{
+							$Response = $HtmlResponse.html.head.title;
+						}
+						elseif($innerException.PSBase.StatusCode)
+						{
+							$Response = $innerException.PSBase.StatusCode;
+						}
+					}
+					else
+					{
+						throw;
+					}
+				}
+				else
+				{
+					throw;
+				}
+			}
 		}
 		else
 		{
 			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'Ping', $null);
+			$Response = $null;
 		}
-		$Response = $null;
 	}
 	else
 	{
