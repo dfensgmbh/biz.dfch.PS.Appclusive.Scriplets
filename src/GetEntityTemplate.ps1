@@ -37,6 +37,106 @@ Tenant         :
 CreatedBy      :
 ModifiedBy     :
 
+# to get the complete metadata for an endpoint you can query $metadata
+# which is available for each endpoint
+
 PS > $xml = Invoke-RestMethod 'https://appclusive/Appclusive/api/Core/$metadata' -UseDefaultCredentials;
 PS > $xml.OuterXml |Out-File .\Core-Metadata.xml;
 
+# you can query all available endpoints via
+PS > $svc.Diagnostics.Endpoints
+
+Version       : 0.0.0.0
+Address       : https://appclusive/
+RouteTemplate :
+RoutePrefix   : /
+ServerRole    : HOST
+Priority      : 0
+Id            : 1
+Tid           : 11111111-1111-1111-1111-111111111111
+Name          : BaseUri
+Description   :
+CreatedById   : 1
+ModifiedById  : 1
+Created       : 06.06.2016 04:56:18 +02:00
+Modified      : 06.06.2016 04:56:18 +02:00
+RowVersion    :
+Tenant        :
+CreatedBy     :
+ModifiedBy    :
+
+Version       : 2.1.3.31404
+Address       : https://appclusive/Appclusiveapi/Cmp
+RouteTemplate : /Appclusiveapi/Cmp/{*odataPath}
+RoutePrefix   : /Appclusiveapi/Cmp
+ServerRole    : HOST
+Priority      : 2147483632
+Id            : 2
+Tid           : 11111111-1111-1111-1111-111111111111
+Name          : Cmp
+Description   :
+CreatedById   : 1
+ModifiedById  : 1
+Created       : 06.06.2016 04:56:18 +02:00
+Modified      : 06.06.2016 04:56:18 +02:00
+RowVersion    :
+Tenant        :
+CreatedBy     :
+ModifiedBy    :
+
+Version       : 2.1.3.31404
+Address       : https://appclusive/Appclusiveapi/Core
+RouteTemplate : /Appclusiveapi/Core/{*odataPath}
+RoutePrefix   : /Appclusiveapi/Core
+ServerRole    : HOST
+Priority      : 2147483646
+Id            : 3
+Tid           : 11111111-1111-1111-1111-111111111111
+Name          : Core
+Description   :
+CreatedById   : 1
+ModifiedById  : 1
+Created       : 06.06.2016 04:56:18 +02:00
+Modified      : 06.06.2016 04:56:18 +02:00
+RowVersion    :
+Tenant        :
+CreatedBy     :
+ModifiedBy    :
+
+Version       : 2.1.3.31404
+Address       : https://appclusive/Appclusiveapi/Diagnostics
+RouteTemplate : /Appclusiveapi/Diagnostics/{*odataPath}
+RoutePrefix   : /Appclusiveapi/Diagnostics
+ServerRole    : HOST
+Priority      : 2147483647
+Id            : 4
+Tid           : 11111111-1111-1111-1111-111111111111
+Name          : Diagnostics
+Description   :
+CreatedById   : 1
+ModifiedById  : 1
+Created       : 06.06.2016 04:56:18 +02:00
+Modified      : 06.06.2016 04:56:18 +02:00
+RowVersion    :
+Tenant        :
+CreatedBy     :
+ModifiedBy    :
+
+Version       : 2.1.3.31404
+Address       : https://appclusive/Appclusiveapi/Infrastructure
+RouteTemplate : /Appclusiveapi/Infrastructure/{*odataPath}
+RoutePrefix   : /Appclusiveapi/Infrastructure
+ServerRole    : HOST
+Priority      : 2147483627
+Id            : 5
+Tid           : 11111111-1111-1111-1111-111111111111
+Name          : Infrastructure
+Description   :
+CreatedById   : 1
+ModifiedById  : 1
+Created       : 06.06.2016 04:56:18 +02:00
+Modified      : 06.06.2016 04:56:18 +02:00
+RowVersion    :
+Tenant        :
+CreatedBy     :
+ModifiedBy    :
