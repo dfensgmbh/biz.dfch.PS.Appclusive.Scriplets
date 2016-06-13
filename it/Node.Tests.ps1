@@ -350,6 +350,98 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 				$null = Remove-ApcEntity -Id $node.Id -EntitySetName "Nodes" -Confirm:$false;
 			}
 		}
+		
+		It "GetSelectablePermissionsForAConfigurationNode-ReturnsIntrinsicPermissions" -Test {
+			# Arrange
+			$configurationRootNodeId = 2;
+			$approvalEntityKindId = 5;
+			
+			$configurationNode = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+			$configurationNode.Parameters = "{}";
+			$configurationNode.EntityKindId = $approvalEntityKindId;
+			$configurationNode.EntityId = 42;
+			$configurationNode.ParentId = $configurationRootNodeId;
+			$configurationNode.Name = "Arbitrary";
+			
+			$svc.Core.AddToNodes($configurationNode);
+			$null = $svc.Core.SaveChanges();
+			
+			$configurationNodeJob = Get-ApcJob -Id $configurationNode.Id;
+			$configurationNode = Get-ApcNode -Id $configurationNodeJob.RefId;
+			
+			try 
+			{
+				$allPermissions = New-Object System.Collections.Generic.List``1[biz.dfch.CS.Appclusive.Api.Core.Permission];
+				
+				$query = $svc.Core.Permissions;
+				$permissions = $query.Execute();
+		
+				while($true) 
+				{
+					foreach($permission in $permissions)
+					{
+						$allPermissions.Add($permission);
+					}
+				
+					$continuation = $permissions.GetContinuation();
+					if ($continuation -eq $null)
+					{
+						break;
+					}
+					
+					$permissions = $Svc.core.Execute($continuation);
+				}
+				
+				# Act
+				$selectablePermissions = $svc.Core.InvokeEntityActionWithListResult($configurationNode, "GetSelectablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
+				
+				# Assert
+				$selectablePermissions | Should Not Be $null;
+				# All permissions for EntityKinds except Node, Folder, ScheduledJob, ScheduledJobInstance, Machine and Network
+				$selectablePermissions.Count | Should Be ($allPermissions.Count - 6*4);
+			}
+			finally
+			{
+				#Cleanup
+				$null = Remove-ApcEntity -Id $configurationNodeJob.Id -EntitySetName "Jobs" -Confirm:$false;
+				$null = Remove-ApcEntity -Id $configurationNode.Id -EntitySetName "Nodes" -Confirm:$false;
+			}
+		}
+		
+		It "GetSelectablePermissionsForRootNode-ReturnsNonIntrinsicPermissions" -Test {
+			# Arrange
+			$rootNodeId = 1L;
+			$rootNode = Get-ApcNode -Id $rootNodeId;
+			
+			$allPermissions = New-Object System.Collections.Generic.List``1[biz.dfch.CS.Appclusive.Api.Core.Permission];
+			
+			$query = $svc.Core.Permissions;
+			$permissions = $query.Execute();
+	
+			while($true) 
+			{
+				foreach($permission in $permissions)
+				{
+					$allPermissions.Add($permission);
+				}
+			
+				$continuation = $permissions.GetContinuation();
+				if ($continuation -eq $null)
+				{
+					break;
+				}
+				
+				$permissions = $Svc.core.Execute($continuation);
+			}
+			
+			# Act
+			$selectablePermissions = $svc.Core.InvokeEntityActionWithListResult($rootNode, "GetSelectablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
+			
+			# Assert
+			$selectablePermissions | Should Not Be $null;
+			# All permissions for EntityKinds with Id > 4096 + Node, Folder, ScheduledJob, ScheduledJobInstance, Machine and Network
+			$selectablePermissions.Count | Should Be 24;
+		}
 	}
 }
 
