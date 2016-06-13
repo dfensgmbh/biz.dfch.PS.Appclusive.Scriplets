@@ -351,7 +351,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 		}
 		
-		It "GetSelectablePermissionsForAConfigurationNode-ReturnsIntrinsicPermissions" -Test {
+		It "GetAssignablePermissionsForAConfigurationNode-ReturnsIntrinsicPermissions" -Test {
 			# Arrange
 			$configurationRootNodeId = 2;
 			$approvalEntityKindId = 5;
@@ -393,12 +393,12 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 				}
 				
 				# Act
-				$selectablePermissions = $svc.Core.InvokeEntityActionWithListResult($configurationNode, "GetSelectablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
+				$assignablePermissions = $svc.Core.InvokeEntityActionWithListResult($configurationNode, "GetAssignablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
 				
 				# Assert
-				$selectablePermissions | Should Not Be $null;
+				$assignablePermissions | Should Not Be $null;
 				# All permissions for EntityKinds except Node, Folder, ScheduledJob, ScheduledJobInstance, Machine and Network
-				$selectablePermissions.Count | Should Be ($allPermissions.Count - 6*4);
+				$assignablePermissions.Count | Should Be ($allPermissions.Count - 6*4);
 			}
 			finally
 			{
@@ -408,7 +408,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 		}
 		
-		It "GetSelectablePermissionsForRootNode-ReturnsNonIntrinsicPermissions" -Test {
+		It "GetAssignablePermissionsForRootNode-ReturnsNonIntrinsicPermissions" -Test {
 			# Arrange
 			$rootNodeId = 1L;
 			$rootNode = Get-ApcNode -Id $rootNodeId;
@@ -435,12 +435,12 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 			
 			# Act
-			$selectablePermissions = $svc.Core.InvokeEntityActionWithListResult($rootNode, "GetSelectablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
+			$assignablePermissions = $svc.Core.InvokeEntityActionWithListResult($rootNode, "GetAssignablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
 			
 			# Assert
-			$selectablePermissions | Should Not Be $null;
+			$assignablePermissions | Should Not Be $null;
 			# All permissions for EntityKinds with Id > 4096 + Node, Folder, ScheduledJob, ScheduledJobInstance, Machine and Network
-			$selectablePermissions.Count | Should Be 24;
+			$assignablePermissions.Count | Should Be 24;
 		}
 	}
 }
