@@ -402,7 +402,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 			finally
 			{
-				#Cleanup
+				# Cleanup
 				$null = Remove-ApcEntity -Id $configurationNodeJob.Id -EntitySetName "Jobs" -Confirm:$false;
 				$null = Remove-ApcEntity -Id $configurationNode.Id -EntitySetName "Nodes" -Confirm:$false;
 			}
