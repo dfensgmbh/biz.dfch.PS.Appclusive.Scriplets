@@ -351,7 +351,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 		}
 		
-		It "GetAssignablePermissionsForAConfigurationNode-ReturnsIntrinsicPermissions" -Test {
+		It "GetAssignablePermissionsForConfigurationNode-ReturnsIntrinsicEntityKindNonNodePermissions" -Test {
 			# Arrange
 			$configurationRootNodeId = 2;
 			$approvalEntityKindId = 5;
@@ -370,35 +370,16 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$configurationNode = Get-ApcNode -Id $configurationNodeJob.RefId;
 			
 			try 
-			{
-				$allPermissions = New-Object System.Collections.Generic.List``1[biz.dfch.CS.Appclusive.Api.Core.Permission];
-				
-				$query = $svc.Core.Permissions;
-				$permissions = $query.Execute();
-		
-				while($true) 
-				{
-					foreach($permission in $permissions)
-					{
-						$allPermissions.Add($permission);
-					}
-				
-					$continuation = $permissions.GetContinuation();
-					if ($continuation -eq $null)
-					{
-						break;
-					}
-					
-					$permissions = $Svc.core.Execute($continuation);
-				}
-				
+			{				
 				# Act
 				$assignablePermissions = $svc.Core.InvokeEntityActionWithListResult($configurationNode, "GetAssignablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
 				
 				# Assert
 				$assignablePermissions | Should Not Be $null;
-				# All permissions for EntityKinds except Node, Folder, ScheduledJob, ScheduledJobInstance, Machine and Network
-				$assignablePermissions.Count | Should Be ($allPermissions.Count - 6*4);
+				# All permissions for EntityKinds except CRUD permissions for
+				# Nodes and its subtypes like Folders, ScheduledJobs, ScheduledJobInstances, Machines and Networks
+				# And except CRUD for ActiveDirectoryUsers, Persons, CimiTargets, Endpoints and permissions for SpecialOperations as there are no EntityKinds defined for
+				$assignablePermissions.Count | Should Be 131;
 			}
 			finally
 			{
@@ -408,7 +389,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			}
 		}
 		
-		It "GetAssignablePermissionsForRootNode-ReturnsNonIntrinsicPermissions" -Test {
+		It "GetAssignablePermissionsForRootNode-ReturnsPermissionsExceptIntrinsicEntityKindNonNodePermissions" -Test {
 			# Arrange
 			$rootNodeId = 1L;
 			$rootNode = Get-ApcNode -Id $rootNodeId;
@@ -439,8 +420,9 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			
 			# Assert
 			$assignablePermissions | Should Not Be $null;
-			# All permissions for EntityKinds with Id > 4096 + Node, Folder, ScheduledJob, ScheduledJobInstance, Machine and Network
-			$assignablePermissions.Count | Should Be 24;
+			# All product related permissions + permissions for
+			# Nodes and its subtypes like Folders, ScheduledJobs, ScheduledJobInstances, Machines and Networks
+			$assignablePermissions.Count | Should Be ($allPermissions.Count - 131);
 		}
 	}
 }
