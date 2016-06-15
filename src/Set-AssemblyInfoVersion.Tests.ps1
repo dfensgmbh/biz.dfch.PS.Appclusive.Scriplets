@@ -130,16 +130,16 @@ using System.Runtime.InteropServices;
 
 		It "GettingAssemblyInfoKeepRevisionTrue-Succeeds" -Test {
 		
-			Set-AssemblyInfoVersion $AssemblyInfoPathAndFile $NewVersion;
+			$result = Set-AssemblyInfoVersion $AssemblyInfoPathAndFile $NewVersion;
 		
+			$result.Contains($NewVersion) | Should Be $false;
 		}
 
 		It "GettingAssemblyInfoKeepRevisionFalse-Succeeds" -Test {
 		
 			$result = Set-AssemblyInfoVersion $AssemblyInfoPathAndFile $NewVersion -KeepRevision:$false;
 			
-			Write-Host $result;
-		
+			$result.Contains($NewVersion) | Should Be $true;
 		}
 
 	}
