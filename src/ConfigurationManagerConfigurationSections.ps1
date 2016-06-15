@@ -74,13 +74,13 @@ $config.AppSettings.Settings["Uri"]
   # </credential>
 # </configuration>
 
-$credentialSection = $config.GetSection("credential")
+$credentialSection = $config.GetSection("AppclusiveCredential")
 $rawxml = $credentialSection.SectionInformation.GetRawXml()
 $rawxml
 <#
 	<credential>
-		<username>.\Administrator</username>
-		<password>P@ssw0rd</password>
+		<username>.\arbitrary-user</username>
+		<password>arbitrary-password</password>
 	</credential>
 #>
 
