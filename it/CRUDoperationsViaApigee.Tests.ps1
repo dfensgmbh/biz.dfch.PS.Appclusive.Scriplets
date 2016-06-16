@@ -94,7 +94,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 		
 		It "PutEntityKindViaApigee" -Test {
 			# Arrange
-			$svc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
+			$apigeeSvc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
@@ -123,7 +123,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 		
 		It "PatchEntityKindViaApigee" -Test {
 			# Arrange
-			$svc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
+			$apigeeSvc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
@@ -152,7 +152,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 		
 		It "BatchUpdateEntityKindViaApigee" -Test {
 			# Arrange
-			$svc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::Batch;
+			$apigeeSvc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::Batch;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
