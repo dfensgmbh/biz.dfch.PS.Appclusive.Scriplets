@@ -29,16 +29,16 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			Contract-Assert(!!$tenant);
 
 			# Create service reference for communication via Apigee
-			$apigeeSvc = Enter-Apc -ServerBaseUri $apiBrokerBaseUrl -BaseUrl '/v1/camp/' -Credential $oAuthCredential;
-			$apigeeSvc.Core.TenantHeaderName = 'Tenant-Id';
-			$apigeeSvc.Core.TenantID = $tenant.ExternalId;
+			$svcViaApigee = Enter-Apc -ServerBaseUri $apiBrokerBaseUrl -BaseUrl '/v1/camp/' -Credential $oAuthCredential;
+			$svcViaApigee.Core.TenantHeaderName = 'Tenant-Id';
+			$svcViaApigee.Core.TenantID = $tenant.ExternalId;
 		}
 		
 		It "GetEntityKindViaApigge" -Test {
 			# Arrange
 			
 			# Act
-			$entityKinds = $apigeeSvc.Core.EntityKinds;
+			$entityKinds = $svcViaApigee.Core.EntityKinds;
 			
 			# Assert
 			$entityKinds | Should Not Be $null;
@@ -53,14 +53,14 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
 			# Act
-			$apigeeSvc.Core.AddToEntityKinds($entityKind);
-			$creationResult = $apigeeSvc.Core.SaveChanges();
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
 			# Assert
 			$creationResult | Should Not Be $null;
 			$creationResult.StatusCode | Should Be 201;
 			
-			$deletionResult = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
+			$deletionResult = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
 			$deletionResult | Should Not Be $null;
 			$deletionResult.StatusCode | Should Be 204;
 		}
@@ -73,8 +73,8 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
 			# Act
-			$apigeeSvc.Core.AddToEntityKinds($entityKind);
-			$creationResult = $apigeeSvc.Core.SaveChanges();
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
 			# Assert
 			$creationResult | Should Not Be $null;
@@ -83,18 +83,18 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			try
 			{
 				$entityKind.Name = 'Another.Name';
-				$apigeeSvc.Core.UpdateObject($entityKind);
-				$apigeeSvc.Core.SaveChanges();
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
 			}
 			finally
 			{
-				$null = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
 			}
 		}
 		
 		It "PutEntityKindViaApigee" -Test {
 			# Arrange
-			$apigeeSvc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
+			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
@@ -102,8 +102,8 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
 			# Act
-			$apigeeSvc.Core.AddToEntityKinds($entityKind);
-			$creationResult = $apigeeSvc.Core.SaveChanges();
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
 			# Assert
 			$creationResult | Should Not Be $null;
@@ -112,18 +112,18 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			try
 			{
 				$entityKind.Name = 'Another.Name';
-				$apigeeSvc.Core.UpdateObject($entityKind);
-				$apigeeSvc.Core.SaveChanges();
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
 			}
 			finally
 			{
-				$null = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
 			}
 		}
 		
 		It "PatchEntityKindViaApigee" -Test {
 			# Arrange
-			$apigeeSvc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
+			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
@@ -131,8 +131,8 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
 			# Act
-			$apigeeSvc.Core.AddToEntityKinds($entityKind);
-			$creationResult = $apigeeSvc.Core.SaveChanges();
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
 			# Assert
 			$creationResult | Should Not Be $null;
@@ -141,18 +141,18 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			try
 			{
 				$entityKind.Name = 'Another.Name';
-				$apigeeSvc.Core.UpdateObject($entityKind);
-				$apigeeSvc.Core.SaveChanges();
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
 			}
 			finally
 			{
-				$null = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
 			}
 		}
 		
 		It "BatchUpdateEntityKindViaApigee" -Test {
 			# Arrange
-			$apigeeSvc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::Batch;
+			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::Batch;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
@@ -160,8 +160,8 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
 			# Act
-			$apigeeSvc.Core.AddToEntityKinds($entityKind);
-			$creationResult = $apigeeSvc.Core.SaveChanges();
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
 			# Assert
 			$creationResult | Should Not Be $null;
@@ -170,12 +170,12 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			try
 			{
 				$entityKind.Name = 'Another.Name';
-				$apigeeSvc.Core.UpdateObject($entityKind);
-				$apigeeSvc.Core.SaveChanges();
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
 			}
 			finally
 			{
-				$null = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
 			}
 		}
 	}
