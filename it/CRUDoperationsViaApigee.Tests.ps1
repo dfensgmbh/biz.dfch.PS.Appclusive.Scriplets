@@ -65,6 +65,33 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$deletionResult.StatusCode | Should Be 204;
 		}
 		
+		It "MergeEntityKindViaApigee" -Test {
+			# Arrange
+			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+			$entityKind.Version = 'Arbitrary.Version';
+			$entityKind.Name = $entityKind.Version;
+			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
+
+			# Act
+			$apigeeSvc.Core.AddToEntityKinds($entityKind);
+			$creationResult = $apigeeSvc.Core.SaveChanges();
+			
+			# Assert
+			$creationResult | Should Not Be $null;
+			$creationResult.StatusCode | Should Be 201;
+			
+			try
+			{
+				$entityKind.Name = 'Another.Name';
+				$apigeeSvc.Core.UpdateObject($entityKind);
+				$apigeeSvc.Core.SaveChanges();
+			}
+			finally
+			{
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
+			}
+		}
+		
 		It "PutEntityKindViaApigee" -Test {
 			# Arrange
 			$svc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
@@ -98,33 +125,6 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			# Arrange
 			$svc.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
 			
-			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
-			$entityKind.Version = 'Arbitrary.Version';
-			$entityKind.Name = $entityKind.Version;
-			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
-
-			# Act
-			$apigeeSvc.Core.AddToEntityKinds($entityKind);
-			$creationResult = $apigeeSvc.Core.SaveChanges();
-			
-			# Assert
-			$creationResult | Should Not Be $null;
-			$creationResult.StatusCode | Should Be 201;
-			
-			try
-			{
-				$entityKind.Name = 'Another.Name';
-				$apigeeSvc.Core.UpdateObject($entityKind);
-				$apigeeSvc.Core.SaveChanges();
-			}
-			finally
-			{
-				$null = Remove-ApcEntity -InputObject $entityKind -svc $apigeeSvc -Confirm:$false;
-			}
-		}
-		
-		It "MergeEntityKindViaApigee" -Test {
-			# Arrange
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
 			$entityKind.Version = 'Arbitrary.Version';
 			$entityKind.Name = $entityKind.Version;
