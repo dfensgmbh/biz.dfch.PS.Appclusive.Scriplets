@@ -48,7 +48,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 		It "PostAndDeleteEntityKindViaApigee" -Test {
 			# Arrange
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
-			$entityKind.Version = 'Arbitrary.Version';
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
 			$entityKind.Name = $entityKind.Version;
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
@@ -68,7 +68,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 		It "MergeEntityKindViaApigee" -Test {
 			# Arrange
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
-			$entityKind.Version = 'Arbitrary.Version';
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
 			$entityKind.Name = $entityKind.Version;
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
@@ -97,7 +97,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
-			$entityKind.Version = 'Arbitrary.Version';
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
 			$entityKind.Name = $entityKind.Version;
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
@@ -126,7 +126,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
-			$entityKind.Version = 'Arbitrary.Version';
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
 			$entityKind.Name = $entityKind.Version;
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
@@ -155,7 +155,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::Batch;
 			
 			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
-			$entityKind.Version = 'Arbitrary.Version';
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
 			$entityKind.Name = $entityKind.Version;
 			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
 
