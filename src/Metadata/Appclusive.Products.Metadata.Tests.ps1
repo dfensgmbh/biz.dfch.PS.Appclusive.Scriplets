@@ -54,7 +54,9 @@ Describe -Tags "Appclusive.Products.Metadata" "Appclusive.Products.Metadata" {
 			New-ApcKeyNameValue -Key $entityKindVersion -Name "Icon-default" -Value $icon
 			New-ApcKeyNameValue -Key $entityKindVersion -Name ("Translation-{0}" -f $locale) -Value ('{{ "{0}": "Arbitrary-Text-1", "{1}": "Arbitrary-Text-2" }}' -f $translationKey1,$translationKey2);
 			$scheme = Get-Content -Raw "EntCloudPortalUIProductDetails-default.json" -Encoding Default
-			New-ApcKeyNameValue -Key $entityKindVersion -Name ("EntCloudPortalUIProductDetails-default" -f $actionOnline) -Value $scheme
+			New-ApcKeyNameValue -Key $entityKindVersion -Name ("EntCloudPortalUIProductDetails-default") -Value $scheme
+			$url = "http://Arbitrary.ch/Arbitrary"
+			New-ApcKeyNameValue -Key $entityKindVersion -Name ("EntCloudPortalUIProductDetails-microsite") -Value $url
 					
 			# Add new Product based on EntityKind
 			$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
@@ -132,16 +134,26 @@ Describe -Tags "Appclusive.Products.Metadata" "Appclusive.Products.Metadata" {
 			
 			$metadata | Should be $actionIcon;
 		}
-			
-		It "Get-Metadata-Online-ProductDetails" -Test {
+		
+		It "Get-Metadata-Online-ProductDetails-Default" -Test {
 			$parameters = @{};
 			$parameters.Request = 'EntCloudPortalUIProductDetails';
+			$parameters.Type = 'default';
 			
 			$metadata = $svc.Core.InvokeEntityActionWithSingleResult('Products', $product.Id, 'Metadata', [string], $parameters);
 			
 			$jsonValue = ConvertFrom-Json $metadata
 			$fcontent = Get-Content -Raw "EntCloudPortalUIProductDetails-default.json" -Encoding Default
 			$metadata | Should be $fcontent;
+		}
+			
+		It "Get-Metadata-Online-ProductDetails-Microsite" -Test {
+			$parameters = @{};
+			$parameters.Request = 'EntCloudPortalUIProductDetails';
+			$parameters.Type = 'microsite';
+			
+			$metadata = $svc.Core.InvokeEntityActionWithSingleResult('Products', $product.Id, 'Metadata', [string], $parameters);			
+			$metadata | Should be $url;
 		}
 			
 		It "Get-Metadata-Online-Translations" -Test {
