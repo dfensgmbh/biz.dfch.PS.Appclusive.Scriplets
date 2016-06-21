@@ -1,0 +1,1 @@
+[{"key":"temporaryAdminRights","type":"radios","disableSuccessState":true,"titleMap":[{"value":false,"name":"disabled"},{"value":true,"name": "enabled"}]},{"key":"temporaryAdminRightsEmail","type":"string","title":"Temporary Admin Rights sent to -- UIDetails","required":true,"placeholder":"Enter E-Mail","condition":"model.temporaryAdminRights"}]
