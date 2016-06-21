@@ -46,6 +46,15 @@ foreach($childNode in $childNodes)
 	$result
 }
 
+$q = "RefId eq '{0}'" -f $Id;
+$job = $svc.Core.Jobs.AddQueryOption('$filter', $q) | Select;
+Contract-Assert (!!$job)
+Contract-Assert (1 -eq $job.Count)
+$job
+$svc.Core.DeleteObject($job);
+$result = $svc.Core.SaveChanges();
+$result
+
 $svc.Core.DeleteObject($node);
 $result = $svc.Core.SaveChanges();
 $result
