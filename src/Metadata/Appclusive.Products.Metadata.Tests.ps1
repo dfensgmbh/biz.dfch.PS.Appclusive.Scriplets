@@ -55,8 +55,8 @@ Describe -Tags "Appclusive.Products.Metadata" "Appclusive.Products.Metadata" {
 			New-ApcKeyNameValue -Key $entityKindVersion -Name ("Translation-{0}" -f $locale) -Value ('{{ "{0}": "Arbitrary-Text-1", "{1}": "Arbitrary-Text-2" }}' -f $translationKey1,$translationKey2);
 			$scheme = Get-Content -Raw "EntCloudPortalUIProductDetails-default.json" -Encoding Default
 			New-ApcKeyNameValue -Key $entityKindVersion -Name ("EntCloudPortalUIProductDetails-default") -Value $scheme
-			$url = "http://Arbitrary.ch/Arbitrary"
-			New-ApcKeyNameValue -Key $entityKindVersion -Name ("EntCloudPortalUIProductDetails-microsite") -Value $url
+			$micrositeObj = Get-Content -Raw "microsite.json" -Encoding Default
+			New-ApcKeyNameValue -Key $entityKindVersion -Name ("EntCloudPortalUIProductDetails-microsite") -Value $micrositeObj
 					
 			# Add new Product based on EntityKind
 			$product = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
@@ -152,8 +152,15 @@ Describe -Tags "Appclusive.Products.Metadata" "Appclusive.Products.Metadata" {
 			$parameters.Request = 'EntCloudPortalUIProductDetails';
 			$parameters.Type = 'microsite';
 			
-			$metadata = $svc.Core.InvokeEntityActionWithSingleResult('Products', $product.Id, 'Metadata', [string], $parameters);			
-			$metadata | Should be $url;
+			$metadata = $svc.Core.InvokeEntityActionWithSingleResult('Products', $product.Id, 'Metadata', [string], $parameters);
+			
+			$micrositeObj = Get-Content -Raw "microsite.json" -Encoding Default
+			$metadata | Should be $micrositeObj;
+			
+			$metadataObj = ConvertFrom-Json $metadata;
+			
+			$metadataObj.url | Should be "http://aribitraryhost.ch/arbitraryFolder/arbitraryfile.zip";
+			$metadataObj.size | Should be "l";
 		}
 			
 		It "Get-Metadata-Online-Translations" -Test {
