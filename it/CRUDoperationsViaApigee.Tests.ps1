@@ -25,7 +25,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$oAuthAccessToken = Get-ApcManagementCredential -Name 'biz.dfch.CS.Appclusive.Core.Scs.Cmp.AccessToken' -svc $svc;
 			$oAuthCredential = New-Object System.Net.NetworkCredential('[AuthorisationBaererUser]', $oAuthAccessToken.Password);
 			Contract-Assert(!!$oAuthCredential);
-			$tenant = $svc.core.Tenants.AddQueryOption('$filter', "Name eq 'Managed Service Tenant'") | Select
+			$tenant = $svc.Core.Tenants.AddQueryOption('$filter', "Name eq 'Managed Service Tenant'") | Select
 			Contract-Assert(!!$tenant);
 
 			# Create service reference for communication via Apigee
