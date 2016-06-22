@@ -34,7 +34,7 @@ Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 			$svcViaApigee.Core.TenantID = $tenant.ExternalId;
 		}
 		
-		It "GetEntityKindViaApigge" -Test {
+		It "GetEntityKindViaApigee" -Test {
 			# Arrange
 			
 			# Act
