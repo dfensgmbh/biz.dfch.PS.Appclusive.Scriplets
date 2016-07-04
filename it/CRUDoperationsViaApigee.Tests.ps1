@@ -1,5 +1,4 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
 function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 {
@@ -8,29 +7,176 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "User.Tests" "User.Tests" {
+Describe -Tags "CRUDoperationsViaApigee.Tests" "CRUDoperationsViaApigee.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
-	
-	Context "#CLOUDTCL-1882-UserTests" {
+
+	Context "#CLOUDTCL-1873-CRUDoperationsViaApigee" {
 		
 		BeforeEach {
 			$moduleName = 'biz.dfch.PS.Appclusive.Client';
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
-			$svc = Enter-ApcServer;
+			
+			$svc = Enter-Apc;
+			$apiBrokerBaseUrl = Get-ApcManagementUri -Name 'biz.dfch.CS.Appclusive.Core.Scs.Cmp.BaseUrl' -ValueOnly -svc $svc;
+
+			# Load information for creation of service reference for communication via Apigee
+			$oAuthAccessToken = Get-ApcManagementCredential -Name 'biz.dfch.CS.Appclusive.Core.Scs.Cmp.AccessToken' -svc $svc;
+			$oAuthCredential = New-Object System.Net.NetworkCredential('[AuthorisationBaererUser]', $oAuthAccessToken.Password);
+			Contract-Assert(!!$oAuthCredential);
+			$tenant = $svc.Core.Tenants.AddQueryOption('$filter', "Name eq 'Managed Service Tenant'") | Select
+			Contract-Assert(!!$tenant);
+
+			# Create service reference for communication via Apigee
+			$svcViaApigee = Enter-Apc -ServerBaseUri $apiBrokerBaseUrl -BaseUrl '/v1/camp/' -Credential $oAuthCredential;
+			$svcViaApigee.Core.TenantHeaderName = 'Tenant-Id';
+			$svcViaApigee.Core.TenantID = $tenant.ExternalId;
 		}
 		
-		It "TestName" -Test {
+		It "GetEntityKindViaApigee" -Test {
 			# Arrange
 			
-			
 			# Act
+			$entityKinds = $svcViaApigee.Core.EntityKinds;
 			
+			# Assert
+			$entityKinds | Should Not Be $null;
+			$entityKinds.Count | Should Not Be 0;
+		}
+		
+		It "PostAndDeleteEntityKindViaApigee" -Test {
+			# Arrange
+			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
+			$entityKind.Name = $entityKind.Version;
+			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
+
+			# Act
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
-			# Assert	
+			# Assert
+			$creationResult | Should Not Be $null;
+			$creationResult.StatusCode | Should Be 201;
 			
+			$deletionResult = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
+			$deletionResult | Should Not Be $null;
+			$deletionResult.StatusCode | Should Be 204;
+		}
+		
+		It "MergeEntityKindViaApigee" -Test {
+			# Arrange
+			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
+			$entityKind.Name = $entityKind.Version;
+			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
+
+			# Act
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
 			
+			# Assert
+			$creationResult | Should Not Be $null;
+			$creationResult.StatusCode | Should Be 201;
+			
+			try
+			{
+				$entityKind.Name = 'Another.Name';
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
+			}
+			finally
+			{
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
+			}
+		}
+		
+		It "PutEntityKindViaApigee" -Test {
+			# Arrange
+			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::ReplaceOnUpdate;
+			
+			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
+			$entityKind.Name = $entityKind.Version;
+			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
+
+			# Act
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
+			
+			# Assert
+			$creationResult | Should Not Be $null;
+			$creationResult.StatusCode | Should Be 201;
+			
+			try
+			{
+				$entityKind.Name = 'Another.Name';
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
+			}
+			finally
+			{
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
+			}
+		}
+		
+		It "PatchEntityKindViaApigee" -Test {
+			# Arrange
+			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::PatchOnUpdate;
+			
+			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
+			$entityKind.Name = $entityKind.Version;
+			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
+
+			# Act
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
+			
+			# Assert
+			$creationResult | Should Not Be $null;
+			$creationResult.StatusCode | Should Be 201;
+			
+			try
+			{
+				$entityKind.Name = 'Another.Name';
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
+			}
+			finally
+			{
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
+			}
+		}
+		
+		It "BatchUpdateEntityKindViaApigee" -Test {
+			# Arrange
+			$svcViaApigee.Core.SaveChangesDefaultOptions = [System.Data.Services.Client.SaveChangesOptions]::Batch;
+			
+			$entityKind = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityKind;
+			$entityKind.Version = 'Arbitrary.Version-{0}' -f [guid]::NewGuid();
+			$entityKind.Name = $entityKind.Version;
+			$entityKind.Parameters = '{"InitialState-Initialise":"ArbitraryState"}';
+
+			# Act
+			$svcViaApigee.Core.AddToEntityKinds($entityKind);
+			$creationResult = $svcViaApigee.Core.SaveChanges();
+			
+			# Assert
+			$creationResult | Should Not Be $null;
+			$creationResult.StatusCode | Should Be 201;
+			
+			try
+			{
+				$entityKind.Name = 'Another.Name';
+				$svcViaApigee.Core.UpdateObject($entityKind);
+				$svcViaApigee.Core.SaveChanges();
+			}
+			finally
+			{
+				$null = Remove-ApcEntity -InputObject $entityKind -svc $svcViaApigee -Confirm:$false;
+			}
 		}
 	}
 }
@@ -50,12 +196,11 @@ Describe -Tags "User.Tests" "User.Tests" {
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrFV5mch90hrUPrZCbBvUbX2F
-# qZOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJKxdGDqW6dxRMrGFebsTTkmy
+# jhagghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -154,26 +299,26 @@ Describe -Tags "User.Tests" "User.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQjsZpOk33LApaZ
-# 7pWodcFKuj0ZfjANBgkqhkiG9w0BAQEFAASCAQB5O6qnoXS7zbhh6F28+ctHLlQv
-# B5c6qJi3T/FHJC9759ZL5cMi5myVQP82KLwA/Xz3a4DrmW0+uhuStpj3G+iamH+T
-# gFTRMSlnu0/fTaOpi+ihAaQlDWwRmbylMiffxLu7UGMvp3mSUD4I4S0t/Cgzv9nW
-# x8nCwUMx3yjz4MBCUbXvw8Ah1p+sKdehfAfPeKIbj6UIHjFMAeUW6OWm6ymksw9U
-# lX+J6p0sVqb2UY4FzoGRK3qHBvxbw8dXWV2inJH+60iQcy5/mcwfN4o6uj7yxMPL
-# juQG+DukCj6W3Y2SNhIEw+e276wv6kW8lkGLmoKRwNPgmt/C95NdPtSy5b50oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQj4w7Sxgm5CmGU
+# Q6yWDImSjx77XzANBgkqhkiG9w0BAQEFAASCAQBvFlHH0jqYx+0BY74vIkh+CjLr
+# Ss9rZB3i3zZkERkk/cosdxlf5IqIgF9NM+dWonYETQXOjWJcLxYLonXVATJEKjGN
+# 9CqvLOVzi7GKf7YCqZ098OjZuINFr5Ojc+ssCdCSFFNEbFCfn1NVWr9htel/y7jH
+# GZQVcXOSSQgKzXiJrmJdmyXHZPD8+16AD0Vi8kn2VmNhjcgrxN2jy8E535rYsLdk
+# pMQrVDP2vo2PZIBm6jRg37luiIwITwmUlZgzc+d+oekYal7KgoRvzpn7AyE1a80L
+# IaJ8nFGDrxGLHKiPsyi2GDlOJLr9i8dEINjxTYUYqVS8v7HNAs/i9nrYFvASoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcwNDExMjIyOFowIwYJKoZIhvcNAQkEMRYEFLVMeFXjTRGGUf8SoVrSmz7E6EIb
+# MDcwNDExMjIxMlowIwYJKoZIhvcNAQkEMRYEFJBsWVeaP0EohdcpoDc45TTcAyEO
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQB54wneYmih/vkwT8G0
-# R48FHaa1UIIeAWBO1HmbSi7kkRps1aC3Z9uEciidwSRKsFrHtj/AynMLMzfTM24J
-# 959FWaZFqHmE/qvpNz+28ixKXJQOJyDI1aEpcrhkxF7ocs6IeDn3AKNffA4AeYTJ
-# +o13EY3U/FK1odd+rK3hh5sujI1b0NOHm/Tr1F0EBGwwoSyjoyBevC87htaIOFbe
-# v5+9WpDhsVPhenr4s33ipQYjvOOV8C2NYI2cy/EKUQ/t2iGI/8wFh+OHuAPISmg+
-# R9KpkD6ZBSvsWYPBNHIun9jVKTMzDgbpid4pTbeO3Xm8ABh70Qtyor5v8QraZkOr
-# eOEa
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAyUSj84E5StOZ+WesO
+# 5Wa1lgB1HUOmqLdtMCuEp2ffq8UFpyEQLQy00Ih1Y3GppgKVDYGTgzO0lyJcRuzQ
+# JoFL79p5XcA1QiQuC0FsAh0KYK6oceCJihxotkqD0WLF4aB10wfZbhOLqo9QB7o6
+# wtGWjO8mUmudvMb++fYlSk0n8TyT/cWp2cJJSBooRb3MKIoayJHTWiy8NSZau9JF
+# EGcqaCp5lnV+IWp260EwYT3Z8iRyvmgrqLZIjRJCqU0C7JhxO3eh25d54ikpSxFb
+# f6+RQxvSYhyW/dEruG5xgvXhS7maEL2pLZtd8D3q6IC6GkCrrq/P8LeDkT6NavGO
+# bEDM
 # SIG # End signature block

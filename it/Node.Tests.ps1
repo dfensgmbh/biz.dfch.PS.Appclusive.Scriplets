@@ -350,6 +350,80 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 				$null = Remove-ApcEntity -Id $node.Id -EntitySetName "Nodes" -Confirm:$false;
 			}
 		}
+		
+		It "GetAssignablePermissionsForConfigurationNode-ReturnsIntrinsicEntityKindNonNodePermissions" -Test {
+			# Arrange
+			$configurationRootNodeId = 2;
+			$approvalEntityKindId = 5;
+			
+			$configurationNode = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+			$configurationNode.Parameters = "{}";
+			$configurationNode.EntityKindId = $approvalEntityKindId;
+			$configurationNode.EntityId = 42;
+			$configurationNode.ParentId = $configurationRootNodeId;
+			$configurationNode.Name = "Arbitrary";
+			
+			$svc.Core.AddToNodes($configurationNode);
+			$null = $svc.Core.SaveChanges();
+			
+			$configurationNodeJob = Get-ApcJob -Id $configurationNode.Id;
+			$configurationNode = Get-ApcNode -Id $configurationNodeJob.RefId;
+			
+			try 
+			{				
+				# Act
+				$assignablePermissions = $svc.Core.InvokeEntityActionWithListResult($configurationNode, "GetAssignablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
+				
+				# Assert
+				$assignablePermissions | Should Not Be $null;
+				# All permissions for EntityKinds except CRUD permissions for
+				# Nodes and its subtypes like Folders, ScheduledJobs, ScheduledJobInstances, Machines and Networks
+				# And except CRUD for ActiveDirectoryUsers, Persons, CimiTargets, Endpoints and permissions for SpecialOperations as there are no EntityKinds defined for
+				$assignablePermissions.Count | Should Be 131;
+			}
+			finally
+			{
+				# Cleanup
+				$null = Remove-ApcEntity -Id $configurationNodeJob.Id -EntitySetName "Jobs" -Confirm:$false;
+				$null = Remove-ApcEntity -Id $configurationNode.Id -EntitySetName "Nodes" -Confirm:$false;
+			}
+		}
+		
+		It "GetAssignablePermissionsForRootNode-ReturnsPermissionsExceptIntrinsicEntityKindNonNodePermissions" -Test {
+			# Arrange
+			$rootNodeId = 1L;
+			$rootNode = Get-ApcNode -Id $rootNodeId;
+			
+			$allPermissions = New-Object System.Collections.Generic.List``1[biz.dfch.CS.Appclusive.Api.Core.Permission];
+			
+			$query = $svc.Core.Permissions;
+			$permissions = $query.Execute();
+	
+			while($true) 
+			{
+				foreach($permission in $permissions)
+				{
+					$allPermissions.Add($permission);
+				}
+			
+				$continuation = $permissions.GetContinuation();
+				if ($continuation -eq $null)
+				{
+					break;
+				}
+				
+				$permissions = $Svc.core.Execute($continuation);
+			}
+			
+			# Act
+			$assignablePermissions = $svc.Core.InvokeEntityActionWithListResult($rootNode, "GetAssignablePermissions", [biz.dfch.CS.Appclusive.Api.Core.Permission], $null);
+			
+			# Assert
+			$assignablePermissions | Should Not Be $null;
+			# All product related permissions + permissions for
+			# Nodes and its subtypes like Folders, ScheduledJobs, ScheduledJobInstances, Machines and Networks
+			$assignablePermissions.Count | Should Be ($allPermissions.Count - 131);
+		}
 	}
 }
 
@@ -372,8 +446,8 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUoq27UvWD0zIizUIPisRaUMhL
-# fm6gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+Zy6OevvPdXED1Q8MxTl7YK2
+# ksSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -472,26 +546,26 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR3Re5OYd7b1dRN
-# TxEVgKwRGMOg+TANBgkqhkiG9w0BAQEFAASCAQCNMSrR2l97+pzY0uTdq1pMWG6d
-# 6v/f3tm2QyiVbw6AkDzOVB7Qv1roG32xVCu478w8yFMJSMJhjPF0jIsmVQKNw1E1
-# 1NL1x/72Ld2IzRBFjaYUJeZCnM+gpSxztbGPqwuT2lFFmcd7pO/Z+tBaR9/9Ek7P
-# yAIZXBngSSAdkeUzBQCGhAzYuzxU+KnOZKm9nLGXa0Zu/KFeoW1NSeAcWTNvVstt
-# aIFLvmfApdOZtO559DJ+HHft+yL+Bq1DeVZ9pvPYw15+i4svau4SfGLfIQxmN1M2
-# UveAuNP4MH08AgHVnrCK/BfwjayyawZO+cG/K6GlXIPpygWc4C2yGyhsn8SeoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRsqN/DbelCrOEE
+# N5ol9fL4whWxhjANBgkqhkiG9w0BAQEFAASCAQBxxL5wvCnoY/o2VBRhLicorlQY
+# hMLdtgjOVlEIPZvPohqWOxZJLysMmB5Y2K30/8GG4hRnNoetw30obY9SwQs0U08W
+# 5jW8jY20xNgyaVAI9sfF6LEeu853Jn68nk2WP/tfVGNMzOom9cKwdJd2huQJE3TZ
+# sXbT5S6yduxmIXQvUrlDdtTZXn13HY9YC7o+H7jYIxbIMK1XHzqiJBR27etEeaMn
+# Av5daAVMWUgEJU9Xbd6PeLO977NKq2rcM2T8FyYoffmV1dVgjjB+TLFpokpsQkPO
+# 3soEezyUqr3HIMM9VvH1ytJthqe2bRZIDf5Y6gWi5snHZPUSIFOWB7eYlqQLoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEhBqCB0z/YeuWCTMFrUglOAzAJBgUrDgMCGgUA
-# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-# MTIyMjExMTM1OFowIwYJKoZIhvcNAQkEMRYEFCD+BxsK9iQAlfkOT+4aMKAHdYX9
+# oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
+# MDcwNDExMjIyNFowIwYJKoZIhvcNAQkEMRYEFKkgisdtXAD6cF3D2jMgoTpJ3JVA
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUs2MItNTN7U/PvWa5Vfrjv7Es
 # KeYwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQAducWXdUjY0aK7l75a
-# H9spxRrN0CtaXheDg8QvIykhPJrwhSwoP/uS0EENrXbREY5cUacfH6tIYclQ/m2h
-# J433FUOK9mruVJD77x+LSSLIE/qjknLPzTIU4mSxQQxYmCb+e3rD1dv2kL7y6aQw
-# 8abFsnRNpNGvQ1LCjN11puznw47NIrKOD1ifhXVCPBkIBcP2vQKFTVapu/ekyUlC
-# /NfmeVYxjDAoybNA3zxEebtjY4/I5YTMiod3EG4vJxkIZvjYbVbaFuff1CGQ2NWz
-# fAiCAFIn35n3p87KTnbxLyA7Pwk1Mj7PKSIVijH5RRrb92roZUAkNEZybJhDFS+I
-# APgI
+# BqCB0z/YeuWCTMFrUglOAzANBgkqhkiG9w0BAQEFAASCAQCtrpgHNwa6W/vqMLtW
+# 8QwoeN9A7V1M9bhNi0ttRWhogQ3+6aDP66ll5NBgKIc7LHE6WcopqOPbfZLLqY09
+# vGRGL6LLtZzQ5cjtrP1/VX95A3hZcUYDLxFYAmMHhFEM8sGjmJf4uB3eENmNjSAZ
+# olQkYe+NInEIy7UUtDP2cL4esZ6W+n/kfP8JJK9Cqnjj3JOZykACudVRObGPhnOn
+# Wz2t8KVZW+OSeFUZE3LHFSYjHcAKKe53QRILrLfXPF2L1oM71GsUBTxr1iqwuPWS
+# CWLbfbI673OiNcGyLsyYHXGcAPDdkOA1k5nO/9VfWlOngqIGxLTwC/vtkWUbnvl6
+# 845e
 # SIG # End signature block
