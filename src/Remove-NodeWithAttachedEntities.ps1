@@ -55,6 +55,16 @@ $svc.Core.DeleteObject($job);
 $result = $svc.Core.SaveChanges();
 $result
 
+$q = "EntityId eq {0} and EntityKindId eq {1}" -f 34394, 31;
+$entityBags = $svc.Core.EntityBags.AddQueryOption('$top', 1);
+Contract-Assert (!!$entityBags)
+foreach($entityBag in $entityBags)
+{
+	$svc.Core.DeleteObject($entityBag);
+	$result = $svc.Core.SaveChanges();
+	$result
+}
+
 $svc.Core.DeleteObject($node);
 $result = $svc.Core.SaveChanges();
 $result
