@@ -1,3 +1,4 @@
+# have a logged in Appclusive session ready ...
 PS > $svc
 Name                           Value
 ----                           -----
@@ -7,10 +8,14 @@ Cmp            biz.dfch.CS.Appclusive.Api.Cmp.Cmp
 Core           biz.dfch.CS.Appclusive.Api.Core.Core
 Csm            biz.dfch.CS.Appclusive.Api.Csm.Csm
 
+# this is the node where we want to track changes from 
 PS > $nodeId = 35160L
 PS > $q = "Id eq {0}" -f $nodeId;
+# get the node ...
 PS > $node = $svc.Core.Nodes.AddQueryOption('$filter', $q) | Select
+# ... and make sure it exists ...
 PS > Contract-Assert (!!$node)
+# ... and finally show the node
 PS > $node
 EntityId       :
 Parameters     : {}
@@ -34,9 +39,13 @@ Tenant         :
 CreatedBy      :
 ModifiedBy     :
 
+# prepare the query for the Job of the Node ...
 PS > $q = "RefId eq '{0}'" -f $node.Id;
+# ... get the Job of the node ...
 PS > $job = $svc.Core.Jobs.AddQueryOption('$filter', $q) | Select
+# ... and make sure the Job exists ...
 PS > Contract-Assert (!!$job)
+# ... and finally show the Job
 PS > $job
 Status              : InitialState
 RefId               : 35160
@@ -65,9 +74,12 @@ Tenant              :
 CreatedBy           :
 ModifiedBy          :
 
+# prepare the query for the AuditTrail ...
 PS > $q = "EntityId eq '{0}'" -f $job.Id;
+# ... and get the the Audit Trail entries
 PS > $auditTrails = $svc.Diagnostics.AuditTrails.AddQueryOption('$filter', $q) | Select;
 PS > Contract-Assert (!!$auditTrails)
+# show all modifications for that Node
 PS > $auditTrails
 EntityId     : 38371
 EntityType   : Job
