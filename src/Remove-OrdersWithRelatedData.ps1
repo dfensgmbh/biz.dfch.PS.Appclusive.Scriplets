@@ -141,7 +141,7 @@ function DeleteJobEntities
 
 Write-Host "START removing orders with all related data ..." -ForegroundColor Yellow;
 
-DeleteEntities -EntitySetName "Machines" -Confirm:$Confirm;
+DeleteEntities -EntitySetName "Machines" -Endpoint 'Infrastructure' -Confirm:$Confirm;
 DeleteEntities -EntitySetName "Approvals" -Confirm:$Confirm;
 DeleteEntities -EntitySetName "Assocs" -Confirm:$Confirm;
 DeleteEntities -EntitySetName "EntityBags" -Confirm:$Confirm;
