@@ -1,224 +1,229 @@
-#
-# Module manifest for module 'biz.dfch.PS.Appclusive.Client'
-#
+function Get-Version {
+<#
+.SYNOPSIS
+Displays the version of all Appclusive related components.
 
-@{
+.DESCRIPTION
+Displays the version of all Appclusive related components.
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'biz.dfch.PS.Appclusive.Client.psm1'
+.INPUTS
+The Cmdlet can either return all available versions or version per single 
+item.
+See PARAMETERS section on possible inputs.
 
-# Version number of this module.
-ModuleVersion = '2.9.0.20160709'
+.OUTPUTS
+default | json | json-pretty | xml | xml-pretty
 
-# ID used to uniquely identify this module
-GUID = '110e9ca0-df4a-404b-9a47-aa616cf7ee63'
+.EXAMPLE
+# List all available versions
+PS > Get-Version -All
 
-# Author of this module
-Author = 'Ronald Rink'
+Name                           Value
+----                           -----
+Core                           2.15.2.25140
+biz.dfch.PS.Appclusive.Client  2.8.2.20160704
+biz.dfch.CS.Appclusive.Api     2.8.0.24089
+Infrastructure                 2.15.2.25140
+Cmp                            2.15.2.25140
+biz.dfch.CS.Appclusive.Public  2.8.3.40225
+Diagnostics                    2.15.2.25140
+BaseUri                        0.0.0.0
+Csm                            2.15.2.25140
 
-# Company or vendor of this module
-CompanyName = 'd-fens GmbH'
+.EXAMPLE
+# List module version
+PS > Get-Version -Module
 
-# Copyright statement for this module
-Copyright = '(c) 2014-2016 d-fens GmbH. Distributed under Apache 2.0 license.'
+Major  Minor  Build  Revision
+-----  -----  -----  --------
+2      8      2      20160704
 
-# Description of the functionality provided by this module
-Description = 'PowerShell module for the Appclusive Framework and Middleware'
+.EXAMPLE
+# List biz.dfch.CS.Appclusive.Api version
+PS > Get-Version -Api
 
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
+Major  Minor  Build  Revision
+-----  -----  -----  --------
+2      8      0      24089
 
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
+.EXAMPLE
+# List biz.dfch.CS.Appclusive.Public version
+PS > Get-Version -Public
 
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
+Major  Minor  Build  Revision
+-----  -----  -----  --------
+2      8      3      40225
 
-# Minimum version of the .NET Framework required by this module
-DotNetFrameworkVersion = '4.6'
+.EXAMPLE
+# List Server version
+PS > Get-Version -Server
 
-# Minimum version of the common language runtime (CLR) required by this module
-# CLRVersion = ''
+Name           Value
+----           -----
+Diagnostics    2.15.2.25140
+Infrastructure 2.15.2.25140
+Cmp            2.15.2.25140
+Core           2.15.2.25140
+BaseUri        0.0.0.0
+Csm            2.15.2.25140
 
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Version/
 
-# Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @(
-	'biz.dfch.PS.System.Logging'
+.NOTES
+See module manifest for required software versions and dependencies.
+#>
+[CmdletBinding(
+    SupportsShouldProcess = $false
 	,
-	'biz.dfch.PS.System.Utilities'
+    ConfirmImpact = 'Low'
+	,
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Version/'
+	,
+	DefaultParameterSetName = 'list'
+)]
+PARAM 
+(
+	# Display version of Appclusive Server
+	[Parameter(Mandatory = $false, ParameterSetName = 'Server')]
+	[Switch] $Server
+	,
+	# Display version of biz.dfch.CS.Appclusive.Api
+	[Parameter(Mandatory = $false, ParameterSetName = 'Api')]
+	[Switch] $Api
+	,
+	# Display version of biz.dfch.CS.Appclusive.Public
+	[Parameter(Mandatory = $false, ParameterSetName = 'Public')]
+	[Switch] $Public
+	,
+	# Display module version
+	[Parameter(Mandatory = $false, ParameterSetName = 'Module')]
+	[Switch] $Module
+	,
+	# Lists all available versions
+	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
+	[Switch] $All = $true
+	,
+	# Service reference to Appclusive
+	[Parameter(Mandatory = $false)]
+	[Alias('Services')]
+	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	,
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
+	[Parameter(Mandatory = $false)]
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
 )
 
-# Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @(
-	'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'System.Net'
-	,
-	'System.Web'
-	,
-	'System.Web.Extensions'
-	,
-	'biz.dfch.CS.Appclusive.Public.dll'
-	,
-	'Newtonsoft.Json.dll'
-)
+Begin 
+{
+	trap { Log-Exception $_; break; }
 
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = @(
-	'Import-Module.ps1'
-)
+	$datBegin = [datetime]::Now;
+	[string] $fn = $MyInvocation.MyCommand.Name;
+	Log-Debug -fn $fn -msg ("CALL.") -fac 1;
+	
+	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	
+	$EntitySetName = 'Endpoints';
+}
+# Begin
 
-# ModuleToProcess = @()
+Process 
+{
+	trap { Log-Exception $_; break; }
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	
+	switch($PSCmdlet.ParameterSetName)
+	{
+		'list'
+		{
+			$Response = [ordered] @{};
+			$Response.'biz.dfch.PS.Appclusive.Client' = GetVersionModule;
+			$Response.'biz.dfch.CS.Appclusive.Public' = GetVersionPublic;
+			$Response.'biz.dfch.CS.Appclusive.Api' = GetVersionApi;
+			$endpoints = GetVersionEndpoints;
+			$Response = Merge-Hashtable $Response $endpoints;
+		}
+		'Module'
+		{
+			$Response = GetVersionModule;
+		}
+		'Public'
+		{
+			$Response = GetVersionModule;
+		}
+		'Api'
+		{
+			$Response = GetVersionApi;
+		}
+		'Server'
+		{
+			$Response = GetVersionEndpoints;
+		}
+	}
+	
+	$OutputParameter = Format-ResultAs $Response $As
+	$fReturn = $true;
+}
+# Process
 
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
+End 
+{
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
+}
+# End
 
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-	'Enter-Server.ps1'
-	,
-	'New-KeyNameValue.ps1'
-	,
-	'Get-KeyNameValue.ps1'
-	,
-	'Set-KeyNameValue.ps1'
-	,
-	'Remove-KeyNameValue.ps1'
-	,
-	'New-ManagementCredential.ps1'
-	,
-	'Get-ManagementCredential.ps1'
-	,
-	'Set-ManagementCredential.ps1'
-	,
-	'Remove-ManagementCredential.ps1'
-	,
-	'Remove-Entity.ps1'
-	,
-	'Get-ModuleVariable.ps1'
-	,
-	'Get-Time.ps1'
-	,
-	'Test-Status.ps1'
-	,
-	'Get-Job.ps1'
-	,
-	'Pop-ChangeTracker.ps1'
-	,
-	'Push-ChangeTracker.ps1'
-	,
-	'New-User.ps1'
-	,
-	'Get-User.ps1'
-	,
-	'Set-User.ps1'
-	,
-	'Get-ManagementUri.ps1'
-	,
-	'Get-EntityKind.ps1'
-	,
-	'Format-ResultAs.ps1'
-	,
-	'Get-Node.ps1'
-	,
-	'New-Node.ps1'
-	,
-	'Set-Node.ps1'
-	,
-	'Invoke-NodeAction.ps1'
-	,
-	'Remove-Node.ps1'
-	,
-	'Invoke-EntityAction.ps1'
-	,
-	'Set-Job.ps1'
-	,
-	'Get-ExternalNode.ps1'
-	,
-	'New-ExternalNode.ps1'
-	,
-	'Set-ExternalNode.ps1'
-	,
-	'Get-CimiTarget.ps1'
-	,
-	'New-Order.ps1'
-	,
-	'Get-Product.ps1'
-	,
-	'Get-CatalogueItem.ps1'
-	,
-	'Get-Tenant.ps1'
-	,
-	'Set-SessionTenant.ps1'
-	,
-	'Get-Version.ps1'
-)
+} # function
 
-# Functions to export from this module
-FunctionsToExport = '*'
-
-# Cmdlets to export from this module
-CmdletsToExport = '*'
-
-# Variables to export from this module
-VariablesToExport = '*'
-
-# Aliases to export from this module
-AliasesToExport = '*'
-
-# List of all modules packaged with this module.
-# ModuleList = @()
-
-# List of all files packaged with this module
-FileList = @(
-	'LICENSE'
-	,
-	'NOTICE'
-	,
-	'README.md'
-	,
-	'biz.dfch.PS.Appclusive.Client.dll'
-	,
-	'biz.dfch.PS.Appclusive.Client.xml'
-	,
-	'Microsoft.Data.Edm.dll'
-	,
-	'Microsoft.Data.OData.dll'
-	,
-	'Microsoft.Data.Services.Client.dll'
-	,
-	'System.Spatial.dll'
-	,
-	'Import-Module.ps1'
-	,
-    'biz.dfch.CS.Appclusive.Api.dll'
-	,
-	'biz.dfch.CS.Appclusive.Public.dll'
-	,
-    'Newtonsoft.Json.dll'
-	,
-    'System.Net.Http.Formatting.dll'
-	,
-    'System.Web.Http.dll'
-)
-
-# Private data to pass to the module specified in RootModule/ModuleToProcess
-PrivateData = @{
-	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
+function GetVersionModule
+{
+	$m = Get-Module 'biz.dfch.PS.Appclusive.Client';
+	$response = $m.Version;
+	
+	return $response;
 }
 
-# HelpInfo URI of this module
-HelpInfoURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/'
-
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-DefaultCommandPrefix = 'Apc'
-
+function GetVersionPublic
+{
+	$canPublicVersionBeExtracted = [biz.dfch.CS.Appclusive.Public.Constants].AssemblyQualifiedName -match 'Version=(\d+\.\d+\.\d+\.\d+)';
+	Contract-Assert $canPublicVersionBeExtracted;
+	
+	$response = $Matches[1] -as [Version];
+	
+	return $response;
 }
+
+function GetVersionApi
+{
+	$canApiVersionBeExtracted = [biz.dfch.CS.Appclusive.Api.Core.Node].AssemblyQualifiedName -match 'Version=(\d+\.\d+\.\d+\.\d+)';
+	Contract-Assert $canApiVersionBeExtracted;
+	
+	$response = $Matches[1] -as [Version];
+	
+	return $response;
+}
+
+function GetVersionEndpoints
+{
+	$response = @{};
+	
+	$endpoints = $svc.Diagnostics.Endpoints | Select;
+	foreach($endpoint in $endpoints)
+	{
+		$Response.Add($endpoint.Name, [Version] $endpoint.Version);
+	}
+	
+	return $response;
+}
+
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Version; } 
 
 # 
 # Copyright 2015-2016 d-fens GmbH
@@ -239,8 +244,8 @@ DefaultCommandPrefix = 'Apc'
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUfqESX2cCIRT/Yq34d1JYcbt0
-# ZXSgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHzRT7e2tO9ZUf1k/lEd9LGOM
+# OCagghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -339,26 +344,26 @@ DefaultCommandPrefix = 'Apc'
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSsSPg8DuM2vN0F
-# yRPqufiQ/yt2BzANBgkqhkiG9w0BAQEFAASCAQCBA1+GJOzLtadKJ+jqC9zglVgj
-# zoC8AgXlLZ7xNEX6OjBqx/taNpqjfKlYNnYItRWH52gqGou7Mwu+UNRuwUwnaaVJ
-# Y76yTYpj4TgxogGm++e1aTfi2txccCIsAIVG3OVv9CgCDlJ4Ku+phx9evu+dSoqz
-# FcSsfXq9OSKXi4rIRpVexwktNBIwjWNgYRRnICUoPNq4oGiIfGIZxgM5OMgzK0/D
-# wcSxDEmPnOBY1kPHnptGATfsd3rKrwocblxS8/YHT8tz22Ggb0gB1OLhgASjffMO
-# 2vyM1NosDVWS06IEpn3h6msTb46Ca97Wgc1eQITWFedSbgGSzJSbnz4FCaJWoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRipNkBRQIbL56w
+# AYSMmEyI6YlLQzANBgkqhkiG9w0BAQEFAASCAQApBvDjEJZIMBEwKxo/I1oLxueN
+# pOfGJ7oy7aTrGdYHBkYi2fWOOFUm3HsTlZg0RP9bjfWqlJyOp5VMcsClN2dWEA0g
+# +9Bf/rMO/ibvSS/wHmtvX57E5nthaxt6mPZVIYrlvg7G8Z5leBXDr4w10L6nkp48
+# GD9T8h/OXEnsMosGz2mxQSZ4PFP9a1km72JyE7ne2DQvy7fkMffHGqpfwbU/XCaS
+# lsm2hNTEE+VNQE0FlOnc4wTH1+72PByn5pmBUJTGV0/swjYsBXU5EIZM7BbH8vd8
+# EZX8JnpDCYv1GDsZo2jXTHCjn4TSA+JqqeLGF3x+KSNuca75aktR3ja8choBoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcwOTExNDMwMFowIwYJKoZIhvcNAQkEMRYEFP0wc4BYVYyvmmVasS6d+CRY1rji
+# MDcwNTA2MjUxM1owIwYJKoZIhvcNAQkEMRYEFNO+fdcWH3JZdstorxBfxVmfmg2f
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAoun0filmBOXXc+crj
-# F6kxGiz+lCWxsEqQBh7IN+CF1UBgXyR3xbjLGa9zlowmBsxIiF5mXnCzzX9TyKDI
-# O/5M2yX8KN6ZH9qb1MTjSJN4ISeDvRjmesI+HPEC1MCTKF/xS0jgXGUpy0q9x6++
-# GpUdzVZ1Jloql2q+geZHRrBAyL+PZhYeu1vLOSJE17cCKNsyqGhs2P9phHCBGuu+
-# Cw2zM8fRTn/619X1eSw6tFUPKs+OC5vqJME8aJPy+ZqZzgweMK+8bS/UsAInKvjd
-# 85xfZoqh97HQMTva1HwrPM91Jpxt7s1LjKsrUl0U7DGRuoi3Ynsb0WBWw0Ftb5Jt
-# euqq
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBGmc+liDIHDIa06Z4U
+# ud+67yiRdHJQZcIqexzHRjbwABJBL6qdG6l+XxsbtHT0NSPiJYKSt85nn1QUGSJ2
+# mg+RokpbuZ4baJpiS8Fn2SM2nVA5UotvtTB+cg5hpbuntmmaIkYA3JjA0i/+73Zr
+# njx4XWsieSmhWKMnl00Wo16hSQLDi/Zi3wsRLNpdz/ApWnZ4o02JGWkbdzLAWNdf
+# xIc0v+DcC2cb7tVbMgYZRBArMwSKbLFLNQZ+Wv8FIs+cLWDniXe6qtRUv2fInmUr
+# CuvPiujMn+Jn+bAUkBSH0TOnFsWbaZSqF0YfCFOVERTxy7hV2kiUsuqJsfSnvP8w
+# rrJS
 # SIG # End signature block
