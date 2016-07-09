@@ -213,13 +213,20 @@ function GetVersionApi
 function GetVersionEndpoints
 {
 	$response = @{};
-	
-	$endpoints = $svc.Diagnostics.Endpoints | Select;
-	foreach($endpoint in $endpoints)
+	try
 	{
-		$Response.Add($endpoint.Name, [Version] $endpoint.Version);
+		$endpoints = $svc.Diagnostics.Endpoints | Select;
+		foreach($endpoint in $endpoints)
+		{
+			$Response.Add($endpoint.Name, [Version] $endpoint.Version);
+		}
 	}
-	
+	catch
+	{
+		$message = ("An error occurred retrieving endpoint information from '{0}' with user '{1}'" -f $biz_dfch_PS_Appclusive_Client.ServerBaseUri, $biz_dfch_PS_Appclusive_Client.Credential.UserName);
+		Log-Warning $fn $message;
+		Write-Warning $message;
+	}
 	return $response;
 }
 
@@ -244,8 +251,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Version; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHzRT7e2tO9ZUf1k/lEd9LGOM
-# OCagghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMrWGb0/Jqrg5rMkBQDD5VgTW
+# e0ugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -344,26 +351,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Version; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRipNkBRQIbL56w
-# AYSMmEyI6YlLQzANBgkqhkiG9w0BAQEFAASCAQApBvDjEJZIMBEwKxo/I1oLxueN
-# pOfGJ7oy7aTrGdYHBkYi2fWOOFUm3HsTlZg0RP9bjfWqlJyOp5VMcsClN2dWEA0g
-# +9Bf/rMO/ibvSS/wHmtvX57E5nthaxt6mPZVIYrlvg7G8Z5leBXDr4w10L6nkp48
-# GD9T8h/OXEnsMosGz2mxQSZ4PFP9a1km72JyE7ne2DQvy7fkMffHGqpfwbU/XCaS
-# lsm2hNTEE+VNQE0FlOnc4wTH1+72PByn5pmBUJTGV0/swjYsBXU5EIZM7BbH8vd8
-# EZX8JnpDCYv1GDsZo2jXTHCjn4TSA+JqqeLGF3x+KSNuca75aktR3ja8choBoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQjnW1RJNac9dL8
+# DzS1Pn5Mv09KxzANBgkqhkiG9w0BAQEFAASCAQB3iqlWHSHvz7hnUBDk3V91LTgV
+# zlKcEs1M046LKN5QP6fniJMWTE1risHE8+X5whGIdaX4IgvGmY8yJk6/1FP+29jO
+# gwYqOsyjwbdquPfJw3wTvBdy4ebZtwn20pA28GMt7Plg7IOyNkwfc3OzzfOpYNGp
+# lg+8TWgBbCAJZUgew0sbM4hzebcJxNjsEbnNFzFrn61MrP1/QbY8+MYNRwl83PJL
+# jiuNKNhi03h6rV0qX8lH0ODEu9sxYCizlQoY62kQrSIVbvaDjF/R74tottn8jLKb
+# PKtxKbTzF2HM5OWeO8HpaYoJP9b49YnsB/2Z9arWlIwvbCvxZApTwu6WeOs0oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcwNTA2MjUxM1owIwYJKoZIhvcNAQkEMRYEFNO+fdcWH3JZdstorxBfxVmfmg2f
+# MDcwOTEyMTI0MVowIwYJKoZIhvcNAQkEMRYEFCkm63rPWFVj5v4BNAZj4EViVeln
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBGmc+liDIHDIa06Z4U
-# ud+67yiRdHJQZcIqexzHRjbwABJBL6qdG6l+XxsbtHT0NSPiJYKSt85nn1QUGSJ2
-# mg+RokpbuZ4baJpiS8Fn2SM2nVA5UotvtTB+cg5hpbuntmmaIkYA3JjA0i/+73Zr
-# njx4XWsieSmhWKMnl00Wo16hSQLDi/Zi3wsRLNpdz/ApWnZ4o02JGWkbdzLAWNdf
-# xIc0v+DcC2cb7tVbMgYZRBArMwSKbLFLNQZ+Wv8FIs+cLWDniXe6qtRUv2fInmUr
-# CuvPiujMn+Jn+bAUkBSH0TOnFsWbaZSqF0YfCFOVERTxy7hV2kiUsuqJsfSnvP8w
-# rrJS
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAqzpsBqzauFV+L90nX
+# 9jrRjw54W3cG0VvAmLoYPiIkmFLqr50z4GraJe6ahsYNYXyPVKR0ZX7LD7ZoFroW
+# 42tbDbzEVdxj1fy6Or3la+Jd9uCcVA3FJAtp63lEKwzUE5k6yzVdFGnahWQGhwFA
+# E47rqb7EOQzC0TWzHCHxPQgxwaLc4w9j6+WOWou6p0NysriAF0FwjzHEu9L3Xf+z
+# NftMIL6aesZhb4CuDjJK1GP7cARKAuSRGh7CQ2hvx2L1r9boW/vgIdYRYR1uU5BR
+# uMIPsBMrNwCrL6IrmvZNZYq5xX4xSM4zrw6LezI3XOHyDd4WJifRJ/DtNJ6iUKLS
+# 7aRj
 # SIG # End signature block
