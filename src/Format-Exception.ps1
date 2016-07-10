@@ -1,108 +1,132 @@
-function New-User {
+function Format-Exception {
 <#
 .SYNOPSIS
-Creates a User entry in Appclusive.
-
+Displays details of an exception.
 
 .DESCRIPTION
-Creates a User entry in Appclusive.
+Displays details of an exception.
 
-You must specify both parameters 'Name' and 'Mail'. If the entry already exists no update of the existing entry is performed.
+For a given exception that occurred during execution of an Appclusive API call 
+this Cmdlet will show you the details of.
 
+.INPUTS
+The Cmdlet can either return all available versions or version per single 
+item.
+See PARAMETERS section on possible inputs.
 
 .OUTPUTS
-[biz.dfch.CS.Appclusive.Api.Core.User]
-
-
-.EXAMPLE
-New-User myName myName@appclusive.net
-
-ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
-ExternalType : Internal
-Mail         : myName@appclusive.net
-Id           : 2
-Tid          : 22222222-2222-2222-2222-222222222222
-Name         : myName
-Description  : 
-CreatedById  : 1
-ModifiedById : 1
-Created      : 15.12.2015 00:00:00 +01:00
-Modified     : 17.12.2015 00:00:00 +01:00
-RowVersion   : {0, 0, 0, 0...}
-Tenant       :
-CreatedBy    : SYSTEM
-ModifiedBy   : SYSTEM
-
-Create a new User entry if it not already exists.
-
+default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
-New-User -Name myName -Mail myName@appclusive.net -ExternalId [guid]'27af9d74-388b-46f2-90d6-a1545d89d16f' -Description myDescription
+# Extracts the innermost exception from a failed SaveChanges operation.
+PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+PS > $svc.Core.AddToNodes($node);
+PS > $svc.Core.SaveChanges();
+PS > Format-Exception
+System.Data.Services.Client.DataServiceClientException: HTTP 400.
+entity : A null value was found for the property named 'Name', which has the expected type 'Edm.String[Nullable=False]'. The expected type 'Edm.String[Nullable=False]' does not allow null values.
 
-ExternalId   : 27af9d74-388b-46f2-90d6-a1545d89d16f
-ExternalType : Internal
-Mail         : myName@appclusive.net
-Id           : 2
-Tid          : 22222222-2222-2222-2222-222222222222
-Name         : myName
-Description  : myDescription
-CreatedById  : 1
-ModifiedById : 1
-Created      : 15.12.2015 00:00:00 +01:00
-Modified     : 17.12.2015 00:00:00 +01:00
-RowVersion   : {0, 0, 0, 0...}
-Tenant       :
-CreatedBy    : SYSTEM
-ModifiedBy   : SYSTEM
+.EXAMPLE
+# Extracts all exceptions from a failed SaveChanges operation.
+PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+PS > $svc.Core.AddToNodes($node);
+PS > $svc.Core.SaveChanges();
+PS > Format-Exception -ListAvailable
+System.Management.Automation.MethodInvocationException
+System.Data.Services.Client.DataServiceRequestException
+System.Data.Services.Client.DataServiceClientException
 
-Create a new User entry if it not already exists.
+.EXAMPLE
+# Extracts all exceptions details from a failed SaveChanges operation.
+PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+PS > $svc.Core.AddToNodes($node);
+PS > $svc.Core.SaveChanges();
+PS > Format-Exception -All
+Exception calling "SaveChanges" with "0" argument(s): "An error occurred while processing this request."
 
+
+Response       : {System.Data.Services.Client.ChangeOperationResponse}
+Message        : An error occurred while processing this request.
+Data           : {}
+InnerException : System.Data.Services.Client.DataServiceClientException: {
+                   "odata.error":{
+                     "code":"","message":{
+                       "lang":"en-US","value":"The request is invalid."
+                     },"innererror":{
+                       "message":"entity : A null value was found for the property named 'Name', which has the expected type 'Edm.String[Nullable=False]'. The expected type
+                 'Edm.String[Nullable=False]' does not allow null values.\r\n","type":"","stacktrace":""
+                     }
+                   }
+                 }
+TargetSite     : System.Data.Services.Client.DataServiceResponse HandleResponse()
+StackTrace     :    at System.Data.Services.Client.SaveResult.HandleResponse()
+                    at System.Data.Services.Client.BaseSaveResult.EndRequest()
+                    at System.Data.Services.Client.DataServiceContext.SaveChanges(SaveChangesOptions options)
+                    at CallSite.Target(Closure , CallSite , Object )
+HelpLink       :
+Source         : Microsoft.Data.Services.Client
+HResult        : -2146233079
+
+StatusCode     : 400
+Message        : {
+                   "odata.error":{
+                     "code":"","message":{
+                       "lang":"en-US","value":"The request is invalid."
+                     },"innererror":{
+                       "message":"entity : A null value was found for the property named 'Name', which has the expected type 'Edm.String[Nullable=False]'. The expected type
+                 'Edm.String[Nullable=False]' does not allow null values.\r\n","type":"","stacktrace":""
+                     }
+                   }
+                 }
+Data           : {}
+InnerException :
+TargetSite     :
+StackTrace     :
+HelpLink       :
+Source         :
+HResult        : -2146233079
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-User/
-Set-KeyNameValue: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-User/
-
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Format-Exception/
 
 .NOTES
-See module manifest for dependencies and further requirements.
-
-
+See module manifest for required software versions and dependencies.
 #>
 [CmdletBinding(
-    SupportsShouldProcess = $true
+    SupportsShouldProcess = $false
 	,
     ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/New-User/'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Format-Exception/'
+	,
+	DefaultParameterSetName = 'single'
 )]
-Param 
+PARAM 
 (
-	# Specifies the name for this entity
-	[Parameter(Mandatory = $true, Position = 0)]
+	# Specifies the ErrorRecord to analyse
+	[Parameter(Mandatory = $false, Position = 0)]
 	[ValidateNotNullOrEmpty()]
+	[Alias('er')]
+	[System.Management.Automation.ErrorRecord] $ErrorRecord = $Error[0]
+	,
+	# Specifies the (partial) exception type to analyse
+	[Parameter(Mandatory = $false, ParameterSetName = 'single')]
 	[string] $Name
 	,
-	# Specifies the key for this entity
-	[Parameter(Mandatory = $true, Position = 1)]
-	[ValidateNotNullOrEmpty()]
-	[string] $Mail
+	# Displays all exceptions within ErrorRecord
+	[Parameter(Mandatory = $false, ParameterSetName = 'all')]
+	[Switch] $All = $true
 	,
-	# Specifies the externalId for this entity
-	[Parameter(Mandatory = $false)]
-	[string] $ExternalId
+	# Lists the names of all exceptions within the ErrorRecord
+	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
+	[Alias('list')]
+	[Switch] $ListAvailable = $true
 	,
-	# Specifies the externalType for this entity
+	# Specifies the return format of the Cmdlet
+	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[string] $ExternalType
-	,
-	# Specifies the description for this entity
-	[Parameter(Mandatory = $false)]
-	[string] $Description
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias('Services')]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
+	[alias('ReturnFormat')]
+	[string] $As = 'default'
 )
 
 Begin 
@@ -111,32 +135,65 @@ Begin
 
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
-
-	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	
 }
 # Begin
 
-Process
+Process 
 {
 	trap { Log-Exception $_; break; }
-
 	# Default test variable for checking function response codes.
 	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
-
-	$UserContents = @($Name);
-	$FilterExpression = "(tolower(Name) eq '{0}')" -f $Name.toLower();
-	$entity = $svc.Core.Users.AddQueryOption('$filter', $FilterExpression).AddQueryOption('$top',1) | Select;
-	Contract-Requires (!$entity) 'Entity does already exist'
-
-	if($PSCmdlet.ShouldProcess($UserContents))
+	
+	switch($PSCmdlet.ParameterSetName)
 	{
-		$r = Set-User -Name $Name -Mail $Mail -ExternalId $ExternalId -ExternalType $ExternalType -Description $Description -CreateIfNotExist:$true -svc $svc;
-		$OutputParameter = $r;
+		'list'
+		{
+			$Response = @();
+			$ex = $ErrorRecord.Exception;
+			while($ex)
+			{
+				$Response += $ex.GetType().FullName;
+				
+				$ex = $ex.InnerException;
+			}
+		}
+		'all'
+		{
+			$Response = @();
+			$ex = $ErrorRecord.Exception;
+			while($ex)
+			{
+				$Response += $ex;
+				
+				$ex = $ex.InnerException.PSBase;
+			}
+		}
+		'single'
+		{
+			$ex = $ErrorRecord.Exception;
+			$result = Find-Exception $ex $Name;
+			if(!$result)
+			{
+				$Response = $null;
+			}
+			elseif($result -is [System.Data.Services.Client.DataServiceClientException])
+			{
+				$Response = Format-DataServiceClientException $result;
+			}
+			else
+			{
+				$Response = ("{0}: {1}" -f $result.GetType().FullName, ($result.PSBase | Out-String));
+			}
+		}
+		default
+		{
+			$er = New-CustomErrorRecord -cat InvalidArgument -o $PSCmdlet.ParameterSetName ("Invalid ParameterSetName '{0}'" -f $PSCmdlet.ParameterSetName);
+			$PSCmdlet.ThrowTerminatingError($er);
+		}
 	}
+	
+	$OutputParameter = Format-ResultAs $Response $As
 	$fReturn = $true;
 }
 # Process
@@ -145,16 +202,76 @@ End
 {
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
+
 	# Return values are always and only returned via OutputParameter.
 	return $OutputParameter;
 }
 # End
 
+} # function
+
+function Find-Exception($ex, $name)
+{
+	Contract-Requires (!!$ex);
+	Contract-Requires ($ex -is [Exception]);
+	
+	$parentEx = $ex;
+	$isExceptionFound = $false;
+	while($ex)
+	{
+		if($name -and ($ex.GetType().FullName -match $name))
+		{
+			$isExceptionFound = $true;
+			break;
+		}
+		$parentEx = $ex;
+		$ex = $ex.InnerException;
+	}
+	
+	if(!$isExceptionFound)
+	{
+		if($name)
+		{
+			$ex = $null;
+		}
+		else
+		{
+			$ex = $parentEx;
+		}
+	}
+	return $ex;
 }
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-User; } 
+
+function Format-DataServiceClientException($ex)
+{
+	Contract-Requires ($ex -is [System.Data.Services.Client.DataServiceClientException])
+
+	try
+	{
+		[xml] $xml = $ex.Message;
+		$message = $xml.head.title;
+	}
+	catch
+	{
+		try
+		{
+			$json = $ex.Message | ConvertFrom-Json;
+			$message = $json.'odata.error'.innererror.message;
+		}
+		catch
+		{
+			$message = $ex.Message
+		}
+	}
+
+	$result = "{0}: HTTP {1}.`r`n{2}`r`n{3}" -f $ex.GetType().FullName, $ex.StatusCode, $message, $ex.StackTrace;
+	return $result;
+}
+
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Format-Exception; } 
 
 # 
-# Copyright 2014-2015 d-fens GmbH
+# Copyright 2015-2016 d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -172,8 +289,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-User; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUPxN00cczeqRdm+UPzl1YxJ2h
-# zhmgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUfAlmL6M6lBvqXcjk/gEckiaP
+# iB2gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -272,26 +389,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-User; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT8PoEMnSQUm5YG
-# xfbYMu73BQ+j5DANBgkqhkiG9w0BAQEFAASCAQCyErh+AXM+mfmQxvokM70ZbUtw
-# EkqNqMfAygmTDdHbZbX8FPD09KViGOB2FtzRnRZMYjmUar2JECBwXyHvKp74g/aD
-# Q2kw/o1GY+d1QWXeeDdNynuDXJYFpxe5KWDpjHawpWgkpQ0y8pJzOyETmSlPhllX
-# Ee5vpdJZHs6KnLiVBvlR1dAGCg42KVvvDF8nqIrrwvQz7RVdCiLk3J6URYlUNlMc
-# GkF0ftbkQ7Yf2hImnCVIosKoCHJ7fmsebg9K0OV9gqac71egBH37SVUGUjElUjWp
-# qMtFShzESqwqLgxt96YimRgAx0eBu8XWXd38fz+NbOaKzc71c/NYWnN2IwF2oYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ4R5DJ0OycRyYf
+# yLlzAP2QoiVJhDANBgkqhkiG9w0BAQEFAASCAQB1AR5edo48nh/WbrJPa0B3vbT7
+# /tBusalBlnX0PMB3VSrZWdvwjBJkYzJVZ+7qWO3kSlt4CsoTaFGz6xa3j51aDrsb
+# irYfJzDuBGJQY5R/IYSIbAJwu3+WTjzlN3eYut7tz9hO3XTf8eaCUbYSh7RCOQFF
+# Kh3nAVLyPmfjRKydLoW6mtOkDDmpAaKyQPjCvc+5z6yDSKzcZ0EE1rxsGy3Sdxjw
+# V2TsMcRf7JLGTN48CJKPM6u7GTsfy26eSqURkT2Am7NManjVsbeZ/B+W1vijFbJX
+# t67AZum3aLyS+d+pQ8GhToRqPDFj3BQM9Ch1H6tRA7oZCfHjcSlgqc27vNn/oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxMDE1MTUzOFowIwYJKoZIhvcNAQkEMRYEFEybZ3FWIbHCnOKhs7JXZ9nP9xwP
+# MDcxMDE1MTUxMFowIwYJKoZIhvcNAQkEMRYEFLbe3Z+LISuDWgn1JHb6L8wJovbe
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBl0wssZ89Ju8O6FHBT
-# hXCkgKvRXXFEj+oxf8THbfNnUW0BqsfU9Q9B1v26FncPifbwLr5K2F0pwDPxzmbb
-# jM8zcKnoRCg7Ds9wQZOqyMtJOVlstVL7/VkrSFapqNkmp4HnYjFnRVmi9/Aet1DR
-# XhP38vDj0tobFVFD3sAtG10aToyCZwlEzoNX8IB4oibav/DpT5PFyyhY8Aem6p+i
-# iLZ0Y97I75F6U6fv3krqiRoiL+qlQQxkvLr+65jFH2Yzdy+Po8yO8wwKElDvsU8+
-# X3J0E/r9QeF1GEf41TsN9irMrlr8tltNt/pq+e0URsopw2KMTMGm8t/xQkn0ByvQ
-# Vjp/
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCS6zzJs6sDU0Zeejtz
+# qK1detrsyoi97KjPJcME+u1fqQZIb7uBbpwkaQtgY9pcRR885bCsP19JoaVFz0jq
+# n7I3ktjWpiN57neSv0YyzTTNBEx9vVKHsKTGHzAkFKA9ezxMo8D1gXwMfcjeKcsO
+# Th2TtkZ+jR3yGHc9oLDOPvokgNglHCbzxfcd02FFpOOziPEwXUQ7j9MDz3gXpryh
+# ik/OulPY4yxwYzpMsLU9pI20eZYCFBuwCv5J52b94hw0cr1Go4PnsQXbd5PUKOpY
+# DmwUQI3Lnf56MrDX6xsF/3fskXbzTaumg+wx3n7+Aqj/DSmc5LyjcLyEVVheTX2E
+# uhrP
 # SIG # End signature block
