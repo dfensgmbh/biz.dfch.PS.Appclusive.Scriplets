@@ -28,7 +28,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
     <releaseNotes>20160709
-* added Get-Version Cmdlet
+* added Format-Exception Cmdlet
 
 * installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
     <copyright>(c) 2015-2016 d-fens GmbH</copyright>
@@ -91,6 +91,7 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
 	<file src="Get-Tenant.ps1" target="tools\Get-Tenant.ps1" />
 	<file src="Set-SessionTenant.ps1" target="tools\Set-SessionTenant.ps1" />
 	<file src="Get-Version.ps1" target="tools\Get-Version.ps1" />
+	<file src="Format-Exception.ps1" target="tools\Format-Exception.ps1" />
     <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
     <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
     <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />

@@ -157,6 +157,8 @@ NestedModules = @(
 	'Set-SessionTenant.ps1'
 	,
 	'Get-Version.ps1'
+	,
+	'Format-Exception.ps1'
 )
 
 # Functions to export from this module
