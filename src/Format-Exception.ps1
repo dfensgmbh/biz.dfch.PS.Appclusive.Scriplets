@@ -107,7 +107,7 @@ PARAM
 	[Parameter(Mandatory = $false, Position = 0)]
 	[ValidateNotNullOrEmpty()]
 	[Alias('er')]
-	[System.Management.Automation.ErrorRecord] $ErrorRecord = $Error[0]
+	[System.Management.Automation.ErrorRecord] $ErrorRecord = $Global:Error[0]
 	,
 	# Specifies the (partial) exception type to analyse
 	[Parameter(Mandatory = $false, ParameterSetName = 'single')]
