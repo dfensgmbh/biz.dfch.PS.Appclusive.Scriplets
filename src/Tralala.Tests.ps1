@@ -69,6 +69,31 @@ Describe -Tags "Tralala.Tests" "Tralala.Tests" {
 			$result | Should Be "tralala";
 		}
 	}
+	
+	Context "MyFirstTest" {
+		It "DoSomeMagic" -Test {
+			1 + 1 | Should Be 2;
+		}
+	}
+	
+	Context "MyFirstAppclusiveTest" {
+		It "Get-UserWithIdOne" -Test {
+			
+			$result = $svc.Core.Users.AddQueryOption('$filter', "Id eq 1") | Select;
+			$result | Should Not Be $null;
+			$result.Id | Should Be 1;
+			
+		}
+		
+		It "Get-SystemRootNode" -Test {
+			
+			$node = $svc.Core.Nodes.AddQueryOption('$filter', "Id eq 1") | Select;
+			$node | Should Not Be $null;
+			$node.Id | Should Be 1;
+			$node.ParentId | Should Be $node.Id;
+		}
+	}
+
 }
 
 #
