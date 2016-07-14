@@ -94,6 +94,31 @@ Describe -Tags "Tralala.Tests" "Tralala.Tests" {
 		}
 	}
 
+	Context "RedmineTest" {
+	
+		BeforeEach {
+
+			$svc = Enter-Apc -Credential $cred;
+		}
+
+		It "RequestingIncidentsViaAppclusiveApiShouldSucceed" -Test {
+	
+			# Arrange
+			$svc = Enter-Acp -Credential $cred;
+		
+			# Act, Assert
+			$svc.Csm.Incidents | Should Not Throw;
+			
+			# Act
+			$result = $svc.Csm.Incidents;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result.Count -gt 0 | Should Be $true;
+
+		}
+	}
+
 }
 
 #
