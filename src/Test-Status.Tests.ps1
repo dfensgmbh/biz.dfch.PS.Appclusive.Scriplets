@@ -44,7 +44,7 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$result = Test-Status -svc $svc;
 			
 			# Assert
-			$result | Should Be $null;
+			$result | Should Be $true;
 		}
 		
 		It "Test-StatusAuthenticatedSucceeds" -Test {
@@ -55,7 +55,7 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$result = Test-Status -Authenticate -svc $svc;
 			
 			# Assert
-			$result | Should Be $null;
+			$result | Should Be $true;
 		}
 
 		It "Test-StatusAuthenticatedReturnsUnauthorised" -Test {
@@ -64,10 +64,10 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$svc = Enter-ApcServer -Credential $cred;
 
 			# Act
-			$result = Test-Status -Authenticate -svc $svc;
+			$result = Test-Status -Authenticate -svc $svc -ErrorAction:SilentlyContinue;
 			
 			# Assert
-			$result | Should Contain '401';
+			$result | Should Be $false;
 		}
 
 		It "Test-StatusEchoSucceeds" -Test {
@@ -88,20 +88,8 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$svc = Enter-ApcServer;
 			$InputObject = '';
 
-			# Act
-			$exceptionOccurred = $false;
-			try
-			{
-				$result = Test-Status $InputObject -svc $svc;
-			}
-			catch
-			{
-				$exceptionOccurred = $true;
-			}
-			
-			# Assert
-			$exceptionOccurred | Should Be $true;
-			$result | Should Be $null;
+			# Act, Assert
+			{ Test-Status $InputObject -svc $svc; } | Should ThrowException ParameterBindingValidationException;
 		}
 
 		It "Test-StatusEchoWithTooLongInputFails" -Test {
@@ -109,26 +97,14 @@ Describe -Tags "Test-Status" "Test-Status" {
 			$svc = Enter-ApcServer;
 			$InputObject = '1234567890123456789012345678901234567890';
 
-			# Act
-			$exceptionOccurred = $false;
-			try
-			{
-				$result = Test-Status $InputObject -svc $svc;
-			}
-			catch
-			{
-				$exceptionOccurred = $true;
-			}
-			
-			# Assert
-			$exceptionOccurred | Should Be $true;
-			$result | Should Be $null;
+			# Act, Assert
+			{ Test-Status $InputObject -svc $svc; } | Should ThrowException ParameterBindingValidationException;
 		}
 	}
 }
 
 #
-# Copyright 2015 d-fens GmbH
+# Copyright 2015-2016 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

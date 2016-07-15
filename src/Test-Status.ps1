@@ -60,51 +60,40 @@ Process
 	{
 		if($Authenticate)
 		{
-			try
-			{
-				$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'AuthenticatedPing', $null);
-			}
-			catch
-			{
-				$er = $_;
-				if($er.Exception -And $er.Exception.InnerException -And $er.Exception.InnerException.InnerException) 
-				{ 
-					$innerException = $er.Exception.InnerException.InnerException;
-					if($innerException.PSBase.Message)
-					{
-						[xml] $HtmlResponse = $innerException.PSBase.Message;
-						if($HtmlResponse.html.head.title)
-						{
-							$Response = $HtmlResponse.html.head.title;
-						}
-						elseif($innerException.PSBase.StatusCode)
-						{
-							$Response = $innerException.PSBase.StatusCode;
-						}
-					}
-					else
-					{
-						throw;
-					}
-				}
-				else
-				{
-					throw;
-				}
-			}
+			$actionName = 'AuthenticatedPing';
 		}
 		else
 		{
-			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, 'Ping', $null);
-			$Response = $null;
+			$actionName = 'Ping';
+		}
+
+		try
+		{
+			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, $actionName, $null);
+			$Response = $true;
+		}
+		catch
+		{
+			$Response = Format-ApcException;
+			Write-Error $Response;
+			$Response = $false;
 		}
 	}
 	else
 	{
-		$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
+		try
+		{
+			$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
+		}
+		catch
+		{
+			$Response = Format-ApcException;
+			Write-Error $Response;
+			$Response = $false;
+		}
 	}
 
-	$OutputParameter = Format-ResultAs $Response $As
+	$OutputParameter = Format-ResultAs $Response $As;
 	$fReturn = $true;
 
 }
