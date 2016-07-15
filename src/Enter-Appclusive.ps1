@@ -46,7 +46,8 @@ PARAM
 
 		$biz_dfch_PS_Appclusive_Client.ServerBaseUri = $serverBaseUri;
 		$svc = Enter-ApcServer -Credential $cred;
-		Test-ApcStatus -Authenticate;
+		$result = Test-ApcStatus -Authenticate;
+		Contract-Assert (!!$result)
 
 		$versions = Get-ApcVersion -All;
 		$title = '{0} - {1} - Server {2} - Client {3}' -f $Environment, $serverBaseUri, $versions.BaseUri.ToString(), $versions.'biz.dfch.PS.Appclusive.Client'.ToString(); 
