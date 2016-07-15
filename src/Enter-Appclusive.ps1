@@ -50,7 +50,7 @@ PARAM
 		Contract-Assert (!!$result)
 
 		$versions = Get-ApcVersion -All;
-		$title = '{0} - {1} - Server {2} - Client {3}' -f $Environment, $serverBaseUri, $versions.BaseUri.ToString(), $versions.'biz.dfch.PS.Appclusive.Client'.ToString(); 
+		$title = '{0}: {1} - {2} - Server {3} - Client {4}' -f $Environment, $cred.Username, $serverBaseUri, $versions.BaseUri.ToString(), $versions.'biz.dfch.PS.Appclusive.Client'.ToString(); 
 		$host.UI.RawUI.WindowTitle = $title;
 
 		return $svc;
