@@ -20,7 +20,8 @@ Describe -Tags "??" "??" {
         #$newJob = Get-ApcJob | Where-Object {$_.RefId -eq $newNode.Id & $_.Status -eq "Running"};
 
         #
+        Write-Host "Changes Made";
 
-        		}
+        }
 	}
 }
