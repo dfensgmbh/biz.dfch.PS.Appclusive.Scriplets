@@ -109,6 +109,32 @@ Retrieves the 'Name' property of a User with Name 'SuperUser'
 and Administrator if the entity is not found.
 
 
+.EXAMPLE
+# Retrieves information about the currently logged in user
+
+PS > Get-User -Current
+ExternalId   : schnittenfittich
+ExternalType : Integrated
+Mail         : schnittenfittich@appclusive.net
+Id           : 42
+Tid          : f2de53c1-62d0-4c15-8626-dac575f857a1
+Name         : schnittenfittich
+Description  : schnittenfittich
+CreatedById  : 1
+ModifiedById : 1
+Created      : 6/22/2016 3:22:29 PM +02:00
+Modified     : 6/22/2016 3:22:29 PM +02:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    :
+ModifiedBy   :
+
+.EXAMPLE
+# Retrieves the name of the currently logged in user
+
+PS > (Get-User -WhoAmi).Name
+schnittenfittich
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
 
@@ -189,6 +215,12 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies to retrieve information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'current')]
+	[alias('WhoAmI')]
+	[alias('CurrentUser')]
+	[switch] $Current = $false
 )
 
 Begin 
@@ -247,6 +279,11 @@ Process
 			}
 		}
 	} 
+	elseif($PSCmdlet.ParameterSetName -eq 'current')
+	{
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
+		Contract-Assert (!!$Response);
+	}
 	else 
 	{
 		$Exp = @();
