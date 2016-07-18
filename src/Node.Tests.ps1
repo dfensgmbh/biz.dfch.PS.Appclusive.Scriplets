@@ -1,19 +1,22 @@
 ﻿Import-Module biz.dfch.PS.Appclusive.Client
 
 # create a test set
-$testCases = @();
+$nodeIds = @();
 # define Id as a test set parameter
-$testCases += @{"Id" = [long] 34884};
+$nodeIds += @{"Id" = [long] 34884};
 # this is expected to fail for Node.Id == 1
-$testCases += @{"Id" = [long] 1};
-$testCases += @{"Id" = [long] 34885};
+# $nodeIds += @{"Id" = [long] 1};
+$nodeIds += @{"Id" = [long] 34885};
+
+$entityKindIds = @();
+$entityKindIds += @{"Id" = [long] 4097};
 
 Describe -Tags "Node.Tests" "Node.Tests" {
 
     Context "#CLOUDTCL-NodeAvailableActions" {
 
 		# pass the test set to the test
-        It "AvailableActions-ShouldMatchStateMachine" -TestCases $testCases -Test {
+        It "AvailableActions-ShouldMatchStateMachine" -TestCases $nodeIds -Test {
 			PARAM
 			(
 				# expect an id as input parameter, i.e. the node id to test
@@ -74,9 +77,35 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			# Assert that both arrays contain the same transitions
 			foreach($transition in $transitions)
 			{
-				$comparisonResult = $availableActions.Contains($transition);
-				$comparisonResult | Should Be $true;
+				$availableActions.Contains($transition) | Should Be $true;
 			}
         }
+
+		# pass the test set to the test
+        It "PermissionsForEntityKindVersion-ShouldBeAvailabe" -TestCases $entityKindIds -Test {
+			PARAM
+			(
+				# expect an id as input parameter, i.e. the EntityKind id to test
+				[long] $Id
+			)
+			
+			# grab the EntityKind
+			# $sut = Get-ApcEntityKind -Id $id;
+			
+			# make sure it exists
+			
+			# get all transitions from that EntityKind
+			# hint1: like in previous tests case
+			# hint2: convert that code into a function so you can reuse it in both tests
+			
+			# for each transition lookup the corresponding permission
+			# hint1: you can query permissions via:
+			# $q = "startswith(Name, '{0}:')" -f $sut.Version
+			# $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select
+			# hint2: permission comes in the following form "<EntityKind.Version>:<Transition>"
+			# eg: "com.swisscom.cms.rhel7.v001:AB01OrderFullOSManagement"
+			
+			
+		}
 	}
 }
