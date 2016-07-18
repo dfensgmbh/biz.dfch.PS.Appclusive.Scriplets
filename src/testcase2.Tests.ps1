@@ -1,10 +1,10 @@
 ﻿Import-Module biz.dfch.PS.Appclusive.Client
 
-$credentials = Get-Credential -UserName "w2012r2-t6-10\Administrator" -Message "Login To Lab3" #enter credentials to connect to lab3 (domain of lab3 = w2012r2-t6-10)
-$labSvc = Enter-ApcServer -ServerBaseUri "http://172.19.115.33/appclusive" -Credential $credentials
+# $credentials = Get-Credential -UserName "w2012r2-t6-10\Administrator" -Message "Login To Lab3" #enter credentials to connect to lab3 (domain of lab3 = w2012r2-t6-10)
+# $labSvc = Enter-ApcServer -ServerBaseUri "http://172.19.115.33/appclusive" -Credential $credentials
 
 
-Describe -Tags "??" "??" {
+Describe -Tags "testcase2" "testcase2.ps1" {
 
     Context "#CLOUDTCL-??" {
 
