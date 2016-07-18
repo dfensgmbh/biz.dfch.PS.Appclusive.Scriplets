@@ -110,7 +110,7 @@ and Administrator if the entity is not found.
 
 
 .EXAMPLE
-# Retrieve information about the currently logged in user
+# Retrieves information about the currently logged in user
 
 PS > Get-User -Current
 ExternalId   : schnittenfittich
@@ -128,6 +128,12 @@ RowVersion   : {0, 0, 0, 0...}
 Tenant       :
 CreatedBy    :
 ModifiedBy   :
+
+.EXAMPLE
+# Retrieves the name of the currently logged in user
+
+PS > (Get-User -WhoAmi).Name
+schnittenfittich
 
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
