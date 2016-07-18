@@ -120,6 +120,26 @@ Describe -Tags "Get-User" "Get-User" {
 			}
 		}
 	}
+	
+	Context "CurrentUser" {
+	
+		# Context wide constants
+		# N/A
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+		
+		It "GettingCurrentUser-Succeeds" -Test {
+			
+			# Act
+			$result = Get-User -svc $svc -Current;
+			# Assert
+			$result | Should Not Be $null;
+			$result.Name | Should Not Be $null;
+			$result.ExternalId | Should Not Be $null;
+		}
+	}
 }
 
 #
