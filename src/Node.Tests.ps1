@@ -59,7 +59,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
     Context "#CLOUDTCL-NodeAvailableActions" {
 
 		# pass the test set to the test
-        <#It "AvailableActions-ShouldMatchStateMachine" -TestCases $nodeIds -Test {
+        It "AvailableActions-ShouldMatchStateMachine" -TestCases $nodeIds -Test {
 			PARAM
 			(
 				# expect an id as input parameter, i.e. the node id to test
@@ -102,21 +102,9 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$entityKind | Should Not Be $null;
 			$entityKind.Id | Should Be $sut.EntityKindId;
 			$entityKind.Parameters | Should Not Be $null;
-			# convert the json encoded finite state machine from EntityKind.Parameters to a dictionary (DictionaryParameters object)
-			$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($entityKind.Parameters);
-			# Write-Host ($dic.Keys | Out-String);
-			$transitions = @(); #create empty array
-			foreach($key in $dic.Keys)
-			{
-				$key.Contains('-') | Should Be $true;
-				
-				if($job.Status -ne $key.Split('-')[0])  ###<-EXPL.
-				{
-					continue;
-				}
-				$transition = $key.Split('-')[-1]; #### [1] = [-1]???
-				$transitions += $transition;
-			}
+			
+            Get-Transitions($entityKind)
+
 			# Write-Host ($transitions | Out-String);
 			
 			# Assert that both arrays contain the same transitions
@@ -124,7 +112,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			{
 				$availableActions.Contains($transition) | Should Be $true;
 			}
-        } #>
+        }
 
 		# pass the test set to the test
         It "PermissionsForEntityKindVersion-ShouldBeAvailabe" -TestCases $entityKindIds -Test {
