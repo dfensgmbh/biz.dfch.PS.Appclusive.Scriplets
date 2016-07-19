@@ -28,29 +28,31 @@ $entityKindIds += @{"Id" = [long] 4097};
 
 
 #function gets an entityKind as a parameter and returns an array of the status transitions of the entityKind
-Function Get-Transitions{
-            Param
-            (
-                $entityKind
-            )
-            # convert the json encoded finite state machine from EntityKind.Parameters to a dictionary (DictionaryParameters object)
-			$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($entityKind.Parameters);
-			# Write-Host ($dic.Keys | Out-String);
-			$transitions = @(); #create empty array
-			foreach($key in $dic.Keys)
-			{
-				if($key.Contains('-')) #changed SHould be true because I got 24 times "true" as result
-                {				
-				    if($job.Status -ne $key.Split('-')[0])  ###<-EXPL.
-				    {
-					    continue;
-				    }
-				$transition = $key.Split('-')[-1]; #### [1] = [-1]???
-				$transitions += $transition;
-                }
-			}
+function Get-Transitions {
+	Param
+	(
+		[string] $Parameters
+	)
 
-            #Return ($transitions)
+	# convert the json encoded finite state machine from EntityKind.Parameters to a dictionary (DictionaryParameters object)
+	$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($Parameters);
+	# Write-Host ($dic.Keys | Out-String);
+	$transitions = @(); #create empty array
+	foreach($key in $dic.Keys)
+	{
+		if(!$key.Contains('-')) #changed SHould be true because I got 24 times "true" as result
+		{	
+			continue;
+		}
+		if($job.Status -ne $key.Split('-')[0])  ###<-EXPL.
+		{
+			continue;
+		}
+		$transition = $key.Split('-')[-1]; #### [1] = [-1]???
+		$transitions += $transition;
+	}
+
+	return $transitions;
 }
 
 
@@ -103,7 +105,8 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$entityKind.Id | Should Be $sut.EntityKindId;
 			$entityKind.Parameters | Should Not Be $null;
 			
-            Get-Transitions($entityKind)
+            $transitions = Get-Transitions($entityKind.Parameters)
+			Contract-Assert (!!$transitions);
 
 			# Write-Host ($transitions | Out-String);
 			
@@ -131,7 +134,8 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			# get all transitions from that EntityKind
 			# hint1: like in previous tests case
 			# hint2: convert that code into a function so you can reuse it in both tests
-            $EntityKindTransitions = Get-Transitions($sut);
+            $transitions = Get-Transitions($sut.Parameters);
+			Contract-Assert (!!$transitions);
             #Write-Host $EntityKindTransitions;
             #Write-Host $sut.Version;
 			
@@ -154,8 +158,11 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			    }
 			}
             
-            #
-            foreach($transition in $EntityKindTransitions)
+            # also check "*" permissions
+			# and assert that we do not have "too many" permissions
+			$transitionsArray.Count | Should Be $transitions.Count
+			
+            foreach($transition in $transitions)
 			{
 				$transitionsArray.Contains($transition) | Should Be $true;
 			}
