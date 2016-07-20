@@ -140,6 +140,27 @@ Describe -Tags "Get-User" "Get-User" {
 			$result.ExternalId | Should Not Be $null;
 		}
 	}
+
+	Context "TenantInformation" {
+	
+		# Context wide constants
+		# N/A
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+		
+		It "GettingTenantInformation-Succeeds" -Test {
+			
+			# Act
+			$result = Get-User -svc $svc -TenantInformation;
+			# Assert
+			$result | Should Not Be $null;
+			$result.NodeId | Should Not Be $null;
+			$result.JobId | Should Not Be $null;
+			$result.BuiltInRoles | Should Not Be $null;
+		}
+	}
 }
 
 #

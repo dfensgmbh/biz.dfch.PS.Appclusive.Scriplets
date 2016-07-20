@@ -130,6 +130,24 @@ CreatedBy    :
 ModifiedBy   :
 
 .EXAMPLE
+# Retrieves tenant information about the currently logged in user
+
+PS > Get-User -TenantInformation
+Id              : 4048fba5-b81e-4cae-b2f4-6dbb90352875
+ParentId        : 199a7dca-ca61-4932-ada6-6c19f4af68851
+NodeId          : 42
+JobId           : 5
+CustomerId      : 8
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+	CloudAdmin         : 19
+	CloudUser          : 20
+	CloudGuest         : 21
+	CreatorOwner       : 18
+	Everyone           : 17
+	AppclusiveEveryone : 7
+
+.EXAMPLE
 # Retrieves the name of the currently logged in user
 
 PS > (Get-User -WhoAmi).Name
@@ -221,6 +239,11 @@ PARAM
 	[alias('WhoAmI')]
 	[alias('CurrentUser')]
 	[switch] $Current = $false
+	,
+	# Specifies to retrieve information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'tenant')]
+	[alias('Tenant')]
+	[switch] $TenantInformation = $false
 )
 
 Begin 
@@ -282,6 +305,11 @@ Process
 	elseif($PSCmdlet.ParameterSetName -eq 'current')
 	{
 		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
+		Contract-Assert (!!$Response);
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'tenant')
+	{
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Tenants", "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
 		Contract-Assert (!!$Response);
 	}
 	else 
