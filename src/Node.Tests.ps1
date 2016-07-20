@@ -38,7 +38,7 @@ function Get-Transitions {
 	# convert the json encoded finite state machine from EntityKind.Parameters to a dictionary (DictionaryParameters object)
 	$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($Parameters);
 	#Write-Host "CheckPoint2";
-	$transitions = @(); #create empty array
+	$transitions = New-Object System.Collections.ArrayList;
 	foreach($key in $dic.Keys)
 	{
 		if(!$key.Contains('-')) #changed SHould be true because I got 24 times "true" as result
@@ -53,7 +53,7 @@ function Get-Transitions {
 			}
 		}
 		$transition = $key.Split('-')[-1]; #### [1] = [-1]???
-		$transitions += $transition;
+		$null = $transitions.Add($transition);
 	}
 
 	return $transitions;
@@ -160,35 +160,35 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			# and assert that we do not have "too many" permissions
 			
 			#check that Initialise transition is included in the EntityKind transitions
-			$transitions.Contains("Initialise") | Should be $true;
+			$transitionInitialiseName = "Initialise";
+			$transitions.Contains(transitionInitialiseName) | Should be $true;
+			$transition.Remove($transitionInitialiseName);
 			
 			#split the permission strings
-			$transitionsArray = @(); #create empty array
+			$transitionsArray = New-Object System.Collections.ArrayList;
             foreach($name in $transitionPermissions.Name)
 			{
                 if($name.Contains(':'))
                 {	
-                    $x = $name.Split(':')[1];
-                    $transitionsArray += $x;
+                    $permissionSuffix = $name.Split(':')[1];
+                    $transitionsArray.Add($permissionSuffix);
 			    }
 			}
 			
 			#check that the * permission is included:
-			$transitionsArray.Contains("*") | Should be $true;
+			$permissionWildCard = "*";
+			$transitionsArray.Contains($permissionWildCard) | Should be $true;
+			$transitionsArray.Remove($permissionWildCard);
+
+			# make sure both array have the same size (excluding our special items like 'Initialise' and '*')
+			# so we then know that both sets contain equal items
+			$transitions.Count | Should Be $transitionsArray.Count;
 			
 			#Check that all the transitions have permissions
 			foreach($transition in $transitions)
 			{
 				foreach($transitionsArrayMember in $transitionsArray)
 				{
-					if($transition = "Initialise")
-					{
-						continue;
-					}
-					if($transitionsArrayMember = "*")
-					{
-						continue;
-					}
 					$transitionsArray.Contains($transition) | Should Be $true;
 				}
 			}
