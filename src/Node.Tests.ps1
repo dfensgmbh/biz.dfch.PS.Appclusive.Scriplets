@@ -55,6 +55,29 @@ function Get-Transitions {
 	return $transitions;
 }
 
+function Get-Transitions2 {
+	Param
+	(
+		[string] $Parameters
+	)
+
+	# convert the json encoded finite state machine from EntityKind.Parameters to a dictionary (DictionaryParameters object)
+	$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($Parameters);
+	# Write-Host ($dic.Keys | Out-String);
+	$transitions = @(); #create empty array
+	foreach($key in $dic.Keys)
+	{
+		if(!$key.Contains('-')) #changed SHould be true because I got 24 times "true" as result
+		{	
+			continue;
+		}
+		$transition = $key.Split('-')[-1]; #### [1] = [-1]???
+		$transitions += $transition;
+	}
+
+	return $transitions;
+}
+
 
 Describe -Tags "Node.Tests" "Node.Tests" {
 
@@ -105,10 +128,10 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			$entityKind.Id | Should Be $sut.EntityKindId;
 			$entityKind.Parameters | Should Not Be $null;
 			
-            $transitions = Get-Transitions($entityKind.Parameters)
+            $transitions = Get-Transitions($entityKind.Parameters);
 			Contract-Assert (!!$transitions);
 
-			# Write-Host ($transitions | Out-String);
+			#Write-Host ($transitions | Out-String);
 			
 			# Assert that both arrays contain the same transitions
 			foreach($transition in $transitions)
@@ -134,21 +157,24 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			# get all transitions from that EntityKind
 			# hint1: like in previous tests case
 			# hint2: convert that code into a function so you can reuse it in both tests
-            $transitions = Get-Transitions($sut.Parameters);
+            $transitions = Get-Transitions2($sut.Parameters);
 			Contract-Assert (!!$transitions);
-            #Write-Host $EntityKindTransitions;
             #Write-Host $sut.Version;
 			
 			# for each transition lookup the corresponding permission
-
-            #get all permissions available the particular EntityKind using its version
 			# hint1: you can query permissions via:
-			$q = "startswith(Name, '{0}:')" -f $sut.Version
-			$transitionPermissions = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select
+			$q = "startswith(Name, '{0}:')" -f $sut.Version;
+			$transitionPermissions = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
 			# hint2: permission comes in the following form "<EntityKind.Version>:<Transition>"
 			# eg: "com.swisscom.cms.rhel7.v001:AB01OrderFullOSManagement"
-            # get an array of transitions
-            $transitionsArray = @(); #create empty array
+            # also check "*" permissions
+			# and assert that we do not have "too many" permissions
+			
+			#check that Initialise transition is included in the EntityKind transitions
+			$transitions.Contains("Initialise") | Should be $true;
+			
+			#split the permission strings
+			$transitionsArray = @(); #create empty array
             foreach($name in $transitionPermissions.Name)
 			{
                 if($name.Contains(':'))
@@ -157,17 +183,27 @@ Describe -Tags "Node.Tests" "Node.Tests" {
                     $transitionsArray += $x;
 			    }
 			}
-            
-            # also check "*" permissions
-			# and assert that we do not have "too many" permissions
-			$transitionsArray.Count | Should Be $transitions.Count
 			
-            foreach($transition in $transitions)
+			#check that the * permission is included:
+			$transitionsArray.Contains("*") | Should be $true;
+			
+			#Check that all the transitions have permissions
+			foreach($transition in $transitions)
 			{
-				$transitionsArray.Contains($transition) | Should Be $true;
+				foreach($transitionsArrayMember in $transitionsArray)
+				{
+					if($transition = "Initialise")
+					{
+						continue;
+					}
+					if($transitionsArrayMember = "*")
+					{
+						continue;
+					}
+					$transitionsArray.Contains($transition) | Should Be $true;
+				}   
 			}
-
-            
+			
 		}
 	}
 }
