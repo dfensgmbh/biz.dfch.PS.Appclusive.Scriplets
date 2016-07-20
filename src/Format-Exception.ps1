@@ -27,6 +27,14 @@ System.Data.Services.Client.DataServiceClientException: HTTP 400.
 entity : A null value was found for the property named 'Name', which has the expected type 'Edm.String[Nullable=False]'. The expected type 'Edm.String[Nullable=False]' does not allow null values.
 
 .EXAMPLE
+# Extracts the HTTP StatusCode from the innermost exception if there is a StatusCode.
+PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+PS > $svc.Core.AddToNodes($node);
+PS > $svc.Core.SaveChanges();
+PS > Format-Exception -StatusCode
+400
+
+.EXAMPLE
 # Extracts all exceptions from a failed SaveChanges operation.
 PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 PS > $svc.Core.AddToNodes($node);
@@ -113,6 +121,10 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'single')]
 	[string] $Name
 	,
+	# Extracts the HTTP StatusCode from the exception chain if available
+	[Parameter(Mandatory = $false, ParameterSetName = 'single')]
+	[Switch] $StatusCode = $false
+	,
 	# Displays all exceptions within ErrorRecord
 	[Parameter(Mandatory = $false, ParameterSetName = 'all')]
 	[Switch] $All = $true
@@ -179,7 +191,14 @@ Process
 			}
 			elseif($result -is [System.Data.Services.Client.DataServiceClientException])
 			{
-				$Response = Format-DataServiceClientException $result;
+				if($StatusCode)
+				{
+					$Response = $ex.StatusCode;
+				}
+				else
+				{
+					$Response = Format-DataServiceClientException $result;
+				}
 			}
 			else
 			{
