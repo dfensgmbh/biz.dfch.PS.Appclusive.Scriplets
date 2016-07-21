@@ -104,6 +104,10 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
 	[Switch] $All = $true
 	,
+	# Lists all available versions
+	[Parameter(Mandatory = $false, ParameterSetName = 'ApiServerComp')]
+	[Switch] $ApiServerCompatibility
+	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
@@ -163,6 +167,10 @@ Process
 		{
 			$Response = GetVersionEndpoints;
 		}
+		'ApiServerComp'
+		{
+			$Response = GetApiServerCompatibility;
+		}
 	}
 	
 	$OutputParameter = Format-ResultAs $Response $As
@@ -202,10 +210,16 @@ function GetVersionPublic
 
 function GetVersionApi
 {
-	$canApiVersionBeExtracted = [biz.dfch.CS.Appclusive.Api.Core.Node].AssemblyQualifiedName -match 'Version=(\d+\.\d+\.\d+\.\d+)';
-	Contract-Assert $canApiVersionBeExtracted;
+	$response = [biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics]::GetVersion();
+	Contract-Assert (!!$response);
 	
-	$response = $Matches[1] -as [Version];
+	return $response;
+}
+
+function GetApiServerCompatibility
+{
+	$response = $svc.Diagnostics.GetSemverCompatibility();
+	
 	
 	return $response;
 }
