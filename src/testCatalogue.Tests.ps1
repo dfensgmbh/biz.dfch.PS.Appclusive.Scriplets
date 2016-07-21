@@ -4,6 +4,29 @@ Import-Module biz.dfch.PS.Appclusive.Client
 #$svc = Enter-ApcServer -ServerBaseUri "http://172.19.115.33/appclusive" -Credential $credentials
 
 
+
+
+function Create-Catalogue {
+	Param
+	(
+	[string] $Name
+	)
+	
+	$catVersion = "1";
+	$catStatus = "Published";
+	
+	#create catalog object
+	$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
+	#add mandatory properties
+	$newCatalogue.Name = $Name;
+	$newCatalogue.Version = $catVersion;
+	$newCatalogue.Status = $catStatus;
+	
+	return $newCatalogue;
+}
+
+
+
 Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 
     Context "#CLOUDTCL-Warmup" {
@@ -17,52 +40,48 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 	
 		# pass the test set to the test
         It "CreateCatalogue" -Test {
+		
 			#ARRANGE
-			#create catalog object
-			$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
-			#add mandatory properties
-			$newCatalogue.Name = "PBCatalogue";
-			$newCatalogue.Version = "1";
-			$newCatalogue.Status = "Published";
+			$catName = "PBCatalogue";
+			
+			#ACT
+			$sut = Create-Catalogue -Name $catName;
 			
 			#ACT - create new catalogue
-			$svc.Core.AddToCatalogues($newCatalogue);
+			$svc.Core.AddToCatalogues($sut);
 			$result = $svc.Core.SaveChanges();
-			
+						
 			#ASSERT
-			$newCatalogue | Should Not Be $null;
-			$newCatalogue.Id | Should Not Be $null;
-			$newCatalogue.Tid |Should Not Be $null;
+			$sut | Should Not Be $null;
+			$sut.Id | Should Not Be $null;
+			$sut.Tid |Should Not Be $null;
 			$result.StatusCode | Should Be 201;
 			
 		}
 		
 		It "DeleteCatalogue" -Test {
 			#ARRANGE
-			#create catalog object
-			$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
-			#add mandatory properties
-			$newCatalogue.Name = "PBCatalogue";
-			$newCatalogue.Version = "1";
-			$newCatalogue.Status = "Published";
-			$newCatalogue.Tid = "ad8f50df-2a5d-4ea5-9fcc-05882f16a9fe";
+			$catName = "PBCatalogue";
+			
+			#ACT
+			$sut = Create-Catalogue -Name $catName;
 			
 			#ACT - create new catalogue
-			$svc.Core.AddToCatalogues($newCatalogue);
+			$svc.Core.AddToCatalogues($sut);
 			$result = $svc.Core.SaveChanges();
-			
+						
 			#ASSERT
-			$newCatalogue | Should Not Be $null;
-			$newCatalogue.Id | Should Not Be $null;
-			$newCatalogue.Tid |Should Not Be $null;
+			$sut | Should Not Be $null;
+			$sut.Id | Should Not Be $null;
+			$sut.Tid |Should Not Be $null;
 			$result.StatusCode | Should Be 201;
 			
 			#ACT - DeleteCatalogue
-			$svc.Core.DeleteObject($newCatalogue);
+			$svc.Core.DeleteObject($sut);
 			$result = $svc.Core.SaveChanges();
 			
 			#ASSERT
-			$query = "Id eq {0}" -f $newCatalogue.Id;
+			$query = "Id eq {0}" -f $sut.Id;
 			$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
 			$deletedCatalog | Should Be $null;
 			
