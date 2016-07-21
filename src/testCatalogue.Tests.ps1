@@ -100,19 +100,21 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$svc.Core.AddToProducts($newProduct);
 			$result = $svc.Core.SaveChanges();
 			
+			#ASSERT product
+			$result.StatusCode | Should Be 201;
+			$newCatalogueItem.Id | Should Not Be $null;
 			
-			
-			#ARRANGE
 			#create catalogue item
 			$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 			$newCatalogueItem.Name = "NewCatalogueItem";
-			$newCatalogueItem.ProductId = $Id;
+			$newCatalogueItem.ProductId = $newProduct.Id;
 			$newCatalogueItem.CatalogueId = 37;
-			
-			
 			$svc.Core.AddToCatalogueItems($newCatalogueItem);
 			$result = $svc.Core.SaveChanges();
-		
+			
+			#ASSERT catalogue item
+			$result.StatusCode | Should be 201;
+			$newCatalogueItem.Id | Should Not Be $null;
 		
 		}
 	}
