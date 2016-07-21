@@ -5,7 +5,6 @@ Import-Module biz.dfch.PS.Appclusive.Client
 
 
 
-
 function Create-Catalogue {
 	Param
 	(
@@ -89,5 +88,32 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 		}
 		
 		
+		It "CreateCatalogueItemInCatalogue" -Test {
+			
+			#create product
+			$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+			$newProduct.Name = "new Product";
+			$newProduct.Description = "Test Product";
+			$newProduct.Type = "Test Product";
+			$newProduct.EntityKindId = 4864;
+			$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
+			$svc.Core.AddToProducts($newProduct);
+			$result = $svc.Core.SaveChanges();
+			
+			
+			
+			#ARRANGE
+			#create catalogue item
+			$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+			$newCatalogueItem.Name = "NewCatalogueItem";
+			$newCatalogueItem.ProductId = $Id;
+			$newCatalogueItem.CatalogueId = 37;
+			
+			
+			$svc.Core.AddToCatalogueItems($newCatalogueItem);
+			$result = $svc.Core.SaveChanges();
+		
+		
+		}
 	}
 }
