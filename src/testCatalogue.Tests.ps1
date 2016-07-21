@@ -36,5 +36,39 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$result.StatusCode | Should Be 201;
 			
 		}
+		
+		It "DeleteCatalogue" -Test {
+			#ARRANGE
+			#create catalog object
+			$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
+			#add mandatory properties
+			$newCatalogue.Name = "PBCatalogue";
+			$newCatalogue.Version = "1";
+			$newCatalogue.Status = "Published";
+			$newCatalogue.Tid = "ad8f50df-2a5d-4ea5-9fcc-05882f16a9fe";
+			
+			#ACT - create new catalogue
+			$svc.Core.AddToCatalogues($newCatalogue);
+			$result = $svc.Core.SaveChanges();
+			
+			#ASSERT
+			$newCatalogue | Should Not Be $null;
+			$newCatalogue.Id | Should Not Be $null;
+			$newCatalogue.Tid |Should Not Be $null;
+			$result.StatusCode | Should Be 201;
+			
+			#ACT - DeleteCatalogue
+			$svc.Core.DeleteObject($newCatalogue);
+			$result = $svc.Core.SaveChanges();
+			
+			#ASSERT
+			$query = "Id eq {0}" -f $newCatalogue.Id;
+			$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
+			$deletedCatalog | Should Be $null;
+			
+			
+		}
+		
+		
 	}
 }
