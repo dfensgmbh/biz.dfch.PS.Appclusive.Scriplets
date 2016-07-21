@@ -1,4 +1,4 @@
-function Get-DataType {
+#requires -Modules biz.dfch.PS.System.Utilities
 PARAM
 (
 	# Data Type to search for. Input is treated as regular expression
@@ -15,8 +15,14 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[Alias('noregex')]
 	[switch] $Literal = $false
+	,
+	# also show the constructor of the data type
+	[Parameter(Mandatory = $false)]
+	[Alias('ctor')]
+	[switch] $IncludeConstructor = $false
 )
-	$result = New-Object System.Collections.ArrayList;
+	$dataTypes = New-Object System.Collections.ArrayList;
+	$constructors = New-Object System.Collections.ArrayList;
 	
 	$assemblies = [System.AppDomain]::CurrentDomain.GetAssemblies();
 	foreach($assembly in $assemblies)
@@ -63,12 +69,19 @@ PARAM
 					}
 				}
 			}
-			$null = $result.Add($definedTypeFullName);
+			
+			$null = $dataTypes.Add($definedTypeFullName);
+			
+			if(!$IncludeConstructor)
+			{
+				continue;
+			}
+			$null = $constructors.Add((Get-Constructor $definedTypeFullName));
 		}
 	}
 	
-	return $result | Sort;
-}
+	Write-Output ($dataTypes | Sort);
+	Write-Output ($constructors);
 
 #
 # Copyright 2012-2016 d-fens GmbH
