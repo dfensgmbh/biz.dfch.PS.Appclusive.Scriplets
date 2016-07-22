@@ -24,6 +24,27 @@ function Create-Catalogue {
 	return $newCatalogue;
 }
 
+function Create-Product {
+	$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+	$newProduct.Name = "new Product";
+	$newProduct.Description = "Test Product";
+	$newProduct.Type = "Test Product";
+	$newProduct.EntityKindId = 4864;
+	$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
+	$svc.Core.AddToProducts($newProduct);
+	$result = $svc.Core.SaveChanges();
+
+	$result.StatusCode | Should Be 201;
+
+	return $newProduct;
+
+}
+
+function Create-CatalogueItem {
+
+
+}
+
 
 
 Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
@@ -90,32 +111,40 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 		
 		It "CreateCatalogueItemInCatalogue" -Test {
 			
-			#create product
-			$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
-			$newProduct.Name = "new Product";
-			$newProduct.Description = "Test Product";
-			$newProduct.Type = "Test Product";
-			$newProduct.EntityKindId = 4864;
-			$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
-			$svc.Core.AddToProducts($newProduct);
-			$result = $svc.Core.SaveChanges();
+			#ACT - create product
+			$newProduct = Create-Product;
 			
 			#ASSERT product
-			$result.StatusCode | Should Be 201;
-			$newCatalogueItem.Id | Should Not Be $null;
-			
+			$newProduct.Id | Should Not Be $null;
+			<#
 			#create catalogue item
 			$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 			$newCatalogueItem.Name = "NewCatalogueItem";
 			$newCatalogueItem.ProductId = $newProduct.Id;
-			$newCatalogueItem.CatalogueId = 37;
+			$newCatalogueItem.CatalogueId = 41;
 			$svc.Core.AddToCatalogueItems($newCatalogueItem);
 			$result = $svc.Core.SaveChanges();
 			
 			#ASSERT catalogue item
 			$result.StatusCode | Should be 201;
 			$newCatalogueItem.Id | Should Not Be $null;
+			
+			#delete catalogue item
+			
+			
+			#delete product #>
+		}
 		
+		It "UpdateCatalogueItem" -Test {
+			
+			$catName = "PBCatalogue";
+			
+			#ACT - create catalogue
+			$sut = Create-Catalogue -Name $catName;
+			#add catalogue to Catalogues
+			$svc.Core.AddToCatalogues($sut);
+			$result = $svc.Core.SaveChanges();
+			
 		}
 	}
 }
