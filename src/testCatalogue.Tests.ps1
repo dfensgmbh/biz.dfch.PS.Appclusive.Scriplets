@@ -96,7 +96,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 
     Context "#CLOUDTCL-Catalogue" {
 	
-        
+        <#
 		It "CreateCatalogue" -Test {
 		
 			#ARRANGE
@@ -110,7 +110,8 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$sut.Id | Should Not Be $null;
 			$sut.Tid |Should Not Be $null;
 		}
-		
+		#>
+		<#
 		It "DeleteCatalogue" -Test {
 			#ARRANGE
 			$catName = "TestCatalogue-tobeDeleted";
@@ -124,14 +125,17 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$newCatalogue.Tid |Should Not Be $null;
 			
 			#ACT - DeleteCatalogue
-			$result = Delete-Catalogue -newCatalogue $newCatalogue;
-			#$catalogToDelete = $svc.Core.DeleteObject($sut);
+			#$result = Delete-Catalogue -newCatalogue $newCatalogue;
+			$catalogToDelete = $svc.Core.DeleteObject($newCatalogue);
 			#$result = $svc.Core.SaveChanges();
 			
 			#ASSERT for catalogue deletion
 			#$query = "Id eq {0}" -f $newCatalogue.Id;
 			#$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
 			#$deletedCatalog | Should Be $null;
+			
+			$query = "Id eq 98";
+			$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
 			
 			
 		}#>
@@ -168,7 +172,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 			#delete product
 		}#>
-		<#
+		
 		It "UpdateCatalogue" -Test {
 			
 			#ARRANGE
@@ -177,23 +181,44 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$catNewDescription = "This is the new description for catalogue";
 			
 			#ACT - create catalogue
-			$catalogue = Create-Catalogue -Name $catName;
+			#$catalogue = Create-Catalogue -Name $catName;
+			
+			$catVersion = "1";
+			$catStatus = "Published";
+	
+			#create catalog object
+			$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
+	
+			#add mandatory properties
+			$newCatalogue.Name = $catName;
+			$newCatalogue.Version = $catVersion;
+			$newCatalogue.Status = $catStatus;
+	
+			#ACT - create new catalogue
+			$svc.Core.AddToCatalogues($newCatalogue);
+			$result = $svc.Core.SaveChanges();
+	
+			$result.StatusCode | Should Be 201;
+	
 					
 			#ASSERT
-			$catalogue | Should Not Be $null;
-			$catalogue.Id | Should Not Be $null;
-			$catalogue.Tid |Should Not Be $null;
-			$catalogue.Name | Should Not Be $null;
+			$newCatalogue | Should Not Be $null;
+			$newCatalogue.Id | Should Not Be $null;
+			$newCatalogue.Tid |Should Not Be $null;
+			$newCatalogue.Name | Should Not Be $null;
 			Write-Host $catalogue.Name;
 			
 			#$catalogue.Name = $catNewName;
-			$catalogue.Description = $catNewDescription;
+			$newcatalogue.Description = $catNewDescription;
 			
 			#ACT - update empty 
-			$svc.Core.UpdateObject($catalogue);
+			$svc.Core.UpdateObject($newCatalogue);
 			$result = $svc.Core.SaveChanges();
 			
 			#ASSERT - update
+			$query = "Id eq {0}" -f $newCatalogue.Id;
+			$updatedCatalogue = $svc.core.Catalogues.AddQueryOption('$filter', $query);
+			$updatedCatalogue.Description | Should Be $catNewDescription;
 			
 			#create product
 			
@@ -209,7 +234,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 			
 		}
-		#>
+		
 		<#
 		It "UpdateCatalogueItem" -Test {
 			#ARRANGE
