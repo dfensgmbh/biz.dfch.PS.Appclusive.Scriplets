@@ -31,6 +31,20 @@ function Create-Catalogue {
 	return $newCatalogue;
 }
 
+function Delete-Catalogue{
+	Param
+	(
+	[System.Object] $newCatalogue
+	)
+	
+	#Write-Host $catalogToDelete;
+	#delete catalogue
+	$svc.Core.DeleteObject($newCatalogue);
+	$result = $svc.Core.SaveChanges();
+	
+	return $result;
+}
+
 function Create-Product {
 	$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$newProduct.Name = "new Product";
@@ -50,13 +64,15 @@ function Create-Product {
 
 function Create-CatalogueItem {
 	Param(
-	$ProductId
+	$productId
+	,
+	$catalogId
 	)
 	
 	$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 	$newCatalogueItem.Name = "NewCatalogueItem";
-	$newCatalogueItem.ProductId = $ProductId;
-	$newCatalogueItem.CatalogueId = 41;
+	$newCatalogueItem.ProductId = $productId;
+	$newCatalogueItem.CatalogueId = $catalogId;
 	
 	$svc.Core.AddToCatalogueItems($newCatalogueItem);
 	$result = $svc.Core.SaveChanges();
@@ -80,11 +96,11 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 
     Context "#CLOUDTCL-Catalogue" {
 	
-		# pass the test set to the test
-        It "CreateCatalogue" -Test {
+        
+		It "CreateCatalogue" -Test {
 		
 			#ARRANGE
-			$catName = "PBCatalogue";
+			$catName = "TestCatalogue";
 			
 			#ACT
 			$sut = Create-Catalogue -Name $catName;
@@ -94,38 +110,45 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$sut.Id | Should Not Be $null;
 			$sut.Tid |Should Not Be $null;
 		}
-		<#
+		
 		It "DeleteCatalogue" -Test {
 			#ARRANGE
-			$catName = "PBCatalogue";
+			$catName = "TestCatalogue-tobeDeleted";
 			
 			#ACT
-			$sut = Create-Catalogue -Name $catName;
+			$newCatalogue = Create-Catalogue -Name $catName;
 			
-			#ACT - create new catalogue
-			$svc.Core.AddToCatalogues($sut);
-			$result = $svc.Core.SaveChanges();
-						
-			#ASSERT
-			$sut | Should Not Be $null;
-			$sut.Id | Should Not Be $null;
-			$sut.Tid |Should Not Be $null;
-			$result.StatusCode | Should Be 201;
+			#ASSERT for catalogue creation
+			$newCatalogue | Should Not Be $null;
+			$newCatalogue.Id | Should Not Be $null;
+			$newCatalogue.Tid |Should Not Be $null;
 			
 			#ACT - DeleteCatalogue
-			$svc.Core.DeleteObject($sut);
-			$result = $svc.Core.SaveChanges();
+			$result = Delete-Catalogue -newCatalogue $newCatalogue;
+			#$catalogToDelete = $svc.Core.DeleteObject($sut);
+			#$result = $svc.Core.SaveChanges();
 			
-			#ASSERT
-			$query = "Id eq {0}" -f $sut.Id;
-			$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
-			$deletedCatalog | Should Be $null;
+			#ASSERT for catalogue deletion
+			#$query = "Id eq {0}" -f $newCatalogue.Id;
+			#$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
+			#$deletedCatalog | Should Be $null;
 			
 			
-		}
+		}#>
 		
-		
+		<#
 		It "CreateCatalogueItemInCatalogue" -Test {
+			
+			#ARRANGE
+			$catName = "TestCatalogue";
+			
+			#ACT - create catalogue
+			$catalog = Create-Catalogue -Name $catName;
+	
+			#ASSERT for catalogue creation
+			$catalog | Should Not Be $null;
+			$catalog.Id | Should Not Be $null;
+			$catalog.Tid |Should Not Be $null;
 			
 			#ACT - create product
 			$newProduct = Create-Product;
@@ -133,9 +156,9 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			#ASSERT product
 			$newProduct | Should Not Be $null;
 			$newProduct.Id | Should Not Be $null;
-
+			
 			#create catalogue item
-			$newCatalogueItem = Create-CatalogueItem -ProductId $newProduct.Id;
+			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalog.Id;
 			
 			#ASSERT catalogue item
 			$newCatalogueItem.Id | Should Not Be $null;
@@ -145,17 +168,74 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 			#delete product
 		}#>
-		
-		It "UpdateCatalogueItem" -Test {
+		<#
+		It "UpdateCatalogue" -Test {
 			
-			$catName = "PBCatalogue";
+			#ARRANGE
+			$catName = "EmptyCatalogue";
+			$catNewName = "EmptyCatalogue Updated";
+			$catNewDescription = "This is the new description for catalogue";
 			
 			#ACT - create catalogue
-			$sut = Create-Catalogue -Name $catName;
-			#add catalogue to Catalogues
-			$svc.Core.AddToCatalogues($sut);
+			$catalogue = Create-Catalogue -Name $catName;
+					
+			#ASSERT
+			$catalogue | Should Not Be $null;
+			$catalogue.Id | Should Not Be $null;
+			$catalogue.Tid |Should Not Be $null;
+			$catalogue.Name | Should Not Be $null;
+			Write-Host $catalogue.Name;
+			
+			#$catalogue.Name = $catNewName;
+			$catalogue.Description = $catNewDescription;
+			
+			#ACT - update empty 
+			$svc.Core.UpdateObject($catalogue);
 			$result = $svc.Core.SaveChanges();
 			
+			#ASSERT - update
+			
+			#create product
+			
+			#create catalogue item
+			
+			#update catalogue with a catalogue item
+			
+			#delete catalogue item
+			
+			#delete product
+			
+			#delete catalogue
+			
+			
 		}
+		#>
+		<#
+		It "UpdateCatalogueItem" -Test {
+			#ARRANGE
+			$catName = "TestCatalogue";
+			
+			#ACT - create catalogue
+			$catalog = Create-Catalogue -Name $catName;
+	
+			#ASSERT for catalogue creation
+			$catalog | Should Not Be $null;
+			$catalog.Id | Should Not Be $null;
+			$catalog.Tid |Should Not Be $null;
+			
+			#ACT - create product
+			$newProduct = Create-Product;
+			
+			#ASSERT product
+			$newProduct | Should Not Be $null;
+			$newProduct.Id | Should Not Be $null;
+			
+			#create catalogue item
+			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalog.Id;
+			
+			#ASSERT catalogue item
+			$newCatalogueItem.Id | Should Not Be $null;
+		
+		}#>
 	}
 }
