@@ -1,4 +1,48 @@
 function Test-Status {
+<#
+.SYNOPSIS
+Test the connection to an Appclusive server.
+
+.DESCRIPTION
+Test the connection to an Appclusive server.
+
+This Cmdlet lets you 'ping' an Appclusive server and display its response.
+
+.INPUTS
+See PARAMETERS section on possible inputs.
+
+.OUTPUTS
+default | json | json-pretty | xml | xml-pretty
+
+.EXAMPLE
+# Sends the text 'tralala' to a server and waits for its response. 
+# Upon successful execution the server returns the input string. 
+# Note: input length is limited.
+PS > Test-Status tralala
+tralala
+
+.EXAMPLE
+# Connects to the Appclusive 'Ping' endpoint and waits for the response.
+# Upon successful execution the server returns an HTTP 204 which will be 
+# displayed as true.
+# Note: input length is limited.
+PS > Test-Status
+$true
+
+.EXAMPLE
+# Connects to the Appclusive 'AuthenticatedPing' endpoint and waits for the 
+# response. Upon successful execution the server returns an HTTP 204 which 
+# will be displayed as true.
+# Note: input length is limited.
+PS > Test-Status -Authenticate
+$true
+
+.LINK
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/
+
+.NOTES
+See module manifest for required software versions and dependencies.
+#>
 [CmdletBinding(
     SupportsShouldProcess = $false
 	,
@@ -116,7 +160,7 @@ return $OutputParameter;
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; } 
 
 # 
-# Copyright 2014-2015 d-fens GmbH
+# Copyright 2014-2016 d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
