@@ -45,11 +45,11 @@ if(Test-Path -Path $ManifestPathAndFile)
 
 (Get-Variable -Name $mvar).Value.Credential = [System.Net.CredentialCache]::DefaultCredentials;
 
-Contract-Requires ((Get-Module biz.dfch.PS.System.Logging).Version -ge ([Version] '1.1.4'))
+Contract-Requires ((Get-Module biz.dfch.PS.System.Logging).Version -ge ([Version] '1.4.1'))
 Contract-Requires ((Get-Module biz.dfch.PS.System.Utilities).Version -ge ([Version] '2.2.0'))
 
 # 
-# Copyright 2014-2015 Ronald Rink, d-fens GmbH
+# Copyright 2014-2016 Ronald Rink, d-fens GmbH
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

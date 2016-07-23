@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>biz.dfch.PS.Appclusive.Client</id>
-    <version>4.0.0</version>
+    <version>4.1.0</version>
     <title>biz.dfch.PS.Appclusive.Client</title>
     <authors>d-fens GmbH</authors>
     <owners>Ronald Rink</owners>
@@ -28,30 +28,14 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
     <releaseNotes>20160723
-# BREAKING CHANGES
-
-* Get-Tenant
-  * renamed paramter ParentTenantId to ParentId
-  * fixed parameter name TenantTyp to ExternalType
-  * removed ExternalType 'All' option
-  * change Id, ParentId parameter to type Guid and removed ValidateScript
-
-# FEATURES
-
-* Get-User
-  * added switch to return information of the currently logged in user
-  * added switch to return tenant information of the currently logged in user
-
-* Format-Exception
-  * added switch to extract the HTTP StatusCode from the exception (if available)
-  * added display out of DataServiceClientException with json messages
+WIP
 
 * installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
     <copyright>(c) 2015-2016 d-fens GmbH</copyright>
     <language>en-US</language>
     <tags>dfch PowerShell Appclusive Automation OData</tags>
     <dependencies>
-      <dependency id="biz.dfch.PS.System.Logging" version="1.3.1" />
+      <dependency id="biz.dfch.PS.System.Logging" version="1.4.1" />
       <dependency id="biz.dfch.PS.System.Utilities" version="2.0.0" />
     </dependencies>
     <frameworkAssemblies>
