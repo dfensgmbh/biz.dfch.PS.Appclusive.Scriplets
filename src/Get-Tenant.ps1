@@ -221,7 +221,7 @@ Process
 	{
 		$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
 	}
-	elseif($PSCmdlet.ParameterSetName -eq 'list')
+	elseif($PSCmdlet.ParameterSetName -eq 'current')
 	{
 		$Response = $svc.Core.InvokeEntityActionWithSingleResult("Tenants", 'Information', [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
 	}
