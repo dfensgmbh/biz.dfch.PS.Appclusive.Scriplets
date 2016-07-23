@@ -223,7 +223,7 @@ Process
 	}
 	elseif($PSCmdlet.ParameterSetName -eq 'current')
 	{
-		$Response = $svc.Core.InvokeEntityActionWithSingleResult("Tenants", 'Information', [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Tenants", 'Current', [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
 	}
 	else
 	{
