@@ -28,29 +28,10 @@ Get-Node -ListAvailable -Select Id, Name
 
   Id Name
   -- ----
- 218  abhenry
- 271  abhenry
- 358  abhenry
- 572  abhenry
- 636  abhenry
- 666  abhenry
-1017  abhenry
- 270  absence
- 406  absence
- 490  absence
- 568  absence
- 607  absence
- 613  absence
- 745  absence
- 875  absence
- 907  absence
- 967  absence
-1024  absence
-1081  absence
-1179  absence
- 361  aggrade
- 373  aggrade
-...
+   8  SomeArbitraryNode
+  15  SomeOtherNode
+  42  TheAnswerToEverythingNode
+ 667  NeighbourNode
 
 Retrieves the id and name of all Nodes.
 
