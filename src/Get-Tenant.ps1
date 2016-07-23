@@ -134,67 +134,31 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Lists all available products
+	# Lists all tenants
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
-	[Switch] $ListAvailable = $true
+	[switch] $ListAvailable = $true
 	,
-	# Tenant id to search fore
-	[Parameter(Mandatory = $true, ParameterSetName = 'Id')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[String] $Id = $null
+	# Tenant id to search for
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'Id')]
+	[Guid] $Id
 	,
-	# Id from the parent tenant
-	[Parameter(Mandatory = $true, ParameterSetName = 'ParentTenant')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[String] $ParentTenantId = $null
+	# Specifies to return all child with this tenant id
+	[Parameter(Mandatory = $false, ParameterSetName = 'Parent')]
+	[Guid] $ParentId
 	,
 	# External Tenant id
-	[Parameter(Mandatory = $true, ParameterSetName = 'ExternalId')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[String] $ExternalId = $null
+	[Parameter(Mandatory = $false, ParameterSetName = 'ExternalId')]
+	[string] $ExternalId
 	,
 	# Tenant name or a part of it to search for
-	[Parameter(Mandatory = $true, ParameterSetName = 'Name')]
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'Name')]
 	[ValidateNotNullOrEmpty()]
-	[String] $Name = $null
+	[string] $Name
 	,
-	# Typ of tenants to search for
-	[ValidateSet('All', 'External', 'Internal')]
+	# Specifies the type of tenant to search for
+	[ValidateSet('External', 'Internal')]
 	[Parameter(Mandatory = $false)]
-	[string] $TenantTyp = 'All'
+	[string] $ExternalType
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
@@ -204,7 +168,7 @@ PARAM
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias('ReturnFormat')]
+	[Alias('ReturnFormat')]
 	[string] $As = 'default'
 )
 
@@ -235,34 +199,32 @@ Process
 	else
 	{
 		$Exp = @();
-		If ($PSCmdlet.ParameterSetName -eq 'Id') 
+		if ($PSCmdlet.ParameterSetName -eq 'Id') 
 		{
-			$Exp += ("Id eq guid'{0}'" -f $Id);
-			# write-warning $Exp;
+			$Exp += ("Id eq guid'{0}'" -f $Id.Guid);
 		}
-		elseIf ($PSCmdlet.ParameterSetName -eq 'ParentTenant') 
+		elseif ($PSCmdlet.ParameterSetName -eq 'Parent') 
 		{
-			$Exp += ("ParentId eq guid'{0}'" -f $ParentTenantId);
+			$Exp += ("ParentId eq guid'{0}'" -f $ParentId.Guid);
 		}
-		elseIf ($PSCmdlet.ParameterSetName -eq 'ExternalId') 
+		elseif ($PSCmdlet.ParameterSetName -eq 'ExternalId') 
 		{
 			$Exp += ("ExternalId eq '{0}'" -f $ExternalId);
 		}
-		elseIf ($PSCmdlet.ParameterSetName -eq 'Name') 
+		elseif ($PSCmdlet.ParameterSetName -eq 'Name') 
 		{
 			$Exp += ("substringof('{0}', tolower(Name))" -f $Name.ToLower());
 		}
 		
-		if ($TenantTyp -ne 'All')
+		if($ExternalType)
 		{
-			$Exp += ("ExternalType eq '{0}'" -f $TenantTyp);
+			$Exp += ("ExternalType eq '{0}'" -f $ExternalType);
 		}
 		
-		$FilterExpression = [String]::Join(' and ', $Exp);
+		$FilterExpression = [string]::Join(' and ', $Exp);
 		$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 	}
 	
-	# $OutputParameter = $result
 	$OutputParameter = Format-ResultAs $Response $As
 	$fReturn = $true;
 }
@@ -280,6 +242,23 @@ End
 } # function
 
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Tenant; } 
+
+# 
+# Copyright 2016 d-fens GmbH
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
