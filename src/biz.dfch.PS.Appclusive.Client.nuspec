@@ -28,7 +28,30 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
     <releaseNotes>20160723
-WIP
+# NOTES
+
+* biz.dfch.PS.System.Utilities
+  * updated requirement on dependent package version to `2.2.0` (was `1.0.9`)
+* biz.dfch.PS.System.Logging
+  * updated requirement on dependent package version to `1.4.1` (was `1.3.1`)
+
+# FEATURES
+
+* Enter-Server now supports the setting of `SaveChangesDefaultOptions`
+  * you can now choose between `MERGE`, `PUT` and `PATCH` update operations
+  * this can be configured via module configuration file `SaveChangesDefaultOptions` element
+  * endpoints are now dynamically dicovered via `DataServiceContext` from `biz.dfch.CS.Appclusive.Api`
+  * the `Controllers` element in the module configuration file can now be removed and is no longer needed
+
+* Get-Tenant
+  * added -Current switch to display `TenantInformation` of the currently logged in user
+
+* Get-User
+  * added -TenantInformation switch to display `TenantInformation` of the currently logged in user
+
+* Get-EntityKind
+  * added ResolveByName switch for name to id conversion
+  * added ResolveById switch for id to name conversion
 
 * installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
     <copyright>(c) 2015-2016 d-fens GmbH</copyright>
