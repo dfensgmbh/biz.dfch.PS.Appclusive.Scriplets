@@ -66,6 +66,8 @@ Param
 
 Begin 
 {
+	trap { Log-Exception $_; break; }
+
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
 	Log-Debug $fn ("CALL. ServerBaseUri '{0}'; BaseUrl '{1}'. Username '{2}'" -f $ServerBaseUri, $BaseUrl, $Credential.Username ) -fac 1;
@@ -75,110 +77,51 @@ Begin
 Process 
 {
 
-[boolean] $fReturn = $false;
+	trap { Log-Exception $_; break; }
 
-try 
-{
+	# Default test variable for checking function response codes.
+	[Boolean] $fReturn = $false;
+	# Return values are always and only returned via OutputParameter.
+	$OutputParameter = $null;
+
 	# Parameter validation
 	# N/A
 	
 	[Uri] $Uri = '{0}{1}' -f $ServerBaseUri.AbsoluteUri.TrimEnd('/'), ('{0}/' -f $BaseUrl.TrimEnd('/'));
-	foreach($k in (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.Keys) 
+	
+	# get all available DataServiceContexts from Api module
+	$endpoints = (Get-DataType 'System.Data.Services.Client.DataServiceContext' -Literal -CaseSensitive -BaseType -AssemblyName biz.dfch.CS.Appclusive.Api) -cmatch '^biz.dfch.CS.Appclusive.Api.';
+	foreach($endpoint in $endpoints) 
 	{ 
-		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Controllers.$k;
-		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $k, $UriService.AbsoluteUri);
-		switch($k) 
-		{
-		'Diagnostics' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
+		$endpointName = $endpoint.Split('.')[-1];
+		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, $endpointName;
+		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $endpoint, $UriService.AbsoluteUri);
+		
+		# create DataServiceContext w/ credentials
+		$dataServiceContext = New-Object -TypeName $endpoint -ArgumentList $UriService;
+		$dataServiceContext.Credentials = $Credential;
+		
+		# set JSON as MIME type if specified
+		if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') 
+		{ 
+			$dataServiceContext.Format.UseJson(); 
 		}
-		'Core' 
+		
+		# apply options for saving changes (MERGE, PUT, PATCH)
+		$saveChangesDefaultOptions = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).SaveChangesDefaultOptions;
+		if($saveChangesDefaultOptions)
 		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Core.Core($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
+			$dataServiceContext.SaveChangesDefaultOptions = $saveChangesDefaultOptions;
 		}
-		'Cmp' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Cmp.Cmp($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		'Infrastructure' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Infrastructure.Infrastructure($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		'Csm' 
-		{
-			$o = New-Object biz.dfch.CS.Appclusive.Api.Csm.Csm($UriService.AbsoluteUri);
-			$o.Credentials = $Credential;
-			if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') { $o.Format.UseJson(); }
-			(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$k = $o;
-		}
-		default 
-		{
-			Log-Error $fn ("Unknown service '{0}': '{1}'. Skipping ..." -f $k, $UriService.AbsoluteUri);
-		}
-		}
+		
+		# save context into Service module variable (svc)
+		(Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services.$endpointName = $dataServiceContext;
 	}
 
 	$OutputParameter = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services;
 	$fReturn = $true;
 
-}
-catch 
-{
-	if($gotoSuccess -eq $_.Exception.Message) 
-	{
-			$fReturn = $true;
-	} 
-	else 
-	{
-		[string] $ErrorText = "catch [$($_.FullyQualifiedErrorId)]";
-		$ErrorText += (($_ | fl * -Force) | Out-String);
-		$ErrorText += (($_.Exception | fl * -Force) | Out-String);
-		$ErrorText += (Get-PSCallStack | Out-String);
-		
-		if($_.Exception -is [System.Net.WebException]) 
-		{
-			Log-Critical $fn "Login to Uri '$Uri' with Username '$Username' FAILED [$_].";
-			Log-Debug $fn $ErrorText -fac 3;
-		}
-		else 
-		{
-			Log-Error $fn $ErrorText -fac 3;
-			if($gotoError -eq $_.Exception.Message) 
-			{
-				Log-Error $fn $e.Exception.Message;
-				$PSCmdlet.ThrowTerminatingError($e);
-			} 
-			elseif($gotoFailure -ne $_.Exception.Message) 
-			{ 
-				Write-Verbose ("$fn`n$ErrorText"); 
-			} 
-			else 
-			{
-				# N/A
-			}
-		}
-		$fReturn = $false;
-		$OutputParameter = $null;
-	}
-}
-finally 
-{
-	# Clean up
-	# N/A
-}
+
 return $OutputParameter;
 
 }
@@ -186,6 +129,8 @@ return $OutputParameter;
 
 End 
 {
+	trap { Log-Exception $_; break; }
+
 	$datEnd = [datetime]::Now;
 	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 }
@@ -216,8 +161,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUC+TqEnZs8S8xCj/sZM7+JNz1
-# a7qgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmh1aIS5GcYTbVld/VMTeCScr
+# 706gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -316,26 +261,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTEMVPTaEcDjK7S
-# WgWB3SyY35ZVCDANBgkqhkiG9w0BAQEFAASCAQAMEzAOSMl1gLjEvtJkEGPsEfUz
-# FupttErUz8nGtRhxc4DM+sggqliYD2G75HOxflBcWKpxNZER+lWT9bY3xxy/Lko8
-# 2/q1uCKbYB+AXcDVyT2V4piWsAbSCP/DPSTfloKTR5a0mlrQVqYLJh6n/RKYSzSo
-# XVn9eq1JdsS1/i7ddFF5Y/E07KXIB0YU+tGxxGdESTZEDc9SphrokZdKOhVws2tG
-# OoCnU14DqHtSfNI/n8zPY4Eq2cE7vhYRyUnHhB2grv2V81f0sv4Zyz7i4TwmfC1V
-# LR+2Y0UXqsykTR8nYjGA8zLoACMvhXO+Hq241EA6qVHQwEYqxJYtFxMqiZkZoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQS9Mfr+fgSmCZO
+# sXCOVla7VymN/jANBgkqhkiG9w0BAQEFAASCAQAKIRvA+3Zff3Cpj9lWJvIEGvJZ
+# S11ZbNNYKNBzg/nZsAkh5QKuXSfv3aBRxo02NPoSNNo7XPz56gZDLsbUvVYboqPn
+# ZKdDwQ5FurRbkCTa4cyzjVxoiUwg9gs7zZGAZ181FN3cGRRJK20d82SIl4oUy2b2
+# xKQ46uMicPn6sHqujSuxDqyQdRGs+1D0OzfxzpW5lVkBnAep5KsM+dwtmM9SDmSU
+# EHBPu/13+I++Gb3UXzFXDeVSWHr/TXSOQE1GreM3hz/9fZRtaaH3VNlxp77efXa5
+# 8mlSaei7uHc4/u1ulCf58Ue4+N7FFDr/b6V2Ofq4x+521FqtLCkWpXJ9qVsnoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyMzA3MDQyNFowIwYJKoZIhvcNAQkEMRYEFPjY6atbb/J6n1mRuSg4UBGsN/Gl
+# MDcyMzIwNTQyN1owIwYJKoZIhvcNAQkEMRYEFJ8QJSXFD66C0FGBSNaEAh/CRhLv
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBRfw3q1n1DdCGw4vQ1
-# QrPU/FUDduNPxoq84tftT5SsUz9TJjCuZY3qi+DnsLn2ZQiZgjb5SAUf791YBRa0
-# vobFQ7X5W6uwRj0Hu/1/oP82jdU6EU4qqZT8Hv6ck37cEyV5DYLz2nU+ncJkctGv
-# zAzjg2zI0DrmzsHTVi0hZjjLq6aVIQJER8u5MzYT3G/CzwRLfJzhEYaFvYdakf2k
-# EHD89U/Xr45CI78XKsxDK34qW4XCzVE2WttdeGl3hzrqqBTe5CODpegilC9A5we+
-# C/xlUnb0UfLhZiBKuc12sC3qGmwUrPjiWnOEA7xjC5lE97vclxddPgXXo0Nu1zen
-# Kvfy
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBc5JuOXs/wcD2w5YP4
+# pDb5ANgCLbXwLTjKZ5/EIq4AcNTBVM71JZ8KvwVm6KGqFf9YwrlWt29sN9lqYX/+
+# 8jjCRBr+Ob5g31YoZsdiSmymSIZulb6X21Pyimch7safeEau+yYvibP/vE58u5T9
+# EJ2HNSy5ayriIhRGv2Y1scxhp1bOS8Oqh7Swog0vdrAxrZcksG8v7jilz525Bd4W
+# AbaYcYraWILA4KCLRDYZyzs8wzhVdNjmr1YgxoA4p891rraZrIRn0MCHgj2y5q2P
+# zv0dkFd075yBsD93HKQGFou3jN64Tf4bmEZDF7g2oAOdsE0s9AwEqHuJQmJ/3f0h
+# 0zYD
 # SIG # End signature block

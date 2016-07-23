@@ -116,6 +116,25 @@ Name         : GROUP_TENANT
 
 This call return all tenants where the name "te" include and the ExternalType "Internal" is.
 
+.EXAMPLE
+# Gets information about the tenant of the currently logged in user
+PS > $tenantInformation = Get-Tenant -Current;
+PS > $tenantInformation
+Id              : e3c70408-9da0-45f2-ab7b-29d1081e948a
+ParentId        : d9c2feda-f3da-488a-8dd3-3747e40b6c6a
+NodeId          : 42
+JobId           : 123
+CustomerId      : 5
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+PS > $tenantInformation.BuiltInRoles
+CloudAdmin         : 14
+CloudUser          : 15
+CloudGuest         : 16
+CreatorOwner       : 12
+Everyone           : 13
+AppclusiveEveryone : 5
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Tenant/
 
@@ -170,6 +189,12 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[Alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies to retrieve tenant information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'current')]
+	[alias('WhoAmI')]
+	[switch] $Current = $false
+	
 )
 
 Begin 
@@ -195,7 +220,11 @@ Process
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
 		$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-	}	
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'list')
+	{
+		$Response = $svc.Core.InvokeEntityActionWithSingleResult("Tenants", 'Information', [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+	}
 	else
 	{
 		$Exp = @();
@@ -262,8 +291,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Tenant; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyHiv6T0xUXqB58zRymyGgH2D
-# aBOgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUkhNxBiv99q8KKK4UqbW8H23p
+# ynKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -362,26 +391,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Tenant; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS5QS6SuEPslsHB
-# +l8pHmCA300dsjANBgkqhkiG9w0BAQEFAASCAQB2C/iO0j2IyHtWYKN97fWdxCHr
-# Ut4kE2BS2UrMemhWlkA0PILkBHSyYx+xqvIFdFxnX23E27SKDXqGwNgQjQ+sNjt1
-# nf9JiT0I/LikrMNlKhRa8uKURRUByhJXkF4q36YasdRsc3pK/1YsZ6np1zzeRQJW
-# xsS+jJ/2/jLDVLAKNN2JWxE1ZpFMdAgF2IF1dnIlXjGiPuu55Gp/l1zMJud52t/a
-# jB9yJlACSBI6hO+wKiKU0KoVDrp+b0f+UNWoJltK1qsWu6scQnQvYNfU24eJ4Jvu
-# cxizKc1Rk7tPAHyTTVR7TQl/T5VFbu2a6ZwbKQRYIuyj2p/WPQfK0G3hR1DOoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR17ZVaMsCqGYkr
+# J7B0ylA8rd4jhTANBgkqhkiG9w0BAQEFAASCAQA9YmvH/1h3AVyL16o3GWs7l+pl
+# 3uojHNazOR+YWt3+lqsb7fMWut8d7mC9bTnY1Ci0jhPVmMgTTB10mPRKpLZ7SJ5J
+# JtVTyimiDfnVOFKUI4xgi4mIQcK25nP7qhLRFoNE9iWOIhyUXre12pxyuoRm945V
+# xg+foTABqXlaIskW0CNLy/TP1Hau+z0kF8CeSuPWaM97n0cUvjDCYjmymdh28Nah
+# I2iYo7NrX7qNJaZt7NwQuS3ivijrB8LHVVHgf7C/AnV+ZfesakYTUKcseL57hvOM
+# v73z5DaI03WHHUQELsImNvJdJyDoXL0BOOpy3LL1PC/lpu8EM4agsF7csG6JoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyMzA3MDQzMlowIwYJKoZIhvcNAQkEMRYEFIXp2bvEpFaCOOMtMB2+ZBrOV080
+# MDcyMzIwNTQ0MFowIwYJKoZIhvcNAQkEMRYEFDDqMIGpQgvkl3fBkWgEFwWtz0gS
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAxLDjhAh4ayZoRtT05
-# cDVg7PxCkf4usSQ5rP/1qTnK+eADbkfyEjTFd0dXv8yUEglyg82PmahDQzTpMeTM
-# 16xyUfSzeXrTIA9P0UeYIClTmjnsTZKmgbtaRj6MY8g0THZLFj8CJ+niqRbL2tIE
-# yyElpHOROzH95Ltk7u6E7rUZsF3uPlg3oHzrwbBKpU8FJHKLV3kjHJvDDdaFvBTR
-# Dek0J+cNzQ+g591qHcelrjXYRDyf43xwXPx4lzTaRyUmaew7hgRogFvuyQdPqvwC
-# K0BlnYmwo2vzWea3Qv34MbJTaMM0AXrI3UqDdibpKNqtj+1JM8OXw1YwyFANmx9G
-# MayF
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBxUiw6TBwGdV58Un6w
+# 1gmM+kYKOhYj82kZ1BTz0HElPmgCRmPl3PNVZaI0FNAe5T1p1ngudUWGmAS5CwjN
+# ElkZFH3dVYRS5CoS3c/xMAVanEcuHO99E8RRcMViAKsLDa+BhiDxrrY8qezJIfJs
+# MUwIeb52KpwJYfGQ9R2vGYkRPaEKfevcvbRO9gCKBPiiqXEHXNE0iTzb5WpwtimU
+# odq5GaEUkSOej8yzfsR84jkswfcG/byCq/yMeLV+QzV10c2C/p9dwwitP/7/aHzc
+# mY+3/8p6NqRVSRhT2iLmh0dExeB2FMrpHpc91ZDcyGXZOaVCBnJB0pEZOgmYQViF
+# T8M7
 # SIG # End signature block

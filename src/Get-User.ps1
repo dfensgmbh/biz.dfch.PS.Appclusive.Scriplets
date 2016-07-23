@@ -153,6 +153,25 @@ BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
 PS > (Get-User -WhoAmi).Name
 schnittenfittich
 
+.EXAMPLE
+# Gets information about the tenant of the currently logged in user
+PS > $tenantInformation = Get-User -TenantInformation;
+PS > $tenantInformation
+Id              : e3c70408-9da0-45f2-ab7b-29d1081e948a
+ParentId        : d9c2feda-f3da-488a-8dd3-3747e40b6c6a
+NodeId          : 42
+JobId           : 123
+CustomerId      : 5
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+PS > $tenantInformation.BuiltInRoles
+CloudAdmin         : 14
+CloudUser          : 15
+CloudGuest         : 16
+CreatorOwner       : 12
+Everyone           : 13
+AppclusiveEveryone : 5
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
 
@@ -309,7 +328,7 @@ Process
 	}
 	elseif($PSCmdlet.ParameterSetName -eq 'tenant')
 	{
-		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Tenants", "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+		$Response = Get-Tenant -Current;
 		Contract-Assert (!!$Response);
 	}
 	else 
@@ -433,8 +452,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZAh9w17us7WMvblmVOjw9W8i
-# MRegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUimmviqqULuOHhbhF0nOc1SCM
+# s5OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -533,26 +552,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTCfcpOzVFf+XAF
-# +bG8kwUd/gzWEzANBgkqhkiG9w0BAQEFAASCAQCTMZooCUW2LQMs/nI9uvlx4ygj
-# mYnIMGJc3ebEqJNcjcPiie/otmA8envCR2KMyoaSfJQThMU9pw3CDw+mdJxkmQJt
-# IPCureCmOGa1SehKCy4Okpr6aJOrN2/dNH50woi38FCh2S8htmHsJe3I2VZGNOtb
-# npNik1wyTTpG+WJWBxO+f5VaT+oGfCEouaqxKacHnqsFKOQiefstuxEpMZMsjNx4
-# swCP8uRKH14zdtNoWIg9pV8Oa77XP1Y/CEJtDZJjCGyLyOSuXQrlMj2jlQMQvJeb
-# N4KhnSB5nix1gfFs2OJxzFwJHeq3DYA+W/3TQ2Dro1LN3Qx4YjbL4+f1rUjuoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS1a+SPEnntCxc6
+# Mmje9udTYDqLrDANBgkqhkiG9w0BAQEFAASCAQAr3zidPEyxj5hzSl779En1YUe1
+# k3HGmIAS0+WQurl7Imw/+I1ainMWZ6OBZ/XyjWyheh6DhD2h7K9ub0tT58NC7IL6
+# bO4kV5FMf6ZhCWHYvZgpAnpL1TKqsQWsCCQDsKITDquduQFAQgfx09CgLrtvELnO
+# 8kH+oeQ4EHdlPVMxwLTZiQ7HCm/qf1kRhlX7V9n/abZtolkZWLHZ7VojnIArttYT
+# qjX91zn1ZomMkX+Dic0vz52HOMXemOTFQyjgXomCOhqpQf4/OppqHpnnLQmep69w
+# cjXt62vCqfJTPPn+BBrTQ69ikz/vYQRl7I+fg71VBAOSVGAALhnE5FudHyBcoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyMzA3MDQzM1owIwYJKoZIhvcNAQkEMRYEFN9wB26ygLhW1ElLcvYpHyRNom68
+# MDcyMzIwNTQ0M1owIwYJKoZIhvcNAQkEMRYEFA7523iryXpjCtauFCdIPhuWw2L1
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCZFYCp57Hi4eVDdxvK
-# xTbg3NyuqhX2c2W+15LjkJUxLCGMlkpM3QAPlaEduLFFlecdppwAYEJy22pvMIIE
-# dB1jSXeYOHJEwpRi9qFgxXurVcGgM9cOtTbhKqDdcxLUGxD6hJcLqRgiuleytSbS
-# snqGx4VmHAWvvZG/phX2wLmUmCtffdnBVk/dCJn+iW2gAfHMRI2JJcMujGfUyPI5
-# gOSEjLAPMk6Qzi9jvQjApdX6onQj0FgCFWNQRR72BIt52IgrpMDNL+h8NCoA3FsL
-# 8wWq8MguuTXJSVlEWAN4XN0PvRLlHm+WTP8UlDFsmOwuhMBN8dqV/Q3ToLq9Z0lS
-# cO50
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQApWE+qjUo8+pMIh3JO
+# o7S4dGlSoXhnVwg7bTYfCGaU2HkKuSYGBj1vsGATZ+XrsU3s4rltT9k45ZRbPnpM
+# iFm0y8iS0YeYWo6zO0b4Yo462UTSgyPR32J3NYeawVAmef9JroyMfY9CsNAT5b+Y
+# 9om4HjJoaYzCw9X/Z+uJX6JQ3jlNdRnhhTYjBlejx32Kz0jZXgHxZFoVAMA4bOCE
+# PE8pqGmRMeD30Rvvlagic4r0Gert4+jnaw/IZFCww1Yt5FS4Rlnnbp/lPf85FmqY
+# VzeoQnbFCjxgcbNArHDEodiY5lGUeFcV59Tzcnwlawfe643T7m4Eu4m3KYJ0QxrD
+# Pyr5
 # SIG # End signature block
