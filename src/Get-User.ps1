@@ -109,6 +109,50 @@ Retrieves the 'Name' property of a User with Name 'SuperUser'
 and Administrator if the entity is not found.
 
 
+.EXAMPLE
+# Retrieves information about the currently logged in user
+
+PS > Get-User -Current
+ExternalId   : schnittenfittich
+ExternalType : Integrated
+Mail         : schnittenfittich@appclusive.net
+Id           : 42
+Tid          : f2de53c1-62d0-4c15-8626-dac575f857a1
+Name         : schnittenfittich
+Description  : schnittenfittich
+CreatedById  : 1
+ModifiedById : 1
+Created      : 6/22/2016 3:22:29 PM +02:00
+Modified     : 6/22/2016 3:22:29 PM +02:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    :
+ModifiedBy   :
+
+.EXAMPLE
+# Retrieves tenant information about the currently logged in user
+
+PS > Get-User -TenantInformation
+Id              : 4048fba5-b81e-4cae-b2f4-6dbb90352875
+ParentId        : 199a7dca-ca61-4932-ada6-6c19f4af68851
+NodeId          : 42
+JobId           : 5
+CustomerId      : 8
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+	CloudAdmin         : 19
+	CloudUser          : 20
+	CloudGuest         : 21
+	CreatorOwner       : 18
+	Everyone           : 17
+	AppclusiveEveryone : 7
+
+.EXAMPLE
+# Retrieves the name of the currently logged in user
+
+PS > (Get-User -WhoAmi).Name
+schnittenfittich
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
 
@@ -189,6 +233,17 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies to retrieve information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'current')]
+	[alias('WhoAmI')]
+	[alias('CurrentUser')]
+	[switch] $Current = $false
+	,
+	# Specifies to retrieve information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'tenant')]
+	[alias('Tenant')]
+	[switch] $TenantInformation = $false
 )
 
 Begin 
@@ -247,6 +302,16 @@ Process
 			}
 		}
 	} 
+	elseif($PSCmdlet.ParameterSetName -eq 'current')
+	{
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
+		Contract-Assert (!!$Response);
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'tenant')
+	{
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Tenants", "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+		Contract-Assert (!!$Response);
+	}
 	else 
 	{
 		$Exp = @();
@@ -368,8 +433,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZ0uvIWkkmnePK3JCBBnyl6Yv
-# NsegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZAh9w17us7WMvblmVOjw9W8i
+# MRegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -468,26 +533,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQHSnHRdkqb4RPb
-# dML1EmtjiXv0LDANBgkqhkiG9w0BAQEFAASCAQA7C7MZJC7BIhGv++1pfgGO4hCo
-# mRdK60kfR1J862NBUiSAve5stnOVg52FToRl8Y67dF/ragAb1VGgAQAdwukRs7RA
-# TRi30rS2MvpDt59U7whLVkRWr7HMZU8YFY37oWEWVVsVo+ehE5NJBUkXoi7amEPh
-# IYkOkD2bwQccw6QCaYd1ADwKEC8Vy/BjULjQPvKNndcBLfAMgIV4cJCYgqINHMzk
-# zjMfdizzqN1dYUzGKPluxJ5kTb1IVsjQ1l64ZutJg1bQLUDmWTs/y/M7y4noF+1l
-# aQ7MA3BsaqqFgitnY3x1q6+MAtyceGjT4pJ2hydxxFNAkWguXBKU+Ae7s0IEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTCfcpOzVFf+XAF
+# +bG8kwUd/gzWEzANBgkqhkiG9w0BAQEFAASCAQCTMZooCUW2LQMs/nI9uvlx4ygj
+# mYnIMGJc3ebEqJNcjcPiie/otmA8envCR2KMyoaSfJQThMU9pw3CDw+mdJxkmQJt
+# IPCureCmOGa1SehKCy4Okpr6aJOrN2/dNH50woi38FCh2S8htmHsJe3I2VZGNOtb
+# npNik1wyTTpG+WJWBxO+f5VaT+oGfCEouaqxKacHnqsFKOQiefstuxEpMZMsjNx4
+# swCP8uRKH14zdtNoWIg9pV8Oa77XP1Y/CEJtDZJjCGyLyOSuXQrlMj2jlQMQvJeb
+# N4KhnSB5nix1gfFs2OJxzFwJHeq3DYA+W/3TQ2Dro1LN3Qx4YjbL4+f1rUjuoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA1MVowIwYJKoZIhvcNAQkEMRYEFGHLqzdYxFPV5gwlKC1FEzuN2XMU
+# MDcyMzA3MDQzM1owIwYJKoZIhvcNAQkEMRYEFN9wB26ygLhW1ElLcvYpHyRNom68
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAOhBvowuXCIXOaXO6R
-# WXUgEEYD18p8dTiFgYLeALTnLwU0G8+Aw3mX6pgzxaOBsinRX0VGs/NmKCueG58o
-# TWkBUnMAXy8ywS87w569NS2HnT65jVfNP3550TjXl6gzQ4+ocxFbgQSHYE6YByKq
-# Fw5ip9o3orB/xe76MqmBN6dQIY5JPVEhtgBSQ+wDMJYnmxw8IkTo9JE7Xc0hDPi2
-# LzWktPJpeGB6TOm4V1Pc/HlCzLUn38coudPCR9FOO182tjJUGAEXJtg4TSYA/pC3
-# QMSJMo3pIrFbtC8+xUcW5HWzRuldY359Jxun9lFEdiYdJDKkpBrjv4EhJgFQuP1f
-# B90h
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCZFYCp57Hi4eVDdxvK
+# xTbg3NyuqhX2c2W+15LjkJUxLCGMlkpM3QAPlaEduLFFlecdppwAYEJy22pvMIIE
+# dB1jSXeYOHJEwpRi9qFgxXurVcGgM9cOtTbhKqDdcxLUGxD6hJcLqRgiuleytSbS
+# snqGx4VmHAWvvZG/phX2wLmUmCtffdnBVk/dCJn+iW2gAfHMRI2JJcMujGfUyPI5
+# gOSEjLAPMk6Qzi9jvQjApdX6onQj0FgCFWNQRR72BIt52IgrpMDNL+h8NCoA3FsL
+# 8wWq8MguuTXJSVlEWAN4XN0PvRLlHm+WTP8UlDFsmOwuhMBN8dqV/Q3ToLq9Z0lS
+# cO50
 # SIG # End signature block

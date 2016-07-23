@@ -1,35 +1,153 @@
-# Import-Module.ps1
-# 
-# Place any pre-initialisation script here
-# Note: 
-# * When executed the module is not yet loaded
-# * Everything you define here (e.g. a variable) is defined OUTSIDE the module scope.
 
-# If this script is loaded via "ScriptsToProcess" it will incorrectly 
-# show up as loaded module, see the bug on Microsoft Connect below: 
-# https://connect.microsoft.com/PowerShell/feedback/details/903654/scripts-loaded-via-a-scriptstoprocess-attribute-in-a-module-manifest-appear-as-if-they-are-loaded-modules
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-# 
-# Copyright 2014-2015 d-fens GmbH
-# 
+Describe -Tags "Get-Tenant" "Get-Tenant" {
+
+	Mock Export-ModuleMember { return $null; }
+	
+	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"
+	
+	$svc = Enter-ApcServer;
+
+	Context "Get-Tenant" {
+	
+		# Context wide constants
+		# N/A
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
+		}
+
+		It "Get-TenantListAvailable-ShouldReturnList" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -ListAvailable;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+
+		It "Get-TenantByPartialName-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Name SHARED;
+
+			# Assert
+			$result | Should Not Be $null;
+			0 -lt $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Name.Contains('SHARED') | Should Be $true;
+		}
+
+		It "Get-TenantByName-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Name SHARED_TENANT;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Id | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.Name | Should Be SHARED_TENANT;
+		}
+
+		It "Get-TenantById-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Id '44444444-4444-4444-4444-444444444444';
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Id | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.Name | Should Be SHARED_TENANT;
+		}
+
+		It "Get-TenantByExternalId-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -ExternalId '44444444-4444-4444-4444-444444444444';
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Id | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.ExternalId | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.Name | Should Be SHARED_TENANT;
+		}
+
+		It "Get-TenantByParentId-ShouldReturnListWithChildren" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -ParentId '11111111-1111-1111-1111-111111111111';
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+
+		It "Get-TenantByIdWithNotMatchingExternalType-ShouldReturnNull" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Id '11111111-1111-1111-1111-111111111111' -ExternalType:External;
+
+			# Assert
+			$result | Should Be $null;
+		}
+
+		It "Get-TenantByIdWithNotMatchingExternalType-ShouldReturnNull" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Id '11111111-1111-1111-1111-111111111111' -ExternalType:External;
+
+			# Assert
+			$result | Should Be $null;
+		}
+	}
+}
+
+#
+# Copyright 2015 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUnm+sW2jeLI+SbgIvQnMgDZ0v
-# 7mqgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdCfPwM1BzEyWobKU3SXVUjm/
+# 32CgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -128,26 +246,26 @@
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBT+oLa3++YrjGhq
-# EXa72tzGpEW9BzANBgkqhkiG9w0BAQEFAASCAQA6phowDAr6snOiWCXqhB60LYk+
-# arB8OTsl/9ubuxgtUnhYqACQpJBkgFG4J4KFc1HTQ5Z4lX9VhaOU9dJlvYhCNVhU
-# crLG0NHANU62ZU3LZg5nzeDrBYgiby1zeYQDdtfX24kxtCV0lMnFD2zRX1uIyMka
-# VsrnibngJWeuEwdlTB0LdHKkBCMqnq2CmfWJrzixkniocJJ1mMP3piPt3GbxSVNE
-# mHq49vMF5hrCvSPnOZ7C7cimp4ACfeGSfS0rKMQuFQNOL1XmzKNJOL4NEE9s+GDf
-# LXPKxIcTbO9+gG4mbdTivjDE74eyZX3JsfYtYS0dtIGrcYulb5tOu4PVaEMLoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTTZYE4g6Lm63SB
+# yHRYqN1Dvzz2EDANBgkqhkiG9w0BAQEFAASCAQBtxXd8B97w6NpyYqGexXd7NsAh
+# N/jqmspg9Tyqmrz0U32WnqWz2NqDrZ+LTzCHsWPm2aMH8Q4NFdBdeuZIKAib/1Jj
+# bJffG/GIxnA1Ql2xgjYoxIjL4NXpPregmpDYKMSwjoAleKv/EcnjSH7wfHrtaqID
+# 5qLCnn1CgXBBMCrwuBB31kjGbEdleVk73+dLmV9NDPBMoMsINVmGTy1Di2017db7
+# Nje84G00EK7EvMQQmhyJLuLsj1Y6VHrd+S+RsoVzB8ALYXdF9urMmON/JXzwfzOH
+# SsWcjpSSwQelpppl0dXhgWcI0ichNHtEsBk14qaJj9wprZuU354TA2P8LnpZoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyMzA3MDQzNVowIwYJKoZIhvcNAQkEMRYEFFGN9GmmJlV94dUoUtiEVQwtEzh7
+# MDcyMzA3MDQzMlowIwYJKoZIhvcNAQkEMRYEFN3y5eSSb2KKQ0RSLYwHkAls3jcR
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBxJWv6suXqnMgk1IgF
-# mC7lA9Ww/W7tIbsUJ6GYyfhyvIrFyeTzJ9bAQ9+lYa2GYdm6P6tbNMaX4DbTa6qG
-# msbTUl1uO9WaT6o1PK1xqHOnlRGiFh6YjOTYFKF4XG77ybz2bveEGESbMoFFSJMl
-# +KV7FmIfU8rHDZPJwX9vZCSAI1RdMj6ljnMNbmMkAtAhAed7Enesqex0EKBZ/biu
-# gSDJGyRPnHQsOzWsJqG+6v5QVQeCnXLRZnUYXmh6JYv/CFaS0nA/9iuzMCOWC6HK
-# w4VYqpKSvCVoiR95tTgTSVKH089OmeDhgNrnMhbpU0LvJsmYV/JepwVRcaM7YGek
-# rRmu
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCbhADTl71fqmhHfZBU
+# oUr6La1Npon+xUJP7pyqpmd9eOtlLoK2iPER9fBEcll+6/zK94rybUdMCCjMcDip
+# /dGlAOE8qSsal4Hs/qATFAMoRq+X/Tvh9ayMJAPwJ7EQqzLLJLWDITBVFyycrdnC
+# DlSw6A0FfDkBfIZ0QvkW0fU9niy5W9p8w2h5VHF4mAvCjF+M2yMXzugCdz/V7xdI
+# EbAQBKP7eMq0LnZD1eL9TQ5YWrYieNPFBTmHd9HOFR8Ng09vAN3fgHZLtvXXNZhS
+# i0NN2Nzq17NmqM9FsI9txUKz3/X5H8+m6qsLrweu00VOP40YgXvPosSLoG2dlzMP
+# 1DUm
 # SIG # End signature block
