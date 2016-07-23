@@ -221,6 +221,14 @@ PARAM
 	[Alias('top')]
 	[int] $First
 	,
+	# Retrieves the EntityKindId for the specified EntityKindName
+	[Parameter(Mandatory = $false, ParameterSetName = 'resolveByName')]
+	[string] $ResolveByName
+	,
+	# Retrieves the EntityKindId for the specified EntityKindName
+	[Parameter(Mandatory = $false, ParameterSetName = 'resolveById')]
+	[long] $ResolveById
+	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
@@ -297,6 +305,28 @@ Process
 			}
 		}
 	} 
+	elseif($PSCmdlet.ParameterSetName -eq 'resolveByName') 
+	{
+		$Response = @();
+		$names = [Enum]::GetNames([biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]);
+		foreach($name in ($names -match $ResolveByName)) 
+		{ 
+			$Response += [Enum]::Parse([biz.dfch.CS.Appclusive.Public.Constants+EntityKindId], $name).value__;
+		}
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'resolveById') 
+	{
+		$Response = @();
+		$values = [Enum]::GetValues([biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]);
+		foreach($value in $values) 
+		{
+			if($ResolveById -eq ($value -as [long]))
+			{
+				$Response = $value.ToString();
+				break;
+			}
+		}
+	}
 	else 
 	{
 		$Exp = @();

@@ -188,10 +188,83 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			0 -lt $result.Count | Should Be $true;
 		}
 	}
+	
+	Context "EntityKindName-Resolver" {
+	
+		It "ResolveByEntityKindName-Succeeds" -Test {
+			
+			# Arrange
+			$name = "^Node$"
+			$id = [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::Node.value__;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveByName $name
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $id;
+		}
+
+		It "ResolveByEntityKindNameWithMultipleMatches-ReturnsList" -Test {
+			
+			# Arrange
+			$name = "Bag"
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveByName $name
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result.Count -gt 1 | Should Be $true;
+			$result -contains [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::ExternalNodeBag.value__ | Should Be $true;
+			$result -contains [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::EntityBag.value__ | Should Be $true;
+		}
+
+		It "ResolveByInexistentEntityKindName-ReturnsNull" -Test {
+			
+			# Arrange
+			$name = "inexistent-EntityKindName"
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveByName $name;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+	}
+	
+	Context "EntityKindID-Resolver" {
+	
+		It "ResolveByEntityKindID-Succeeds" -Test {
+			
+			# Arrange
+			$name = "Node"
+			$id = [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::Node.value__;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveById $id
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $name;
+		}
+
+		It "ResolveByInexistentEntityKindId-ReturnsNull" -Test {
+			
+			# Arrange
+			$id = [long]::MaxValue;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveById $id;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+	}
 }
 
 #
-# Copyright 2015 d-fens GmbH
+# Copyright 2015-2016 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
