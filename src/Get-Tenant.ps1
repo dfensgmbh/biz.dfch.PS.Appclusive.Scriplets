@@ -116,6 +116,25 @@ Name         : GROUP_TENANT
 
 This call return all tenants where the name "te" include and the ExternalType "Internal" is.
 
+.EXAMPLE
+# Gets information about the tenant of the currently logged in user
+PS > $tenantInformation = Get-Tenant -Current;
+PS > $tenantInformation
+Id              : e3c70408-9da0-45f2-ab7b-29d1081e948a
+ParentId        : d9c2feda-f3da-488a-8dd3-3747e40b6c6a
+NodeId          : 42
+JobId           : 123
+CustomerId      : 5
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+PS > $tenantInformation.BuiltInRoles
+CloudAdmin         : 14
+CloudUser          : 15
+CloudGuest         : 16
+CreatorOwner       : 12
+Everyone           : 13
+AppclusiveEveryone : 5
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Tenant/
 
@@ -170,6 +189,12 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[Alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies to retrieve tenant information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'current')]
+	[alias('WhoAmI')]
+	[switch] $Current = $false
+	
 )
 
 Begin 
@@ -195,7 +220,11 @@ Process
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
 		$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-	}	
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'list')
+	{
+		$Response = $svc.Core.InvokeEntityActionWithSingleResult("Tenants", 'Information', [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+	}
 	else
 	{
 		$Exp = @();

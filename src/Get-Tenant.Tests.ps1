@@ -125,10 +125,27 @@ Describe -Tags "Get-Tenant" "Get-Tenant" {
 			$result | Should Be $null;
 		}
 	}
+	
+	Context "TenantInformation" {
+		
+		It "GettingTenantInformation-Succeeds" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -Current;
+
+			# Assert
+			$result | Should Be $null;
+			$result.GetType().FullName | Should Be 'biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation':
+			$result.BuiltInRoles.GetType().FullName | Should Be 'biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles';
+		}
+	}
+	
 }
 
 #
-# Copyright 2015 d-fens GmbH
+# Copyright 2015-2016 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
