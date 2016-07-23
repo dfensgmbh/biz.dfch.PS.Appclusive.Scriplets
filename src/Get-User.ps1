@@ -153,6 +153,25 @@ BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
 PS > (Get-User -WhoAmi).Name
 schnittenfittich
 
+.EXAMPLE
+# Gets information about the tenant of the currently logged in user
+PS > $tenantInformation = Get-User -TenantInformation;
+PS > $tenantInformation
+Id              : e3c70408-9da0-45f2-ab7b-29d1081e948a
+ParentId        : d9c2feda-f3da-488a-8dd3-3747e40b6c6a
+NodeId          : 42
+JobId           : 123
+CustomerId      : 5
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+PS > $tenantInformation.BuiltInRoles
+CloudAdmin         : 14
+CloudUser          : 15
+CloudGuest         : 16
+CreatorOwner       : 12
+Everyone           : 13
+AppclusiveEveryone : 5
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
 
@@ -309,7 +328,7 @@ Process
 	}
 	elseif($PSCmdlet.ParameterSetName -eq 'tenant')
 	{
-		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Tenants", "Information", [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+		$Response = Get-Tenant -Current;
 		Contract-Assert (!!$Response);
 	}
 	else 
