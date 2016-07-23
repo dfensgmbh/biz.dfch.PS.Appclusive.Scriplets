@@ -274,8 +274,19 @@ function Format-DataServiceClientException($ex)
 	{
 		try
 		{
-			$json = $ex.Message | ConvertFrom-Json;
-			$message = $json.'odata.error'.innererror.message;
+			$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($er.Exception.InnerException.InnerException.Message);
+			if(0 -ge $dic.Keys)
+			{
+				$message = $ex.Message;
+			}
+			else
+			{
+				$message = $dic.GetOrSelf('odata.error').GetOrSelf('message').GetOrSelf('value');
+				if($message -eq $dic)
+				{
+					$message = $dic.ToString();
+				}
+			}
 		}
 		catch
 		{

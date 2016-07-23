@@ -1,4 +1,5 @@
 #Requires -Modules @{ ModuleName = 'biz.dfch.PS.Pester.Assertions'; RequiredVersion = '1.1.1.20160710' }
+#Requires -Modules @{ ModuleName = 'biz.dfch.PS.Appclusive.Client'; RequiredVersion = '3.0.0.20160715' }
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
@@ -281,8 +282,9 @@ Describe -Tags "Format-Exception" "Format-Exception" {
 			$result | Should Not Be $null;
 			$result.Count | Should Be 3;
 			$result[0] | Should BeOfType [System.Management.Automation.ExtendedTypeSystemException];
-			$result[1] | Should BeOfType [System.Data.Services.Client.DataServiceQueryException];
-			$result[2] | Should BeOfType [System.Data.Services.Client.DataServiceClientException];
+			$result[1].GetType().FullName | Should Be "System.Data.Services.Client.DataServiceQueryException";
+			$result[2].GetType().FullName | Should Be "System.Data.Services.Client.DataServiceClientException";
+			Write-Host ($result | Out-String);
 		}
 	}
 
