@@ -1,24 +1,45 @@
 function Set-SessionTenant {
 <#
 .SYNOPSIS
-Set the tenant in the session, so the user can work for this tenant.
+Set the tenant id for the current session, so all CRUD operations are performed under this tenant.
 
 .DESCRIPTION
-Set the tenant in the session, so the user can work for this tenant. 
+Set the tenant id for the current session, so all CRUD operations are performed under this tenant.
 
-You can set a tenant in your user variable. All actions will executed in the name of this tenant. Pay attention the tenant will be set on all entpoint (Core, Cmp, Diagnostics)
+By default all operations are performed under the home tenant of the caller. To change this, you can set the tenant id for the current session. From there on all CRUD operations are performed under this tenant.
+In addition to setting a tenant id, the caller must have actual permissions to operate under that tenant. This means that setting of the tenant id may succeed. But subsequent operations may fail due to insufficient permissions of the caller.
 
 .INPUTS
-GUID from the tenant.
+The tenant id as a GUID
 
 .OUTPUTS
-Retun the tenant you set.
+Retuns the tenant entity of the id specified. Throws an error if the tenant id could not be found or the caller did not have permission to view the tenant.
 
 default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
-Set-SessionTenant 
+# In this example we set the tenant id to an id where the caller has permissions to read the tenant. The result is the entity represented by the tenant id.
+PS > Set-SessionTenant cb62d4c5-a354-408f-8658-1eb944762dec
+Id           : cb62d4c5-a354-408f-8658-1eb944762dec
+Name         : Fabulous
+Description  : A supercalifragilisticexpialidocius tenant, but shorter and easier to spell.
+ExternalId   : bb8a5b66-7daa-4f4b-a769-fd9fc34fbfa2
+ExternalType : External
+CreatedById  : 1
+ModifiedById : 1
+Created      : 3/7/2016 12:00:00 AM +01:00
+Modified     : 7/15/2016 4:33:24 PM +02:00
+RowVersion   : {0, 0, 0, 0...}
+ParentId     : 5d31dbbd-d09c-4881-83b3-412d82ba84e5
+CustomerId   :
+Parent       :
+Customer     :
+Children     : {}
 
+.EXAMPLE
+# Setting in invalid tenant id will result in an exception being raised.
+PS > Set-SessionTenant deaddead-dead-dead-dead-deaddeaddead
+WARNING: : Assertion failed: (!!$tenant) "Tenant not found"
 
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-SessionTenant/
@@ -26,33 +47,18 @@ Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-SessionTenant/
 .NOTES
 See module manifest for required software versions and dependencies.
 #>
-# Requires biz.dfch.PS.Appclusive.Client
 [CmdletBinding(
-    SupportsShouldProcess = $true
+	SupportsShouldProcess = $false
 	,
-    ConfirmImpact = 'Low'
+	ConfirmImpact = 'Low'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-SessionTenant/'
-	,
-	DefaultParameterSetName = 'TenantId'
 )]
 PARAM 
 (
-	# List of Cimi IDs to check if they are available
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'TenantId')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[string] $TenantId = $null
+	# Specifies the tenant guid to set for this session
+	[Parameter(Mandatory = $true, Position = 0)]
+	[guid] $TenantId
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
@@ -72,27 +78,31 @@ Begin
 
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
+	
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
-	Contract-Requires ($svc.Cmp -is [biz.dfch.CS.Appclusive.Api.Cmp.Cmp]) "Connect to the server before using the Cmdlet"
-	Contract-Requires ($svc.Diagnostics -is [biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics]) "Connect to the server before using the Cmdlet"
 }
 # Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
 	$tenant = Get-ApcTenant -Id $TenantId;
-	If($tenant)
-	{
-		$svc.Core.TenantID = $TenantId
-		$svc.Cmp.TenantID = $TenantId
-		$svc.Diagnostics.TenantID = $TenantId	
-	}
-	else
-	{
-		Write-warning ("No tenant with id {0} found. Abort..." -f $TenantId)
-		Return;
+	Contract-Assert (!!$tenant) "Tenant not found"
+
+	foreach($key in $svc.Keys) 
+	{ 
+		$endpoint = $svc.$key; 
+		$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
+		if(!$propertyTenantID)
+		{
+			Log-Error $fn ("Endpoint '{0}' does not contain 'TenantID' property." -f $key);
+			continue;
+		}
+
+		$endpoint.TenantID = $TenantId;
 	}
 	
 	$OutputParameter = Format-ResultAs $tenant $As
@@ -112,6 +122,23 @@ End
 } # function
 
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-SessionTenant; } 
+
+# 
+# Copyright 2014-2016 d-fens GmbH
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
