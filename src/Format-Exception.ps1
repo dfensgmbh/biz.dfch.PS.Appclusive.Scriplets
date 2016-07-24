@@ -275,7 +275,7 @@ function Format-DataServiceClientException($ex)
 		try
 		{
 			$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($er.Exception.InnerException.InnerException.Message);
-			if(0 -ge $dic.Keys)
+			if(0 -ge $dic.Keys.Count)
 			{
 				$message = $ex.Message;
 			}
