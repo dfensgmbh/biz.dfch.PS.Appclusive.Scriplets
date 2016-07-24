@@ -102,7 +102,7 @@ Process
 		$dataServiceContext.Credentials = $Credential;
 		
 		# set JSON as MIME type if specified
-		if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') 
+		if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -ieq 'JSON') 
 		{ 
 			$dataServiceContext.Format.UseJson(); 
 		}
@@ -112,6 +112,14 @@ Process
 		if($saveChangesDefaultOptions)
 		{
 			$dataServiceContext.SaveChangesDefaultOptions = $saveChangesDefaultOptions;
+		}
+		
+		# merge options for saving changes (MERGE, PUT, PATCH)
+		# https://msdn.microsoft.com/en-us/library/system.data.services.client.mergeoption
+		$mergeOption = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).MergeOption;
+		if($mergeOption)
+		{
+			$dataServiceContext.MergeOption = $mergeOption;
 		}
 		
 		# save context into Service module variable (svc)
