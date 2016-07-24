@@ -57,14 +57,20 @@ See module manifest for required software versions and dependencies.
 	ConfirmImpact = 'Low'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-SessionTenant/'
+	,
+	DefaultParameterSetName = 'id'
 )]
 PARAM 
 (
 	# Specifies the tenant guid to set for this session
-	[Parameter(Mandatory = $true, Position = 0)]
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
 	[Alias("Tid")]
 	[Alias("TenantId")]
 	[guid] $Id
+	,
+	# Specifies the tenant guid to set for this session
+	[Parameter(Mandatory = $true, ParameterSetName = 'clear')]
+	[switch] $Clear = $false
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
@@ -95,25 +101,50 @@ Process
 {
 	trap { Log-Exception $_; break; }
 
-	$tenant = Get-ApcTenant -Id $TenantId;
-	Contract-Assert (!!$tenant) "Tenant not found"
+	if($PSCmdlet.ParameterSetName -eq 'id')
+	{
+		$tenant = Get-ApcTenant -Id $TenantId;
+		Contract-Assert (!!$tenant) "Tenant not found"
 
-	foreach($key in $svc.Keys) 
-	{ 
-		$endpoint = $svc.$key; 
-		$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
-		if(!$propertyTenantID)
-		{
-			$message = ("Endpoint '{0}' does not contain 'TenantID' property." -f $key)
-			Write-Warning $message
-			Log-Error $fn $message;
-			continue;
+		foreach($key in $svc.Keys) 
+		{ 
+			$endpoint = $svc.$key; 
+			$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
+			if(!$propertyTenantID)
+			{
+				$message = ("Endpoint '{0}' does not contain 'TenantID' property." -f $key)
+				Write-Warning $message
+				Log-Error $fn $message;
+				continue;
+			}
+
+			$endpoint.TenantID = $TenantId;
 		}
-
-		$endpoint.TenantID = $TenantId;
+		
+		$OutputParameter = Format-ResultAs $tenant $As
 	}
-	
-	$OutputParameter = Format-ResultAs $tenant $As
+	elseif($PSCmdlet.ParameterSetName -eq 'clear')
+	{
+		foreach($key in $svc.Keys) 
+		{ 
+			$endpoint = $svc.$key; 
+			$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
+			if(!$propertyTenantID)
+			{
+				$message = ("Endpoint '{0}' does not contain 'TenantID' property." -f $key)
+				Write-Warning $message
+				Log-Error $fn $message;
+				continue;
+			}
+
+			$endpoint.TenantID = $null;
+		}
+		$OutputParameter = $null;
+	}
+	else
+	{
+		Write-Error "Invalid ParameterSetName found";
+	}
 	$fReturn = $true;
 }
 # Process

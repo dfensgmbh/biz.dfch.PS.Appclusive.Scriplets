@@ -9,6 +9,7 @@ Describe -Tags "Set-SessionTenant.Tests" "Set-SessionTenant.Tests" {
 	. "$here\$sut"
 	. "$here\Get-ModuleVariable.ps1"
 	. "$here\Format-ResultAs.ps1"
+	. "$here\Get-SessionTenant.ps1"
 	
 	Context "Set-SessionTenant.Tests" {
 	
@@ -53,6 +54,18 @@ Describe -Tags "Set-SessionTenant.Tests" "Set-SessionTenant.Tests" {
 			# Assert
 			$result | Should Not Be $null;
 			$result.Id | Should Be $tenantId;
+		}
+		
+		It "SetSessionTenantClear-Succeeds" -Test {
+		
+			# Arrange
+			#
+			
+			# Act
+			$result = Set-SessionTenant -Clear -svc $svc;
+			
+			# Assert
+			$result | Should Be $null;
 		}
 		
 	}
