@@ -64,7 +64,7 @@ Get-SessionTenant
     <tags>dfch PowerShell Appclusive Automation OData</tags>
     <dependencies>
       <dependency id="biz.dfch.PS.System.Logging" version="1.4.1" />
-      <dependency id="biz.dfch.PS.System.Utilities" version="2.0.0" />
+      <dependency id="biz.dfch.PS.System.Utilities" version="2.2.0" />
     </dependencies>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System.Data.Entity" targetFramework="" />
