@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>biz.dfch.PS.Appclusive.Client</id>
+        <version>4.2.0</version>
+        <title>biz.dfch.PS.Appclusive.Client</title>
+        <authors>d-fens GmbH</authors>
+        <owners>Ronald Rink</owners>
+        <licenseUrl>https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client</projectUrl>
+        <iconUrl>https://raw.githubusercontent.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/master/logo-32x32.png</iconUrl>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <description>=============================
+
+Module: biz.dfch.PS.Appclusive.Client
+
+d-fens GmbH, General-Guisan-Strasse 6, CH-6300 Zug, Switzerland
+
+This Microsoft PowerShell module contains Cmdlets to perform various base actions and utility/convenience functions with the our open-source based automation framework "Appclusive".
+
+You can also download this module via [NuGet](http://nuget.org) with [Install-Package biz.dfch.PS.Appclusive.Client](https://www.nuget.org/packages/biz.dfch.PS.Appclusive.Client/)
+
+See http://appclusive.net
+
+Third party (and Microsoft) DLLs are not part of this Apache 2.0 licensed project but are only put here for convenience.
+
+See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detailed description on how to use the Cmdlets in this module.</description>
+        <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
+        <releaseNotes>20160724
+# BUGFIXES
+
+Get-Tenant
+
+* changed OData action from entity based to entity set action
+
+Format-Exception
+
+* fixed error in json extraction
+
+# FEATURES
+
+Enter-Server
+
+* added MergeOption to be settable in module configuration file
+  * default is `AppendOnly` which is also the DataServiceContext default
+
+Set-SessionTenant
+
+* updated cmdlet to read endpoints from Services instead of hard coded in cmdlet
+* added more examples
+* improved error handling
+* changed input parameter to be native guid and removed unnecessary ValidateScript validation
+* renamed id switch and added aliases for compatibility
+* added Clear switch to remove any set tenant id
+
+Get-SessionTenant
+
+* added Cmdlet to support display of currently set tenant id
+
+* installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
+        <copyright>(c) 2015-2016 d-fens GmbH</copyright>
+        <language>en-US</language>
+        <tags>dfch PowerShell Appclusive Automation OData</tags>
+        <dependencies>
+            <dependency id="biz.dfch.PS.System.Logging" version="1.4.1" />
+            <dependency id="biz.dfch.PS.System.Utilities" version="2.0.0" />
+        </dependencies>
+        <frameworkAssemblies>
+            <frameworkAssembly assemblyName="System.Data.Entity" targetFramework="" />
+            <frameworkAssembly assemblyName="System.Data.Services.Client" targetFramework="" />
+        </frameworkAssemblies>
+    </metadata>
+    <files>
+        <file src="..\packages\biz.dfch.CS.Appclusive.Api.3.4.1\lib\biz.dfch.CS.Appclusive.Api.dll" target="tools\biz.dfch.CS.Appclusive.Api.dll" />
+        <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\biz.dfch.CS.Appclusive.Public.dll" target="tools\biz.dfch.CS.Appclusive.Public.dll" />
+        <file src="biz.dfch.PS.Appclusive.Client.psd1" target="tools\biz.dfch.PS.Appclusive.Client.psd1" />
+        <file src="biz.dfch.PS.Appclusive.Client.psm1" target="tools\biz.dfch.PS.Appclusive.Client.psm1" />
+        <file src="biz.dfch.PS.Appclusive.Client.xml" target="tools\biz.dfch.PS.Appclusive.Client.xml" />
+        <file src="Enter-Server.ps1" target="tools\Enter-Server.ps1" />
+        <file src="Format-Exception.ps1" target="tools\Format-Exception.ps1" />
+        <file src="Format-ResultAs.ps1" target="tools\Format-ResultAs.ps1" />
+        <file src="Get-CatalogueItem.ps1" target="tools\Get-CatalogueItem.ps1" />
+        <file src="Get-CimiTarget.ps1" target="tools\Get-CimiTarget.ps1" />
+        <file src="Get-EntityKind.ps1" target="tools\Get-EntityKind.ps1" />
+        <file src="Get-ExternalNode.ps1" target="tools\Get-ExternalNode.ps1" />
+        <file src="Get-Job.ps1" target="tools\Get-Job.ps1" />
+        <file src="Get-KeyNameValue.ps1" target="tools\Get-KeyNameValue.ps1" />
+        <file src="Get-ManagementCredential.ps1" target="tools\Get-ManagementCredential.ps1" />
+        <file src="Get-ManagementUri.ps1" target="tools\Get-ManagementUri.ps1" />
+        <file src="Get-ModuleVariable.ps1" target="tools\Get-ModuleVariable.ps1" />
+        <file src="Get-Node.ps1" target="tools\Get-Node.ps1" />
+        <file src="Get-Product.ps1" target="tools\Get-Product.ps1" />
+        <file src="Get-SessionTenant.ps1" target="tools\Get-SessionTenant.ps1" />
+        <file src="Get-Tenant.ps1" target="tools\Get-Tenant.ps1" />
+        <file src="Get-Time.ps1" target="tools\Get-Time.ps1" />
+        <file src="Get-User.ps1" target="tools\Get-User.ps1" />
+        <file src="Get-Version.ps1" target="tools\Get-Version.ps1" />
+        <file src="Import-Module.ps1" target="tools\Import-Module.ps1" />
+        <file src="Invoke-EntityAction.ps1" target="tools\Invoke-EntityAction.ps1" />
+        <file src="Invoke-NodeAction.ps1" target="tools\Invoke-NodeAction.ps1" />
+        <file src="..\LICENSE" target="tools\LICENSE" />
+        <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
+        <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
+        <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />
+        <file src="New-ExternalNode.ps1" target="tools\New-ExternalNode.ps1" />
+        <file src="New-KeyNameValue.ps1" target="tools\New-KeyNameValue.ps1" />
+        <file src="New-ManagementCredential.ps1" target="tools\New-ManagementCredential.ps1" />
+        <file src="New-Node.ps1" target="tools\New-Node.ps1" />
+        <file src="New-Order.ps1" target="tools\New-Order.ps1" />
+        <file src="New-User.ps1" target="tools\New-User.ps1" />
+        <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\Newtonsoft.Json.dll" target="tools\Newtonsoft.Json.dll" />
+        <file src="..\NOTICE" target="tools\NOTICE" />
+        <file src="Pop-ChangeTracker.ps1" target="tools\Pop-ChangeTracker.ps1" />
+        <file src="Push-ChangeTracker.ps1" target="tools\Push-ChangeTracker.ps1" />
+        <file src="..\README.md" target="tools\README.md" />
+        <file src="Remove-Entity.ps1" target="tools\Remove-Entity.ps1" />
+        <file src="Remove-KeyNameValue.ps1" target="tools\Remove-KeyNameValue.ps1" />
+        <file src="Remove-ManagementCredential.ps1" target="tools\Remove-ManagementCredential.ps1" />
+        <file src="Remove-Node.ps1" target="tools\Remove-Node.ps1" />
+        <file src="Set-ExternalNode.ps1" target="tools\Set-ExternalNode.ps1" />
+        <file src="Set-Job.ps1" target="tools\Set-Job.ps1" />
+        <file src="Set-KeyNameValue.ps1" target="tools\Set-KeyNameValue.ps1" />
+        <file src="Set-ManagementCredential.ps1" target="tools\Set-ManagementCredential.ps1" />
+        <file src="Set-Node.ps1" target="tools\Set-Node.ps1" />
+        <file src="Set-SessionTenant.ps1" target="tools\Set-SessionTenant.ps1" />
+        <file src="Set-User.ps1" target="tools\Set-User.ps1" />
+        <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\System.Net.Http.Formatting.dll" target="tools\System.Net.Http.Formatting.dll" />
+        <file src="..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll" target="tools\System.Spatial.dll" />
+        <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\System.Web.Http.dll" target="tools\System.Web.Http.dll" />
+        <file src="Test-Status.ps1" target="tools\Test-Status.ps1" />
+        <file src="Install.ps1" target="Install.ps1" />
+    </files>
+</package>
