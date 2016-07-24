@@ -90,6 +90,8 @@ Process
 {
 	trap { Log-Exception $_; break; }
 
+	$tenantIds = @{};
+	
 	foreach($key in $svc.Keys) 
 	{ 
 		$endpoint = $svc.$key; 
@@ -103,14 +105,27 @@ Process
 		}
 
 		$tenantId = $endpoint.TenantID;
+		if($tenantId)
+		{
+			$tenant = Get-ApcTenant -Id $tenantId;
+			Contract-Assert (!!$tenant) "Tenant not found $tenantId"
+		}
+		$tenantIds.$tenantId = $tenant;
 	}
 	
-	if($tenantId)
+	if($tenantIds.Keys.Count -eq 0)
 	{
-		$tenant = Get-ApcTenant -Id $tenantId;
-		Contract-Assert (!!$tenant) "Tenant not found"
-		$OutputParameter = Format-ResultAs $tenant $As
+		$OutputParameter = $null
 	}
+	elseif($tenantIds.Keys.Count -eq 1)
+	{
+		$OutputParameter = $tenantIds.($tenantIds.Keys | Select -first 1);
+	}
+	else
+	{
+		$OutputParameter = $tenantIds;
+	}
+	$OutputParameter = Format-ResultAs $OutputParameter $As
 	$fReturn = $true;
 }
 # Process

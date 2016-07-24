@@ -9,6 +9,7 @@ Describe -Tags "Get-SessionTenant.Tests" "Get-SessionTenant.Tests" {
 	. "$here\$sut"
 	. "$here\Get-ModuleVariable.ps1"
 	. "$here\Format-ResultAs.ps1"
+	. "$here\Set-SessionTenant.ps1"
 	
 	Context "Get-SessionTenant.Tests" {
 	
@@ -33,23 +34,29 @@ Describe -Tags "Get-SessionTenant.Tests" "Get-SessionTenant.Tests" {
 		It "GetSessionTenantWithNoIdDefined-ReturnsNull" -Test {
 		
 			# Arrange
-			
-			# Act
-			$result = help Get-SessionTenant -full;
-			
-			# Assert
-			Write-Host ($result | Out-String)
-		}
-
-		It "GetSessionTenantWithNoIdDefined-ReturnsNull" -Test {
-		
-			# Arrange
+			$null = Set-SessionTenant -Clear -svc $svc;
 			
 			# Act
 			$result = Get-SessionTenant -svc $svc;
 			
 			# Assert
+			Write-Host ($result | Out-String);
 			$result | Should Be $null;
+		}
+		
+		It "GetSessionTenantWithIdDefined-ReturnsNull" -Test {
+		
+			# Arrange
+			$tenantId = '11111111-1111-1111-1111-111111111111'
+			$null = Set-SessionTenant $tenantId -svc $svc;
+			
+			# Act
+			$result = Get-SessionTenant -svc $svc;
+			
+			# Assert
+			Write-Host ($result | Out-String);
+			$result | Should Not Be $null;
+			$result.Id | Should Be $tenantId;
 		}
 		
 	}

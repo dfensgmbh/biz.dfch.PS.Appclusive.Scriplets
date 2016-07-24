@@ -156,6 +156,8 @@ NestedModules = @(
 	,
 	'Set-SessionTenant.ps1'
 	,
+	'Get-SessionTenant.ps1'
+	,
 	'Get-Version.ps1'
 	,
 	'Format-Exception.ps1'
