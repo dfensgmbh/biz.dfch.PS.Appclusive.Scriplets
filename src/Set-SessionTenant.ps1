@@ -1,58 +1,76 @@
 function Set-SessionTenant {
 <#
 .SYNOPSIS
-Set the tenant in the session, so the user can work for this tenant.
+Sets the tenant id for the current session, so all CRUD operations are performed under this tenant.
 
 .DESCRIPTION
-Set the tenant in the session, so the user can work for this tenant. 
+Sets the tenant id for the current session, so all CRUD operations are performed under this tenant.
 
-You can set a tenant in your user variable. All actions will executed in the name of this tenant. Pay attention the tenant will be set on all entpoint (Core, Cmp, Diagnostics)
+By default all operations are performed under the home tenant of the caller. To change this, you can set the tenant id for the current session. From there on all CRUD operations are performed under this tenant.
+In addition to setting a tenant id, the caller must have actual permissions to operate under that tenant. This means that setting of the tenant id may succeed. But subsequent operations may fail due to insufficient permissions of the caller.
 
 .INPUTS
-GUID from the tenant.
+The tenant id as a GUID
 
 .OUTPUTS
-Retun the tenant you set.
+Retuns the tenant entity of the id specified. Throws an error if the tenant id could not be found or the caller did not have permission to view the tenant.
 
 default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
-Set-SessionTenant 
+# In this example we set the tenant id to an id where the caller has permissions to read the tenant. The result is the entity represented by the tenant id.
+PS > Set-SessionTenant cb62d4c5-a354-408f-8658-1eb944762dec
+Id           : cb62d4c5-a354-408f-8658-1eb944762dec
+Name         : Fantabulous
+Description  : A supercalifragilisticexpialidocius tenant, but shorter and easier to spell.
+ExternalId   : bd16aeab-f354-43b4-9da9-60a1d64a15d0
+ExternalType : External
+CreatedById  : 1
+ModifiedById : 1
+Created      : 3/7/2016 12:00:00 AM +01:00
+Modified     : 7/15/2016 4:33:24 PM +02:00
+RowVersion   : {0, 0, 0, 0...}
+ParentId     : 5d31dbbd-d09c-4881-83b3-412d82ba84e5
+CustomerId   :
+Parent       :
+Customer     :
+Children     : {}
 
+.EXAMPLE
+# Setting in invalid tenant id will result in an exception being raised.
+PS > Set-SessionTenant deaddead-dead-dead-dead-deaddeaddead
+WARNING: : Assertion failed: (!!$tenant) "Tenant not found"
 
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-SessionTenant/
 
+.RELATED
+Get-SessionTenant
+Get-Tenant
+
 .NOTES
 See module manifest for required software versions and dependencies.
 #>
-# Requires biz.dfch.PS.Appclusive.Client
 [CmdletBinding(
-    SupportsShouldProcess = $true
+	SupportsShouldProcess = $false
 	,
-    ConfirmImpact = 'Low'
+	ConfirmImpact = 'Low'
 	,
 	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Set-SessionTenant/'
 	,
-	DefaultParameterSetName = 'TenantId'
+	DefaultParameterSetName = 'id'
 )]
 PARAM 
 (
-	# List of Cimi IDs to check if they are available
-	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'TenantId')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[string] $TenantId = $null
+	# Specifies the tenant guid to set for this session
+	[Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'id')]
+	[Alias("Tid")]
+	[Alias("TenantId")]
+	[guid] $Id
+	,
+	# Specifies the tenant guid to set for this session
+	[Parameter(Mandatory = $true, ParameterSetName = 'clear')]
+	[switch] $Clear = $false
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
@@ -72,30 +90,61 @@ Begin
 
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
+	
 	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
+	
 	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
-	Contract-Requires ($svc.Cmp -is [biz.dfch.CS.Appclusive.Api.Cmp.Cmp]) "Connect to the server before using the Cmdlet"
-	Contract-Requires ($svc.Diagnostics -is [biz.dfch.CS.Appclusive.Api.Diagnostics.Diagnostics]) "Connect to the server before using the Cmdlet"
 }
 # Begin
 
 Process 
 {
+	trap { Log-Exception $_; break; }
 
-	$tenant = Get-ApcTenant -Id $TenantId;
-	If($tenant)
+	if($PSCmdlet.ParameterSetName -eq 'id')
 	{
-		$svc.Core.TenantID = $TenantId
-		$svc.Cmp.TenantID = $TenantId
-		$svc.Diagnostics.TenantID = $TenantId	
+		$tenant = Get-ApcTenant -Id $TenantId;
+		Contract-Assert (!!$tenant) "Tenant not found"
+
+		foreach($key in $svc.Keys) 
+		{ 
+			$endpoint = $svc.$key; 
+			$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
+			if(!$propertyTenantID)
+			{
+				$message = ("Endpoint '{0}' does not contain 'TenantID' property." -f $key)
+				Write-Warning $message
+				Log-Error $fn $message;
+				continue;
+			}
+
+			$endpoint.TenantID = $TenantId;
+		}
+		
+		$OutputParameter = Format-ResultAs $tenant $As
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'clear')
+	{
+		foreach($key in $svc.Keys) 
+		{ 
+			$endpoint = $svc.$key; 
+			$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
+			if(!$propertyTenantID)
+			{
+				$message = ("Endpoint '{0}' does not contain 'TenantID' property." -f $key)
+				Write-Warning $message
+				Log-Error $fn $message;
+				continue;
+			}
+
+			$endpoint.TenantID = $null;
+		}
+		$OutputParameter = $null;
 	}
 	else
 	{
-		Write-warning ("No tenant with id {0} found. Abort..." -f $TenantId)
-		Return;
+		Write-Error "Invalid ParameterSetName found";
 	}
-	
-	$OutputParameter = Format-ResultAs $tenant $As
 	$fReturn = $true;
 }
 # Process
@@ -112,11 +161,28 @@ End
 } # function
 
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-SessionTenant; } 
+
+# 
+# Copyright 2014-2016 d-fens GmbH
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUWF6hKuKfPg7nBU9btAQl0Jc2
-# E3OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUoS0jZrEHZ6jNDwOyJu8Tqip8
+# 5jegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -215,26 +281,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Set-SessionTenant; 
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSQb71UzwfH5TS6
-# dsxpsAMWE+8nwDANBgkqhkiG9w0BAQEFAASCAQBTDYsY5B/rGqOdZ7PGmMVIxpJ3
-# NizM1WrOnGS7YzI1nJo/3D5n37hpwEzivySjaltpPnNcB9BmA8ZwNZeGDkooJbNz
-# u2W8ukLN9ZDMwX6OlTbPu9s79reW5SovE8dLPyWGIm/5PhNR1Upjy0r9UrwK+ghf
-# FdO5QIKv30ytBMJR4e7xdjG6tI/iX70KzGI/DH52caXbwMx7sbldcXaxB0WZa+eO
-# RPqFxZzOrG+hxXAxKY1yheZ622mSn0I1CjHWAb8ZOqBsk9UOLXbmLwxCyTEw84UU
-# Oh034u3ht0yi9/Bd3oNUFtnOv5Mkx/AoYZuvUi90X1UihCp2+GFLVfXeRFljoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRTRRWxRMSq/y6Q
+# HPMzdL+BR/fD8jANBgkqhkiG9w0BAQEFAASCAQCk/mnl1E9UAIDhyFnayi3+iFYR
+# epEQdmdrviEUrNwYsepJRq3MtMgHfNA+YS09Rp5bRLoDbpWVo2oJamknqw1Ae+wb
+# cr2xK0Mi19qoIuY8Uw1dgyqqSDJu5wn7iFA85FrsL81G3ETcd1MZOlpS5FZ+N3X2
+# Kt8E8O/5SfpIterQP0TmouWQqMO8/rlEPAzEuKD+bm2RAbenaSBONp+KmvtX64jG
+# /ZT8SN/D+pw6dJgZYqegMRntiowOY2XIY9BAsv+bzaqNiFw3T1oVCENBKxgQ0dzy
+# TqSMqlg9D5Ln3664enT+BytWm5JEczGiyt4Y6kvarEbI4a4ofw7ba2yOdSUZoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyMzIwNTUwN1owIwYJKoZIhvcNAQkEMRYEFEg4oqCkPhNzbIWU3y/zEuVF+v4R
+# MDcyNDEwNTcwMFowIwYJKoZIhvcNAQkEMRYEFFv29GFEeXW/6rIBplHHlggPfvAf
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBmp7051SxkEDU7sFXr
-# OepLTkm4/TqI6B+Rw86narJoTvn602x5sT3n6EsrGFp8J/eyBcVXhXzP7Qs/UT9k
-# G9LEN9ZvBmnXZY08U4IUPFbQCFhG9x1vKfD49v9LUmOBJiAmo+gum94wqOK5VYch
-# HfIcF3OO2ACiSKlB/QFIVATjqH1Xh6ymVgv/KaZJ3Q6NvRJiX/fNexbAnpCZ1d/i
-# YxEbURyLqDcOgtsgwQY6wGr8wKOn3UCHsci13YEp+vWmDoB1fvYuz9jQCykYXxYN
-# BMbZ9pTk3YhgKIZfEcFbcIJRecHWTu0MS3GlNbMIngGsXEqFJTzdJbIHBiT00y85
-# y8mZ
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBB6BGsCLDG4RWXPiUJ
+# Qt0+2i/4UMh4MZMV+xoSJ+4McUQxJn5xcE5QFQgn/OtecnztJEIMe7vrJ1Ux/u09
+# 6D9ZEUc7NqYHGEPSeaqCbouMp5+xJNQL27+I/cKatJ5vMnHegFjCfxpGDFOAF1Ie
+# Z1HUfByNwbuMm81zBc2HQnTjww0Z4LFfpxNZdEUispOQghLJ1HxuYFzP0HFFDaS2
+# nwTEU5ku++T4SVoImGVSbsFOenFURnRAiOcLjraqhkzu9nbSmWDCchq7JvF2MQ/B
+# qg6EbDny5D8+Zk5aTuyPwmzvTo/qzMXQld6UaKmLkQHlJYEFcWKQl7ZlzLKABknc
+# FGQG
 # SIG # End signature block

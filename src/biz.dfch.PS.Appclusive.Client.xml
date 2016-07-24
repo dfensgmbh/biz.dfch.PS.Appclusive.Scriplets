@@ -14,6 +14,10 @@
         <S N="Value">None</S>
       </En>
       <En>
+        <S N="Key">MergeOption</S>
+        <S N="Value">AppendOnly</S>
+      </En>
+      <En>
         <S N="Key">Credential</S>
         <Nil N="Value" />
       </En>

@@ -102,7 +102,7 @@ Process
 		$dataServiceContext.Credentials = $Credential;
 		
 		# set JSON as MIME type if specified
-		if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -eq 'JSON') 
+		if((Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Format -ieq 'JSON') 
 		{ 
 			$dataServiceContext.Format.UseJson(); 
 		}
@@ -112,6 +112,14 @@ Process
 		if($saveChangesDefaultOptions)
 		{
 			$dataServiceContext.SaveChangesDefaultOptions = $saveChangesDefaultOptions;
+		}
+		
+		# merge options for saving changes (MERGE, PUT, PATCH)
+		# https://msdn.microsoft.com/en-us/library/system.data.services.client.mergeoption
+		$mergeOption = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).MergeOption;
+		if($mergeOption)
+		{
+			$dataServiceContext.MergeOption = $mergeOption;
 		}
 		
 		# save context into Service module variable (svc)
@@ -161,8 +169,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmh1aIS5GcYTbVld/VMTeCScr
-# 706gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUUjfAEmnFNhhBTw3JKwv0qnkG
+# gMKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -261,26 +269,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Enter-Server -Alias
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQS9Mfr+fgSmCZO
-# sXCOVla7VymN/jANBgkqhkiG9w0BAQEFAASCAQAKIRvA+3Zff3Cpj9lWJvIEGvJZ
-# S11ZbNNYKNBzg/nZsAkh5QKuXSfv3aBRxo02NPoSNNo7XPz56gZDLsbUvVYboqPn
-# ZKdDwQ5FurRbkCTa4cyzjVxoiUwg9gs7zZGAZ181FN3cGRRJK20d82SIl4oUy2b2
-# xKQ46uMicPn6sHqujSuxDqyQdRGs+1D0OzfxzpW5lVkBnAep5KsM+dwtmM9SDmSU
-# EHBPu/13+I++Gb3UXzFXDeVSWHr/TXSOQE1GreM3hz/9fZRtaaH3VNlxp77efXa5
-# 8mlSaei7uHc4/u1ulCf58Ue4+N7FFDr/b6V2Ofq4x+521FqtLCkWpXJ9qVsnoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR0baAgrI63x0ze
+# NwabQgub3bgR5DANBgkqhkiG9w0BAQEFAASCAQBI5LekO7Mii50FjS2SwpnKZn/v
+# iMBQlhAetH7UGzv4i7FLyI4WZnO2wTpOPOCphTdqopkra3xNbAHXylEhWOAOYidv
+# NPB0wCmXyS8mh8P3a+/ohh1UkTCZFsWUkGrLFJFjfUO1m8uXAA2FE1UmGBnDPWAN
+# BxpvxKD1R3G4GYV8bjWRW7mC2FeC8Gen2GvdMxH8rjb9fh57N2s1cKZNjN8bX0/e
+# tlDswX7YuJydADMv0APRFDCUE1drDN4LtMj95G8xOqADkLIUqABh/wjgC9lfLq5R
+# lyN7eOE6iqVLXfbo3h51q9RDahWc+AkOsBodyUwdzbTUjy8mj9oh8RDQ22aAoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyMzIwNTQyN1owIwYJKoZIhvcNAQkEMRYEFJ8QJSXFD66C0FGBSNaEAh/CRhLv
+# MDcyNDEwNTYzNlowIwYJKoZIhvcNAQkEMRYEFPKcwHOaFLVJi0RoEhiScbjGaDCR
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBc5JuOXs/wcD2w5YP4
-# pDb5ANgCLbXwLTjKZ5/EIq4AcNTBVM71JZ8KvwVm6KGqFf9YwrlWt29sN9lqYX/+
-# 8jjCRBr+Ob5g31YoZsdiSmymSIZulb6X21Pyimch7safeEau+yYvibP/vE58u5T9
-# EJ2HNSy5ayriIhRGv2Y1scxhp1bOS8Oqh7Swog0vdrAxrZcksG8v7jilz525Bd4W
-# AbaYcYraWILA4KCLRDYZyzs8wzhVdNjmr1YgxoA4p891rraZrIRn0MCHgj2y5q2P
-# zv0dkFd075yBsD93HKQGFou3jN64Tf4bmEZDF7g2oAOdsE0s9AwEqHuJQmJ/3f0h
-# 0zYD
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBkMzoOO71981uHcmeP
+# mybVtfY0J/gEllWSojOMF46WCgLvRczrTH44YHNRf21jPNjrLgfnbS6AKnsO6xeE
+# BivmlUhmPoRMamIF+PMJnz7LUk54kNGFLs5ITQREJddZY+9zmioPJWxD4WOQwMLt
+# ghwrF4/bfPMKX43d1mm7D9B644aF8BmhnEYUJxqseRgveM9mrPPs7u5lwAZF6xkR
+# g65hmJyoixVd36AW4tbbYCbpE2qibw6SqjmEu6SVyHDzcXB7Uy+8rfnml9M/0dRP
+# nS04XPa1W2IhHlTIg15+aOdpKtgm0myfGcAJYpAdyXVOH2RjOiA/nucKrb5dEqFt
+# b/P1
 # SIG # End signature block
