@@ -1,4 +1,5 @@
 #Requires -Modules @{ ModuleName = 'biz.dfch.PS.Pester.Assertions'; RequiredVersion = '1.1.1.20160710' }
+#Requires -Modules @{ ModuleName = 'biz.dfch.PS.Appclusive.Client'; RequiredVersion = '3.0.0.20160715' }
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
@@ -281,8 +282,9 @@ Describe -Tags "Format-Exception" "Format-Exception" {
 			$result | Should Not Be $null;
 			$result.Count | Should Be 3;
 			$result[0] | Should BeOfType [System.Management.Automation.ExtendedTypeSystemException];
-			$result[1] | Should BeOfType [System.Data.Services.Client.DataServiceQueryException];
-			$result[2] | Should BeOfType [System.Data.Services.Client.DataServiceClientException];
+			$result[1].GetType().FullName | Should Be "System.Data.Services.Client.DataServiceQueryException";
+			$result[2].GetType().FullName | Should Be "System.Data.Services.Client.DataServiceClientException";
+			Write-Host ($result | Out-String);
 		}
 	}
 
@@ -398,8 +400,8 @@ Describe -Tags "Format-Exception" "Format-Exception" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqPoOAyudHwnzzANGyjwRDLP4
-# gCKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQIGxYd9Cb5qMUALXIDsqOSA6
+# qrugghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -498,26 +500,26 @@ Describe -Tags "Format-Exception" "Format-Exception" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQks1Pmfoo9eUTn
-# UMbR7YaoCMPHCjANBgkqhkiG9w0BAQEFAASCAQAraSI84OZF8oRSHgHY8eATQa+H
-# vVdTiVHDgLGuBEKIDYJQg8BOVFgwqOdCACXgUKlren4VTZUT9jBqW2W9g8F6YHWP
-# KVLdnCEcp7Swic5Vt9bwgaRHYNvDkVQ7MsewE4cY6HsaQ78vOr+z8EtGp4Wg3r+i
-# azxr9LdN9KmsCYKa96VleGrOKxTsQqagx/01WXkVP425t+MpuReW2oTdc51VRt8/
-# KaiQd2FLihZRwOa7rhGm0pUsYjF4pjKG9AzYEcslFcE9F8hcEpZeXjqBO1t465tC
-# DYV2MGoDk/THjacLjW7NLwFTij0PcZV+PSsLJPYPM2TnwYRnoBQt9JCDIttUoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS8kA10PZEuCTpX
+# bsX3LqeBHutzcTANBgkqhkiG9w0BAQEFAASCAQBPfD4+kAj1mdlMe15ar5Ro1gLY
+# 6ken+Cx7gI3qxQwaBHYv8n2RYsUOR+uQsEqg5P+4hBFpIl2PNnGUj6tmWkWt3yF/
+# 3TPBvkH3MhNnB1gHy27Y9WHE4fmqUGiAldX5LTAELmG2ivigtPX5LelNqL9LoqCW
+# J9LxJFC1J6v3j7Tcx6r/CxLrBnw0fEx+Tk660O2phrgJ4pIsFyxYQY97To+/eIyj
+# YtlpZM+5NPR5CZ2pejGU58rDmDcKYj8pt4Xt/b4ZEwTNdMKmHXlTCbeFa908h9M9
+# XOEkUfIeZMvxQmbZeECCxAxk4Pv7IN1CqD5i0ZCmhswMIXh1En2vb7VOo2U3oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA0M1owIwYJKoZIhvcNAQkEMRYEFBMeX4fON3bXA7RB4ZYRPYKBO/Jj
+# MDcyNDEwNTYzNlowIwYJKoZIhvcNAQkEMRYEFM3EbvQsAtmFaSrfXwrhZPMwPhlv
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCn0MFnaAhMClMs57Aj
-# BBQ7sW9LYtsZq+NNFBd9TvlwGSzJiTDkque2Oftnlmkupo6OmL8NPooabpoRqJOX
-# 0Y5Qsc3yjWdHECxw1xyYtmrbLmAuDuNuqs9DU21KF3jyutoAplfZopwIiJVFT5sZ
-# DF0dKM8P+BjjkaKUJJ0YCs61jKGOnvQElGHAoSTzQhOS8vlrg8Kdwn0ivNFU9Pj0
-# sA6gfoLNNGB48tJV+O7MmLk7IaDK/S6xvJghKfzujPmj4uQSzB0/DyV4pDwiQXKc
-# /2RYL/hbTzDr+qzwWCnBkjuBQjZOgYnFfOU29bQxnyJ1XsNjLgObroTqUeZfSrc7
-# WEqY
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBOwDERUkV2LnbMmCK6
+# unaNGDxA/C1f6jiykVs7xPuElBHkh5j12X6LdO/uxh6SvpY2JBqD1LPX3XkIvPvi
+# 6Lajr1V4uV6EbjXZmPbvF+DHf+M3XVx5iwf1pcQlQoBanpVjjkVLkjtLcLDjqTIr
+# 9MZDDJoN+hmL3/N/uyoolz2mHy9st4vzLzeMnXuvBc/2ONHWHUxmO85Xzv2i2yvf
+# bIHgdzePx/uaTjZlMRkXb0/o/2EcNIgNBn47uGYGK+oDJvvgPyCBplBB2EVkChsQ
+# MgrJGrM6oCLCob/noA9cILYd3EG6zlHdJS9ahpFolZtb0LF6/1Tn696eNiqc6o7C
+# EJUY
 # SIG # End signature block

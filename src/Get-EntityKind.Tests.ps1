@@ -188,10 +188,83 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 			0 -lt $result.Count | Should Be $true;
 		}
 	}
+	
+	Context "EntityKindName-Resolver" {
+	
+		It "ResolveByEntityKindName-Succeeds" -Test {
+			
+			# Arrange
+			$name = "^Node$"
+			$id = [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::Node.value__;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveByName $name
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $id;
+		}
+
+		It "ResolveByEntityKindNameWithMultipleMatches-ReturnsList" -Test {
+			
+			# Arrange
+			$name = "Bag"
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveByName $name
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result.Count -gt 1 | Should Be $true;
+			$result -contains [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::ExternalNodeBag.value__ | Should Be $true;
+			$result -contains [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::EntityBag.value__ | Should Be $true;
+		}
+
+		It "ResolveByInexistentEntityKindName-ReturnsNull" -Test {
+			
+			# Arrange
+			$name = "inexistent-EntityKindName"
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveByName $name;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+	}
+	
+	Context "EntityKindID-Resolver" {
+	
+		It "ResolveByEntityKindID-Succeeds" -Test {
+			
+			# Arrange
+			$name = "Node"
+			$id = [biz.dfch.CS.Appclusive.Public.Constants+EntityKindId]::Node.value__;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveById $id
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result | Should Be $name;
+		}
+
+		It "ResolveByInexistentEntityKindId-ReturnsNull" -Test {
+			
+			# Arrange
+			$id = [long]::MaxValue;
+			
+			# Act
+			$result = Get-EntityKind -svc $svc -ResolveById $id;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+	}
 }
 
 #
-# Copyright 2015 d-fens GmbH
+# Copyright 2015-2016 d-fens GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -209,8 +282,8 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+zKpmXXvM4oDiKGJ8E0qHsF3
-# 3fCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUlFLPtdy1hmf6goufnBUeTcYo
+# ERGgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -309,26 +382,26 @@ Describe -Tags "Get-EntityKind" "Get-EntityKind" {
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS19IQ2TO9jCldT
-# H922ML34YRvIQzANBgkqhkiG9w0BAQEFAASCAQA4FE+GIglzWv7WKIzHp1C6WPMs
-# aNAOYeTatCkbyKTNVnp5ycBaQL0HsvzGebUBMfbWbGPzgxmBGQ3C0/mNhXHPk2Yk
-# t9ddSmZEiE3It2w0XDgfXHyLX0noNVdkNKNtCiViDQ/UG3Kc9qIfK1J+11xxyPRe
-# 7Y9DUlcMN+TiPr8JUvM0EPsosBUFMIOeboH5/pe6fYBvpnpxKf4gqrYANXIgsJxg
-# Tca3BWLb7+Dl0+VkZfrQTF8lgLnF0TNDdrR4CS2sR27vZp3vaO3qCjOAzsmzKz0v
-# 0tmNAva7YM/SESpsIto4cyn8K6DK630MXP5k3jb+NGQzYi1fBBDuOapzrDifoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSCwAxM72qDioj1
+# zUKmhzYXc02FmzANBgkqhkiG9w0BAQEFAASCAQCETABAHMrdymUuDeqtC1linmJd
+# tWpgPZPLR7P1ZoHP4qLyOg9id0cNoxIGBj4GKCreDTi9Imp0ae4Rurnd+5IiotNW
+# EIpZW05fYz1fDURwIF/izXBU/a6D8dmUYidEnaxLOj2f/6sHq8NbQopFAxG5z/4V
+# 3sBjw7BYG0vAlS4Nv/MhWSN/jaeqcwBxWVqsnT3tFs5kYWJyYQbBgFx1WIxZVOCo
+# y9zeG94aZ62EJ2W3UPxpYBFJFKrAut2UBKWzdZ27Pl9nFqBizk379KDjxvUCKt8V
+# uFUaVffJH1fDSH1oJNEaB3WXObRQCbc/GIhY4ajy1zrZF3CtGg4LaAzDV6rOoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA0NVowIwYJKoZIhvcNAQkEMRYEFE9MkgVZFEVbR/xJmxCvAn9xYz54
+# MDcyNDEwNTYzOFowIwYJKoZIhvcNAQkEMRYEFAQh8dCrcSCRLDbTIjiH41ZsWPfm
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAVws39a8TZaZYYURLz
-# cE+Ayru3/OOscGQgyn1rawj9P2OK1HnCCSBZZnZ+yqiu/w4EqtkuXzWq2u+9phJE
-# vjuE5nwsVDgQQXGzw131rlmBI1MofM7xyZXlkSkf1EKUWSZoRE8yamuX9nI2HEa+
-# hxNlcjzXn3XAHNrfmVn24hmFpdJy0RkdElyI9hfXO3juPgNjPhMa8FMk739VmTS5
-# kASj2IaPF4Et2hLw+zE6JsuXhjrF5rSfRpnv0Q76It4zs1vjEERcAY19YFC28v3o
-# 95+BMK9nJ/OT+UBNSXGLOiteHEkt6rf/sO5t1ZdPSEDRtK5YuoG1wzECSikKjomc
-# CLOE
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCbYNThN7ogSMZ0Vyu6
+# P6Q3f2hGEKkZyL6e06UE/H/qzVyvH6B1Bu7TIoGdjk1gUY95hPlLlhTjS8lJ7yv1
+# wZip5+LYhQ9DPJwRTJJPwo4ss6itwuAuAsuMkOmoh3AFJDJ5XfdW7Vhvc5qewYUm
+# TAPZnh9WCoexH5CpMwHiZu6CrtgZtDZJgpgElyMIN0ktS30+lnrspj6pxwCVtM/9
+# 3e90nYGAgRtQUcHnjd9jf6NIpAwIgb1Ag1myThrbtDLEGLk3OOm9t+7fnXA+6zX0
+# A94uZT3//P/A51Odql6Hljc0SRhpttAuxJibDmVosMiR3YbJtmT9Lb/MFQa7Wbfk
+# 5aWO
 # SIG # End signature block

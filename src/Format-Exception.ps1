@@ -27,6 +27,14 @@ System.Data.Services.Client.DataServiceClientException: HTTP 400.
 entity : A null value was found for the property named 'Name', which has the expected type 'Edm.String[Nullable=False]'. The expected type 'Edm.String[Nullable=False]' does not allow null values.
 
 .EXAMPLE
+# Extracts the HTTP StatusCode from the innermost exception if there is a StatusCode.
+PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+PS > $svc.Core.AddToNodes($node);
+PS > $svc.Core.SaveChanges();
+PS > Format-Exception -StatusCode
+400
+
+.EXAMPLE
 # Extracts all exceptions from a failed SaveChanges operation.
 PS > $node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 PS > $svc.Core.AddToNodes($node);
@@ -113,6 +121,10 @@ PARAM
 	[Parameter(Mandatory = $false, ParameterSetName = 'single')]
 	[string] $Name
 	,
+	# Extracts the HTTP StatusCode from the exception chain if available
+	[Parameter(Mandatory = $false, ParameterSetName = 'single')]
+	[Switch] $StatusCode = $false
+	,
 	# Displays all exceptions within ErrorRecord
 	[Parameter(Mandatory = $false, ParameterSetName = 'all')]
 	[Switch] $All = $true
@@ -179,7 +191,14 @@ Process
 			}
 			elseif($result -is [System.Data.Services.Client.DataServiceClientException])
 			{
-				$Response = Format-DataServiceClientException $result;
+				if($StatusCode)
+				{
+					$Response = $ex.StatusCode;
+				}
+				else
+				{
+					$Response = Format-DataServiceClientException $result;
+				}
 			}
 			else
 			{
@@ -255,8 +274,19 @@ function Format-DataServiceClientException($ex)
 	{
 		try
 		{
-			$json = $ex.Message | ConvertFrom-Json;
-			$message = $json.'odata.error'.innererror.message;
+			$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($er.Exception.InnerException.InnerException.Message);
+			if(0 -ge $dic.Keys.Count)
+			{
+				$message = $ex.Message;
+			}
+			else
+			{
+				$message = $dic.GetOrSelf('odata.error').GetOrSelf('message').GetOrSelf('value');
+				if($message -eq $dic)
+				{
+					$message = $dic.ToString();
+				}
+			}
 		}
 		catch
 		{
@@ -289,8 +319,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Format-Exception; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUjwKSROka9mvpVQSXyjt95cXs
-# VmygghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU9S13Mf2i+V8n7dM0RUy1VGKk
+# caCgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -389,26 +419,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Format-Exception; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSBeacZqWNqjDV/
-# 6anivTE8b2Q5OzANBgkqhkiG9w0BAQEFAASCAQB7+mVORrYq05gx1siLf2/VSuny
-# inqqBasH6FIaM0Nwz9U6dqnrNoVDh2wFAikTyG5EMUFox88a2FXpYg+cwnq1qxze
-# c/+Vz6ccy2n8jXVPFc1InNg3OSKQuo+UPNCYv1Wky1sRherL1kQVLOqXGOQp3fDo
-# FV2n2O8SCastnsiYw7d5/qbw7UcSgKgp2xqC2RX9U+z5EUzcgOS/U840Jl+Fr5vV
-# y/mzsd5bZ93b/zYPcgn4YV8Qa2Xoy5o6luHS83rTngMa02oyWBj1gQLfFGJHvyod
-# +kcOYh7bfIHrQtRq80XREmNp4OFyu1bR71sXiNfUbH66p0D1A9jex1k0eehwoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQNS0thUx0HG5pT
+# T8q9reOHnzHOxDANBgkqhkiG9w0BAQEFAASCAQBaVkK0iEjXkHwzl8jro9OfxXrU
+# wRj2n2i2bfSiZNQ864TcQaK0F3IMrhHtKOudfmXa4/9Kb/Hu4FyZ1KIrfr87E94h
+# BlnY0sKfLe2PlOm1p6ICJPDJE9mJLqp67HoOX21fK9h/QSlvaP0TCP87EJwKHLVn
+# 5iUQ1Y6nD+mfHsuc+Mj8aJdLX0rdKKhUM263xiPnysnPvY+Iv2CaYn2565cGBPG+
+# yYGwj76E16rQS/A5FDjPdluxOJwulcaX3VZzMPIGvX6aNkfjSwkuSKwxfxab/bpS
+# 2x6bOv11irB5os8EDnfNDJKZgiCCJ2CVWHikNcPhs6wYooV5vxfhzDw9bNnqoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA0M1owIwYJKoZIhvcNAQkEMRYEFHhZwlcDZ3xTXQQx/I9HUICUMnA+
+# MDcyNDEwNTYzNlowIwYJKoZIhvcNAQkEMRYEFGTiT8ApwRMFPduo7TU3FuERA+ZU
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCE1S2QXUzWLBxfSMUM
-# Ku9vfPBheG8XjtG4DJtsSHWaqf7JuWQSVCe60cfQIykDPgohwq/EgPm1esllYtnO
-# mGGbXwvc5HdwftumfodVUYxLLY5VUU4z1tI8GN804as0WLIqbHq6yDDK4QbKSSmB
-# jG5Nb83RE0jmooDIRVfw9fjYkm2iFDtv8u4K3UmRwZrTnRO+uCjiKF8DtFJyG+Zj
-# Vf1darCYiC7jJhk58jJFZI6akvFCWkV0gGWG0FZ/f0lpZrUv7iCvgqDFDkoyuer2
-# azZbd3Ej65zVBwT2jfgH/yXW0Xc8FHfbxpaad8Nu3YSBQmqBSvyRg9Hxg0CHEGkY
-# awVY
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBgKMcv/TaNuVYPEDAk
+# qzIQd+zOHMJ+1eyNAKr/uC+1U9G4366IFrRueCHM02ShPZx9GRjDJETtCXupysEW
+# O5Px0kdkPa+44yrLDXEEPg1/w9zCp5x6T2dXGT8TU+PdUy5cah+FJX1WqfIgdsq8
+# iEWfJvOtXvrmE2UIimizIzmz2SWfCivwSxHmN2td17GpbLAvKvMIvxkxwvd3VBBg
+# B7Tx14Y+j6dzp9URHoVHGXwQgWKz99LKpCIokmIR0VJFrVZgN3dqCf2mFxpxECQV
+# vXwvq5X2neT37FoyE7NKULTaKtJAdZtDtr4/VEKr20kE9f/E1zKzGkTChPJJ65si
+# rAXJ
 # SIG # End signature block

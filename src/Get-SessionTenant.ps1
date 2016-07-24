@@ -1,68 +1,63 @@
-function Test-Status {
+function Get-SessionTenant {
 <#
 .SYNOPSIS
-Test the connection to an Appclusive server.
+Gets the tenant id for the current session.
 
 .DESCRIPTION
-Test the connection to an Appclusive server.
+Gets the tenant id for the current session.
 
-This Cmdlet lets you 'ping' an Appclusive server and display its response.
+By default the tenant id is not set in the caller session, meaning that all operations are performed under the HOME_TENANT of the caller.
 
 .INPUTS
-See PARAMETERS section on possible inputs.
+See parameters.
 
 .OUTPUTS
+Retuns the tenant entity of current tenant id if specified.
+
 default | json | json-pretty | xml | xml-pretty
 
 .EXAMPLE
-# Sends the text 'tralala' to a server and waits for its response. 
-# Upon successful execution the server returns the input string. 
-# Note: input length is limited.
-PS > Test-Status tralala
-tralala
+# In this example we query the current setting of the TenantID. TenantID has been set to 'cb62d4c5-a354-408f-8658-1eb944762dec' so the result is the tenant entity for this id.
+PS > Get-SessionTenant
+Id           : cb62d4c5-a354-408f-8658-1eb944762dec
+Name         : Fantabulous
+Description  : A supercalifragilisticexpialidocius tenant, but shorter and easier to spell.
+ExternalId   : bd16aeab-f354-43b4-9da9-60a1d64a15d0
+ExternalType : External
+CreatedById  : 1
+ModifiedById : 1
+Created      : 3/7/2016 12:00:00 AM +01:00
+Modified     : 7/15/2016 4:33:24 PM +02:00
+RowVersion   : {0, 0, 0, 0...}
+ParentId     : 5d31dbbd-d09c-4881-83b3-412d82ba84e5
+CustomerId   :
+Parent       :
+Customer     :
+Children     : {}
 
 .EXAMPLE
-# Connects to the Appclusive 'Ping' endpoint and waits for the response.
-# Upon successful execution the server returns an HTTP 204 which will be 
-# displayed as true.
-# Note: input length is limited.
-PS > Test-Status
-$true
-
-.EXAMPLE
-# Connects to the Appclusive 'AuthenticatedPing' endpoint and waits for the 
-# response. Upon successful execution the server returns an HTTP 204 which 
-# will be displayed as true.
-# Note: input length is limited.
-PS > Test-Status -Authenticate
-$true
+# In this example we query the current setting of the TenantID. As no id has been set, nothing is returned.
+PS > Get-SessionTenant
 
 .LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/
+Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-SessionTenant/
+
+.RELATED
+Set-SessionTenant
+Get-Tenant
 
 .NOTES
 See module manifest for required software versions and dependencies.
 #>
 [CmdletBinding(
-    SupportsShouldProcess = $false
+	SupportsShouldProcess = $false
 	,
-    ConfirmImpact = 'Low'
+	ConfirmImpact = 'Low'
 	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/'
-	,
-	DefaultParameterSetName = 'ping'
+	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-SessionTenant/'
 )]
 PARAM 
 (
-	# The text that should be echoed by the server
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'echo')]
-	[ValidateLength(1, 32)]
-	[string] $InputObject
-	,
-	# Specifies if the connection to the server will be authenticated with current credentials
-	[Parameter(Mandatory = $false, ParameterSetName = 'ping')]
-	[switch] $Authenticate = $false
-	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
 	[Alias('Services')]
@@ -81,83 +76,72 @@ Begin
 
 	$datBegin = [datetime]::Now;
 	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. InputObject '{1}'." -f ($svc -is [Object]), $InputObject) -fac 1;
+
+	$OutputParameter = $null;
 	
-	$EntitySetName = 'Endpoints';
+	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. Name '{1}'." -f ($svc -is [Object]), $Name) -fac 1;
 	
-	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
+	$isConnected = Test-ApcStatus -Authenticate;
+	Contract-Assert (!!$isConnected) "You must connect to the server before using this Cmdlet."
 }
 # Begin
 
 Process 
 {
-
 	trap { Log-Exception $_; break; }
 
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
+	$tenantIds = @{};
+	
+	foreach($key in $svc.Keys) 
+	{ 
+		$endpoint = $svc.$key; 
+		$propertyTenantID = ($endpoint | gm -Type Properties -Name TenantID);
+		if(!$propertyTenantID)
+		{
+			$message = ("Endpoint '{0}' does not contain 'TenantID' property." -f $key)
+			Write-Warning $message
+			Log-Error $fn $message;
+			continue;
+		}
 
-	if($PSCmdlet.ParameterSetName -eq 'ping')
+		$tenantId = $endpoint.TenantID;
+		if($tenantId)
+		{
+			$tenant = Get-ApcTenant -Id $tenantId;
+			Contract-Assert (!!$tenant) "Tenant not found $tenantId"
+		}
+		$tenantIds.$tenantId = $tenant;
+	}
+	
+	if($tenantIds.Keys.Count -eq 0)
 	{
-		if($Authenticate)
-		{
-			$actionName = 'AuthenticatedPing';
-		}
-		else
-		{
-			$actionName = 'Ping';
-		}
-
-		try
-		{
-			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, $actionName, $null);
-			$Response = $true;
-		}
-		catch
-		{
-			$Response = Format-ApcException;
-			Write-Error $Response;
-			$Response = $false;
-		}
+		$OutputParameter = $null
+	}
+	elseif($tenantIds.Keys.Count -eq 1)
+	{
+		$OutputParameter = $tenantIds.($tenantIds.Keys | Select -first 1);
 	}
 	else
 	{
-		try
-		{
-			$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
-		}
-		catch
-		{
-			$Response = Format-ApcException;
-			Write-Error $Response;
-			$Response = $false;
-		}
+		$OutputParameter = $tenantIds;
 	}
-
-	$OutputParameter = Format-ResultAs $Response $As;
+	$OutputParameter = Format-ResultAs $OutputParameter $As
 	$fReturn = $true;
-
 }
 # Process
 
 End 
 {
+	$datEnd = [datetime]::Now;
+	Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
 
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-
+	# Return values are always and only returned via OutputParameter.
+	return $OutputParameter;
 }
-# End
 
 } # function
 
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; } 
+if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-SessionTenant; } 
 
 # 
 # Copyright 2014-2016 d-fens GmbH
@@ -178,8 +162,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwJcAacSbawkTi97iyz6Pcjvp
-# P+OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7Uo3HE2a6offwa4Tzr1Vckd5
+# 1segghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -278,26 +262,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQi7x/jG1h/1iNJ
-# nAWPL5yesbsytDANBgkqhkiG9w0BAQEFAASCAQCiKPcVoZ1j8WT61wAfdVOweae6
-# x+L7c1EvHMSWa5xl3VgPx7tWiPSS/9x4YKQqp8N+egTumD+BXpEBQnuQCgi8C/kG
-# v4TMsoasjTu3cp4lVydWcHZYaO4LVKaXNnbSip1tk+bIdUPg91J6TAkojrT25zOg
-# xkLlpiENcllVjYW8j0u6jyPKvefyzYN4ud1GF4jVBjMXIEoYRhNr5tJHQXdDQLvW
-# Qb7srb6R+meFZ32UAint33xS/lAv0fCAqS8OnHX7l1jo5Jg5umH5Cx+7eISYVSFV
-# iqA2tUKsXt6Zq6aORqHAuNFUomCkkwrYmY0+Q1iOly02Zj+V6cpF1Wg+Qz1uoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRT0sbmpD7RXmCK
+# PWSqOQD3KmmbjDANBgkqhkiG9w0BAQEFAASCAQCV2yEX3FtCCBoOmG1nOrjbNw1Q
+# K7Kt1OCA19pTOBubtJcPVkzcbNjPXsjNOSLCwghcF68ZA6shHkUl5z8Em5eFeaE6
+# sWKbTJHq1mnIUX2ma+zgpJNwZCLUcWzwv1W4VPZ+5AQ9bn7ILi88o46dWeMAPN7y
+# sScGqs8Ax+VTgkuLclTBYDZ1wmBVumG/XeW0F1W5bXFfKKl+JOfojQ2qPVQEjqUw
+# 01/ndgNAbx7SVGVu1qgDjk3VTSMJZ0/uBRXhirfqzoOb4ysgJqhTWsU00021pL7F
+# hd69hzs5DRVXXblA9rU/4AtLLXZQhryPT5itNK+y7DKRGV6Pf8OnZ7MTqGf1oYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyNDEwNTcwMlowIwYJKoZIhvcNAQkEMRYEFGNaimd36vTyqMRYZCcQgFVoGKbh
+# MDcyNDEwNTY0NFowIwYJKoZIhvcNAQkEMRYEFE1uXGnRvjFAWwDfE0UXTOEeCTzQ
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBP/AW8ZdliFGbrW9Y2
-# hi5Y96nSQHK1ux/TtroVxCAEbyFvXZUCqg/cS3YDRxJW3bbpAedbU1rG1hUfT1rp
-# IB2lUCnHhwSRK0XI0+79F3aG6eNPItSx5sF12OLSuwNpyQaxefKzaRheKxK9dxCd
-# KcIbIEFyHv+sCDqA7xAB1COcD6l6szHrhuR1rXrwsPiRdESqH01/GfxNgae1eYg1
-# JVOUo0DSAs1pN6jdRPAzY6rIt9RUJm8JRR2P/RbvFIR0tE9ntXaPF0cHqjlUGSJj
-# G8s30trFb5258I3nK8xOFEZ30xMVFBqkqZ3RCbbQtZ1Dtvff2hBCOGXcI1uQ5nun
-# zQ6Z
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQA7qa/QSCs3ZQZOEZ3T
+# c+k9H3v74bx6dvL/u20BpBbYjDUk3+cMjin9lySRL0yLi030lMEToD7Qs0jCRnUX
+# jL0gIZPAnr7L8ghWna0UAQSRmNlPkWlzUyfff2uwhK5wNrvfwQ2ZwlU1DZyR5EVT
+# zBoVNMKeApV8HS5/nj4uo/O+c6/4pwfruhaKvPnZKE5EmzDcBDft9Ngw7nn3dxV6
+# 021g8yzJo5R6zTsNJsobng8ovFKEWaA3IoaPCQNvuFhS8tWZiyALxxykdiw4p/F8
+# UU3V7vnegZjDdhl6bnGr+xHAuKzwNtwt6Q333hiPCZRPvfJObnfsxEcmziSZSNZ4
+# ELzs
 # SIG # End signature block

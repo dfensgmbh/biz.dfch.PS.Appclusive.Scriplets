@@ -109,6 +109,69 @@ Retrieves the 'Name' property of a User with Name 'SuperUser'
 and Administrator if the entity is not found.
 
 
+.EXAMPLE
+# Retrieves information about the currently logged in user
+
+PS > Get-User -Current
+ExternalId   : schnittenfittich
+ExternalType : Integrated
+Mail         : schnittenfittich@appclusive.net
+Id           : 42
+Tid          : f2de53c1-62d0-4c15-8626-dac575f857a1
+Name         : schnittenfittich
+Description  : schnittenfittich
+CreatedById  : 1
+ModifiedById : 1
+Created      : 6/22/2016 3:22:29 PM +02:00
+Modified     : 6/22/2016 3:22:29 PM +02:00
+RowVersion   : {0, 0, 0, 0...}
+Tenant       :
+CreatedBy    :
+ModifiedBy   :
+
+.EXAMPLE
+# Retrieves tenant information about the currently logged in user
+
+PS > Get-User -TenantInformation
+Id              : 4048fba5-b81e-4cae-b2f4-6dbb90352875
+ParentId        : 199a7dca-ca61-4932-ada6-6c19f4af68851
+NodeId          : 42
+JobId           : 5
+CustomerId      : 8
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+	CloudAdmin         : 19
+	CloudUser          : 20
+	CloudGuest         : 21
+	CreatorOwner       : 18
+	Everyone           : 17
+	AppclusiveEveryone : 7
+
+.EXAMPLE
+# Retrieves the name of the currently logged in user
+
+PS > (Get-User -WhoAmi).Name
+schnittenfittich
+
+.EXAMPLE
+# Gets information about the tenant of the currently logged in user
+PS > $tenantInformation = Get-User -TenantInformation;
+PS > $tenantInformation
+Id              : e3c70408-9da0-45f2-ab7b-29d1081e948a
+ParentId        : d9c2feda-f3da-488a-8dd3-3747e40b6c6a
+NodeId          : 42
+JobId           : 123
+CustomerId      : 5
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+PS > $tenantInformation.BuiltInRoles
+CloudAdmin         : 14
+CloudUser          : 15
+CloudGuest         : 16
+CreatorOwner       : 12
+Everyone           : 13
+AppclusiveEveryone : 5
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-User/
 
@@ -189,6 +252,17 @@ PARAM
 	[Parameter(Mandatory = $false)]
 	[alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies to retrieve information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'current')]
+	[alias('WhoAmI')]
+	[alias('CurrentUser')]
+	[switch] $Current = $false
+	,
+	# Specifies to retrieve information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'tenant')]
+	[alias('Tenant')]
+	[switch] $TenantInformation = $false
 )
 
 Begin 
@@ -247,6 +321,16 @@ Process
 			}
 		}
 	} 
+	elseif($PSCmdlet.ParameterSetName -eq 'current')
+	{
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Users", "Current", [biz.dfch.CS.Appclusive.Api.Core.User], $null);
+		Contract-Assert (!!$Response);
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'tenant')
+	{
+		$Response = Get-Tenant -Current;
+		Contract-Assert (!!$Response);
+	}
 	else 
 	{
 		$Exp = @();
@@ -368,8 +452,8 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; }
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZ0uvIWkkmnePK3JCBBnyl6Yv
-# NsegghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUimmviqqULuOHhbhF0nOc1SCM
+# s5OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -468,26 +552,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-User; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQHSnHRdkqb4RPb
-# dML1EmtjiXv0LDANBgkqhkiG9w0BAQEFAASCAQA7C7MZJC7BIhGv++1pfgGO4hCo
-# mRdK60kfR1J862NBUiSAve5stnOVg52FToRl8Y67dF/ragAb1VGgAQAdwukRs7RA
-# TRi30rS2MvpDt59U7whLVkRWr7HMZU8YFY37oWEWVVsVo+ehE5NJBUkXoi7amEPh
-# IYkOkD2bwQccw6QCaYd1ADwKEC8Vy/BjULjQPvKNndcBLfAMgIV4cJCYgqINHMzk
-# zjMfdizzqN1dYUzGKPluxJ5kTb1IVsjQ1l64ZutJg1bQLUDmWTs/y/M7y4noF+1l
-# aQ7MA3BsaqqFgitnY3x1q6+MAtyceGjT4pJ2hydxxFNAkWguXBKU+Ae7s0IEoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS1a+SPEnntCxc6
+# Mmje9udTYDqLrDANBgkqhkiG9w0BAQEFAASCAQAr3zidPEyxj5hzSl779En1YUe1
+# k3HGmIAS0+WQurl7Imw/+I1ainMWZ6OBZ/XyjWyheh6DhD2h7K9ub0tT58NC7IL6
+# bO4kV5FMf6ZhCWHYvZgpAnpL1TKqsQWsCCQDsKITDquduQFAQgfx09CgLrtvELnO
+# 8kH+oeQ4EHdlPVMxwLTZiQ7HCm/qf1kRhlX7V9n/abZtolkZWLHZ7VojnIArttYT
+# qjX91zn1ZomMkX+Dic0vz52HOMXemOTFQyjgXomCOhqpQf4/OppqHpnnLQmep69w
+# cjXt62vCqfJTPPn+BBrTQ69ikz/vYQRl7I+fg71VBAOSVGAALhnE5FudHyBcoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA1MVowIwYJKoZIhvcNAQkEMRYEFGHLqzdYxFPV5gwlKC1FEzuN2XMU
+# MDcyNDEwNTY0NlowIwYJKoZIhvcNAQkEMRYEFA7523iryXpjCtauFCdIPhuWw2L1
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAOhBvowuXCIXOaXO6R
-# WXUgEEYD18p8dTiFgYLeALTnLwU0G8+Aw3mX6pgzxaOBsinRX0VGs/NmKCueG58o
-# TWkBUnMAXy8ywS87w569NS2HnT65jVfNP3550TjXl6gzQ4+ocxFbgQSHYE6YByKq
-# Fw5ip9o3orB/xe76MqmBN6dQIY5JPVEhtgBSQ+wDMJYnmxw8IkTo9JE7Xc0hDPi2
-# LzWktPJpeGB6TOm4V1Pc/HlCzLUn38coudPCR9FOO182tjJUGAEXJtg4TSYA/pC3
-# QMSJMo3pIrFbtC8+xUcW5HWzRuldY359Jxun9lFEdiYdJDKkpBrjv4EhJgFQuP1f
-# B90h
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAJMyr6H0RLvccxi1Dd
+# Hq+Fmc2MXwGH+Opn0DD6ylAuz4vLuJLV+FE3Qqx4kHnmVKnodcyb0wE71XNLGNtz
+# FeFyZckZk5pxPVm2Rk9c54a0+9RgFFFRG3Ij2rjcFZKPgDecLf8oxXmuvlrDEG2B
+# DfCbNfYP378tBJB+u6k0AL8VPioEQ52I+t8T2F/87gtLE83alKSy87Ir1KYOsPW5
+# TielIAiDVFF4uGvX1o95mx9ddjMCHcH7V8YxorQpdLzqEoKHWUL4MZ+Z89ygsIsH
+# N4PGLL0eb05Rvm/rVqVBchkHxOF24jCF1/bEvcvAjcwFwH/NCyxVce4T0TfxjWa3
+# NIoE
 # SIG # End signature block

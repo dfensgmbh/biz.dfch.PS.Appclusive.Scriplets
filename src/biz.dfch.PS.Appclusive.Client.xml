@@ -10,6 +10,14 @@
         <S N="Value">JSON</S>
       </En>
       <En>
+        <S N="Key">SaveChangesDefaultOptions</S>
+        <S N="Value">None</S>
+      </En>
+      <En>
+        <S N="Key">MergeOption</S>
+        <S N="Value">AppendOnly</S>
+      </En>
+      <En>
         <S N="Key">Credential</S>
         <Nil N="Value" />
       </En>
@@ -30,34 +38,6 @@
       <En>
         <S N="Key">BaseUrl</S>
         <S N="Value">/api/</S>
-      </En>
-      <En>
-        <S N="Key">Controllers</S>
-        <Obj N="Value" RefId="2">
-          <TNRef RefId="0" />
-          <DCT>
-            <En>
-              <S N="Key">Core</S>
-              <S N="Value">Core</S>
-            </En>
-            <En>
-              <S N="Key">Diagnostics</S>
-              <S N="Value">Diagnostics</S>
-            </En>
-			<En>
-              <S N="Key">Cmp</S>
-              <S N="Value">Cmp</S>
-            </En>
-			<En>
-              <S N="Key">Infrastructure</S>
-              <S N="Value">Infrastructure</S>
-            </En>
-			<En>
-              <S N="Key">Csm</S>
-              <S N="Value">Csm</S>
-            </En>
-          </DCT>
-        </Obj>
       </En>
     </DCT>
   </Obj>

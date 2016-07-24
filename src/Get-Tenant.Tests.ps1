@@ -1,185 +1,170 @@
-function Test-Status {
-<#
-.SYNOPSIS
-Test the connection to an Appclusive server.
 
-.DESCRIPTION
-Test the connection to an Appclusive server.
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-This Cmdlet lets you 'ping' an Appclusive server and display its response.
+Describe -Tags "Get-Tenant" "Get-Tenant" {
 
-.INPUTS
-See PARAMETERS section on possible inputs.
-
-.OUTPUTS
-default | json | json-pretty | xml | xml-pretty
-
-.EXAMPLE
-# Sends the text 'tralala' to a server and waits for its response. 
-# Upon successful execution the server returns the input string. 
-# Note: input length is limited.
-PS > Test-Status tralala
-tralala
-
-.EXAMPLE
-# Connects to the Appclusive 'Ping' endpoint and waits for the response.
-# Upon successful execution the server returns an HTTP 204 which will be 
-# displayed as true.
-# Note: input length is limited.
-PS > Test-Status
-$true
-
-.EXAMPLE
-# Connects to the Appclusive 'AuthenticatedPing' endpoint and waits for the 
-# response. Upon successful execution the server returns an HTTP 204 which 
-# will be displayed as true.
-# Note: input length is limited.
-PS > Test-Status -Authenticate
-$true
-
-.LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/
-
-.NOTES
-See module manifest for required software versions and dependencies.
-#>
-[CmdletBinding(
-    SupportsShouldProcess = $false
-	,
-    ConfirmImpact = 'Low'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/'
-	,
-	DefaultParameterSetName = 'ping'
-)]
-PARAM 
-(
-	# The text that should be echoed by the server
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'echo')]
-	[ValidateLength(1, 32)]
-	[string] $InputObject
-	,
-	# Specifies if the connection to the server will be authenticated with current credentials
-	[Parameter(Mandatory = $false, ParameterSetName = 'ping')]
-	[switch] $Authenticate = $false
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias('Services')]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias('ReturnFormat')]
-	[string] $As = 'default'
-)
-
-Begin 
-{
-	trap { Log-Exception $_; break; }
-
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. InputObject '{1}'." -f ($svc -is [Object]), $InputObject) -fac 1;
+	Mock Export-ModuleMember { return $null; }
 	
-	$EntitySetName = 'Endpoints';
+	. "$here\$sut"
+	. "$here\Format-ResultAs.ps1"
 	
-	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
-}
-# Begin
+	$svc = Enter-ApcServer;
 
-Process 
-{
-
-	trap { Log-Exception $_; break; }
-
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
-
-	if($PSCmdlet.ParameterSetName -eq 'ping')
-	{
-		if($Authenticate)
-		{
-			$actionName = 'AuthenticatedPing';
-		}
-		else
-		{
-			$actionName = 'Ping';
+	Context "Get-Tenant" {
+	
+		# Context wide constants
+		# N/A
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
 		}
 
-		try
-		{
-			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, $actionName, $null);
-			$Response = $true;
+		It "Get-TenantListAvailable-ShouldReturnList" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -ListAvailable;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
 		}
-		catch
-		{
-			$Response = Format-ApcException;
-			Write-Error $Response;
-			$Response = $false;
+
+		It "Get-TenantByPartialName-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Name SHARED;
+
+			# Assert
+			$result | Should Not Be $null;
+			0 -lt $result.Count | Should Be $true;
+			$result[0] -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Name.Contains('SHARED') | Should Be $true;
+		}
+
+		It "Get-TenantByName-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Name SHARED_TENANT;
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Id | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.Name | Should Be SHARED_TENANT;
+		}
+
+		It "Get-TenantById-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Id '44444444-4444-4444-4444-444444444444';
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Id | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.Name | Should Be SHARED_TENANT;
+		}
+
+		It "Get-TenantByExternalId-ShouldReturnTenant" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -ExternalId '44444444-4444-4444-4444-444444444444';
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [biz.dfch.CS.Appclusive.Api.Core.Tenant] | Should Be $true;
+			$result.Id | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.ExternalId | Should Be ([Guid] '44444444-4444-4444-4444-444444444444')
+			$result.Name | Should Be SHARED_TENANT;
+		}
+
+		It "Get-TenantByParentId-ShouldReturnListWithChildren" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -ParentId '11111111-1111-1111-1111-111111111111';
+
+			# Assert
+			$result | Should Not Be $null;
+			$result -is [Array] | Should Be $true;
+			0 -lt $result.Count | Should Be $true;
+		}
+
+		It "Get-TenantByIdWithNotMatchingExternalType-ShouldReturnNull" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Id '11111111-1111-1111-1111-111111111111' -ExternalType:External;
+
+			# Assert
+			$result | Should Be $null;
+		}
+
+		It "Get-TenantByIdWithNotMatchingExternalType-ShouldReturnNull" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -svc $svc -Id '11111111-1111-1111-1111-111111111111' -ExternalType:External;
+
+			# Assert
+			$result | Should Be $null;
 		}
 	}
-	else
-	{
-		try
-		{
-			$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
-		}
-		catch
-		{
-			$Response = Format-ApcException;
-			Write-Error $Response;
-			$Response = $false;
+	
+	Context "TenantInformation" {
+		
+		It "GettingTenantInformation-Succeeds" -Test {
+			# Arrange
+			# N/A
+			
+			# Act
+			$result = Get-Tenant -Current;
+
+			# Assert
+			$result | Should Be $null;
+			$result.GetType().FullName | Should Be 'biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation':
+			$result.BuiltInRoles.GetType().FullName | Should Be 'biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles';
 		}
 	}
-
-	$OutputParameter = Format-ResultAs $Response $As;
-	$fReturn = $true;
-
+	
 }
-# Process
 
-End 
-{
-
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-
-}
-# End
-
-} # function
-
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; } 
-
-# 
-# Copyright 2014-2016 d-fens GmbH
-# 
+#
+# Copyright 2015-2016 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwJcAacSbawkTi97iyz6Pcjvp
-# P+OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUXwAGknx5fYXe97wUCZmUtBPW
+# JXygghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -278,26 +263,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQi7x/jG1h/1iNJ
-# nAWPL5yesbsytDANBgkqhkiG9w0BAQEFAASCAQCiKPcVoZ1j8WT61wAfdVOweae6
-# x+L7c1EvHMSWa5xl3VgPx7tWiPSS/9x4YKQqp8N+egTumD+BXpEBQnuQCgi8C/kG
-# v4TMsoasjTu3cp4lVydWcHZYaO4LVKaXNnbSip1tk+bIdUPg91J6TAkojrT25zOg
-# xkLlpiENcllVjYW8j0u6jyPKvefyzYN4ud1GF4jVBjMXIEoYRhNr5tJHQXdDQLvW
-# Qb7srb6R+meFZ32UAint33xS/lAv0fCAqS8OnHX7l1jo5Jg5umH5Cx+7eISYVSFV
-# iqA2tUKsXt6Zq6aORqHAuNFUomCkkwrYmY0+Q1iOly02Zj+V6cpF1Wg+Qz1uoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBR8tmCkoM7Uviwf
+# 01//vVRCVO+BQzANBgkqhkiG9w0BAQEFAASCAQAwbsxTZcL2lZ2S600V14DXwNVn
+# xQYUnMWS8jfwKa/kS1haj21p3QW70T3ineNE+POxpH56YAePyKN/ft6+WYXvCEmP
+# LZ3qmMsvgCLctmsr5oGgvGUh/7NV5a1veJOmTYgDqDzqeTVBZzZSSqZN4zQPhF2d
+# KEyEPRBasepSdfvGUMvOJ80MRCh/QErecLyJdLLKhsIFckHuHt9G4uRkPElg+Xvj
+# o9Gf/wOlzlbdgn3zffspFk3lFYPbdOR5n7h047S7nWj1yJ0Qxi5VvJ7VDrhtXRGB
+# N+bzjU0fAE6JZ5KavCB5yrlSIV6bMYEtee998pqaFerwR7OYmFUS+FY6gTNloYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyNDEwNTcwMlowIwYJKoZIhvcNAQkEMRYEFGNaimd36vTyqMRYZCcQgFVoGKbh
+# MDcyNDEwNTY0NVowIwYJKoZIhvcNAQkEMRYEFDqT9jUfSj4/OJAGRgLr8DbV9LfB
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBP/AW8ZdliFGbrW9Y2
-# hi5Y96nSQHK1ux/TtroVxCAEbyFvXZUCqg/cS3YDRxJW3bbpAedbU1rG1hUfT1rp
-# IB2lUCnHhwSRK0XI0+79F3aG6eNPItSx5sF12OLSuwNpyQaxefKzaRheKxK9dxCd
-# KcIbIEFyHv+sCDqA7xAB1COcD6l6szHrhuR1rXrwsPiRdESqH01/GfxNgae1eYg1
-# JVOUo0DSAs1pN6jdRPAzY6rIt9RUJm8JRR2P/RbvFIR0tE9ntXaPF0cHqjlUGSJj
-# G8s30trFb5258I3nK8xOFEZ30xMVFBqkqZ3RCbbQtZ1Dtvff2hBCOGXcI1uQ5nun
-# zQ6Z
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBQEz2j4xV9CpKFaL2z
+# MVmcuZw6mp3nkDueTtunQ8r3Dkp+9XSM60gK+Pk/x82gSTw9vt7MdKUG2CE6eg/7
+# UZni9OZzW1E7o7YKMt0RqZtWQ262nyyEnGxrwpeln5xrormJI0Iq/K4qiCbFV99b
+# hDmJfBCe+sUDO8Gzfoufm94OBzdpfacZMNA8bwRdmflW3Pt1ZDyzHp5Yp/WHktrm
+# kSJBbwcITIB61/L47jY61k92v+4OC8usKJ5sTtGeoyGgrG78orr4mkfHS/rQGIWd
+# wQfdjDQRQg5eEyejTbX6ArEjgLOs055CBi/x8F6Zug3pj7Gvb88P4MEe9DIuK4wo
+# lym8
 # SIG # End signature block

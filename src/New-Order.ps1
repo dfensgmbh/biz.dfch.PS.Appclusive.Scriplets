@@ -220,11 +220,28 @@ End
 } # function
 
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-Order; } 
+
+# 
+# Copyright 2015-2016 d-fens GmbH
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCEQG7+kPHEnUBXj1iBaVFS22
-# h02gghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0Jq8Pz/vTCLQpppxB8aPgjvL
+# bECgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -323,26 +340,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function New-Order; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBSr+whxXbfblh/p
-# L5x/LGX7s7hccTANBgkqhkiG9w0BAQEFAASCAQCEKuSJ57A3m2upyZbmWP4o3s2n
-# zgI9SlGdalO9RSYatlCcqK36pMYv9cHJe2n5L/LqytsoYPNe2YntztbUGuUq8HcT
-# H+zfaA7QqRcoDpZ4H3lzF5nH6te1yjlfd7F/LxyfppZv454sOGkCOhKeTCOB3EDx
-# yhB5cgrPEhWItvA2jNr7hXMvZJmfk1HcAn1OGP2+ZkxOQsBWSN4zyWqK8+AD95Mv
-# de0pH8qv0kMyBjUSXFhtgDFXLre+Z3O+uGykRYH5n2F/1aZpe+32Wqabv4p93C+h
-# C6uBWMeafXCDnf+nnjtEEge3upCvInoLMC0kzKTsNR0etzmXAjjLcz76ovHGoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBS4eR8LJ4uNMN3L
+# cDCjcm+mdyfI8DANBgkqhkiG9w0BAQEFAASCAQBX1bjR8/3ZSldZX5C0sBfiItku
+# OI/K9CjkAV7X/IeYQ8y+vgzcRhi20np1UByqHbvJT6UPwGRO4LAicS+7BaPKp7ob
+# fIUc4H4yQ+DA89Wz5AL0nm8gWQw2QtocH6YEeW8YFkBnJi4HvR4HuadlApB8FjPs
+# i03H6VoMGkHpqUiWllpTVm4BRvuiMbb7ubx1Yvww/WbB2m9CLhy+g/gH3L09K980
+# EuQddreqYVYYH300s+kTTQXpUntxl/01uag6sFXTELG8GgQKk7nVQ+N5viDISHlG
+# ILZ1f2dbtdErq/elM8R81SIWQeMqvgyUUVINvJBL3dgFt+7KcQDkwmXN8bBWoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA1N1owIwYJKoZIhvcNAQkEMRYEFBPqxyLvfuo/Rl7mPMfCaAxb+Y6h
+# MDcyNDEwNTY1MlowIwYJKoZIhvcNAQkEMRYEFLOoIIvToroS5TCYJgk/9yegH4wi
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQAlyt4cEX1ZFor4k3T1
-# v0s4h66rH+KXsCfjil8zubRSlOpaOUjTKTijQ50EqZSERok29lkW/vRVLvI2YtfD
-# u+AqL4DloiA74/K9oNk31Rz/CDooebGJPJVnpI6IR0BMW1kvV5FdMooO8t7ie1rg
-# zEUJ0V6to/kiQ1UtY1dTuowQ5R4b2x7J/nGboKIKhwn+2/90hAEK02x8mvp4qHhZ
-# yX6oEcj/y9uLL6biY1prwoQ4s46VgQ7RnTpo3la/NWlzW1nbbDoqOWltYm0KBCdG
-# yFVAjM5rWUEVseHz6hrCZV+PQGWEzgr12Nnvmz5enpXIGNYUVwBQyRszlgGMiiNj
-# S4fd
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQALiTVGeSyRb6kCkAYg
+# Dq4/qjb4vzsqUQ3FFqzqC8/OLhhoBeMDxOEhFrIZbty29BvZGVyOFGwkZoKAnVU6
+# PRZyV8qlEV4GBotM4IRsFCYw7UDMaZ4Mi19FnWOOO2Ii/SDA8a0yXlXFEpOsPlll
+# 2Qqf+OaS2HmFcsz+8Crs2eP5r77dMNPfEusUYWHYuaPuW5iwyO+Sxb7pZnd2pWHt
+# wxTDHvUnspkPrVe1tjQwQwBuMpRmJg8v1UqhwJYqjRCO32RNdT2TGzRwMXhg0smq
+# F/+ytpwGrsrm9y4hmp+uQ8CzczP9FYqgb12XqRQMwqzDIRlkGhyR8TCTlnz3T0+3
+# KF+H
 # SIG # End signature block

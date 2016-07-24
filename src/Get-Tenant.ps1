@@ -116,6 +116,25 @@ Name         : GROUP_TENANT
 
 This call return all tenants where the name "te" include and the ExternalType "Internal" is.
 
+.EXAMPLE
+# Gets information about the tenant of the currently logged in user
+PS > $tenantInformation = Get-Tenant -Current;
+PS > $tenantInformation
+Id              : e3c70408-9da0-45f2-ab7b-29d1081e948a
+ParentId        : d9c2feda-f3da-488a-8dd3-3747e40b6c6a
+NodeId          : 42
+JobId           : 123
+CustomerId      : 5
+ConfigurationId : 43
+BuiltInRoles    : biz.dfch.CS.Appclusive.Core.Managers.BuiltInRoles
+PS > $tenantInformation.BuiltInRoles
+CloudAdmin         : 14
+CloudUser          : 15
+CloudGuest         : 16
+CreatorOwner       : 12
+Everyone           : 13
+AppclusiveEveryone : 5
+
 .LINK
 Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Get-Tenant/
 
@@ -134,67 +153,31 @@ See module manifest for required software versions and dependencies.
 )]
 PARAM 
 (
-	# Lists all available products
+	# Lists all tenants
 	[Parameter(Mandatory = $false, ParameterSetName = 'list')]
-	[Switch] $ListAvailable = $true
+	[switch] $ListAvailable = $true
 	,
-	# Tenant id to search fore
-	[Parameter(Mandatory = $true, ParameterSetName = 'Id')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[String] $Id = $null
+	# Tenant id to search for
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'Id')]
+	[Guid] $Id
 	,
-	# Id from the parent tenant
-	[Parameter(Mandatory = $true, ParameterSetName = 'ParentTenant')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[String] $ParentTenantId = $null
+	# Specifies to return all child with this tenant id
+	[Parameter(Mandatory = $false, ParameterSetName = 'Parent')]
+	[Guid] $ParentId
 	,
 	# External Tenant id
-	[Parameter(Mandatory = $true, ParameterSetName = 'ExternalId')]
-	[ValidateScript({
-		try 
-		{
-			[System.Guid]::Parse($_) | Out-Null
-			$true
-		} 
-		catch 
-		{
-			write-warning "Input is not from type GUID"
-			$false
-		}
-    })]
-	[String] $ExternalId = $null
+	[Parameter(Mandatory = $false, ParameterSetName = 'ExternalId')]
+	[string] $ExternalId
 	,
 	# Tenant name or a part of it to search for
-	[Parameter(Mandatory = $true, ParameterSetName = 'Name')]
+	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'Name')]
 	[ValidateNotNullOrEmpty()]
-	[String] $Name = $null
+	[string] $Name
 	,
-	# Typ of tenants to search for
-	[ValidateSet('All', 'External', 'Internal')]
+	# Specifies the type of tenant to search for
+	[ValidateSet('External', 'Internal')]
 	[Parameter(Mandatory = $false)]
-	[string] $TenantTyp = 'All'
+	[string] $ExternalType
 	,
 	# Service reference to Appclusive
 	[Parameter(Mandatory = $false)]
@@ -204,8 +187,14 @@ PARAM
 	# Specifies the return format of the Cmdlet
 	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
 	[Parameter(Mandatory = $false)]
-	[alias('ReturnFormat')]
+	[Alias('ReturnFormat')]
 	[string] $As = 'default'
+	,
+	# Specifies to retrieve tenant information about the currently logged in user
+	[Parameter(Mandatory = $false, ParameterSetName = 'current')]
+	[alias('WhoAmI')]
+	[switch] $Current = $false
+	
 )
 
 Begin 
@@ -231,38 +220,40 @@ Process
 	if($PSCmdlet.ParameterSetName -eq 'list') 
 	{
 		$Response = $svc.Core.$EntitySetName.AddQueryOption('$orderby','Name') | Select;
-	}	
+	}
+	elseif($PSCmdlet.ParameterSetName -eq 'current')
+	{
+		$Response = $svc.Core.InvokeEntitySetActionWithSingleResult("Tenants", 'Current', [biz.dfch.CS.Appclusive.Core.Managers.TenantManagerInformation], $null);
+	}
 	else
 	{
 		$Exp = @();
-		If ($PSCmdlet.ParameterSetName -eq 'Id') 
+		if ($PSCmdlet.ParameterSetName -eq 'Id') 
 		{
-			$Exp += ("Id eq guid'{0}'" -f $Id);
-			# write-warning $Exp;
+			$Exp += ("Id eq guid'{0}'" -f $Id.Guid);
 		}
-		elseIf ($PSCmdlet.ParameterSetName -eq 'ParentTenant') 
+		elseif ($PSCmdlet.ParameterSetName -eq 'Parent') 
 		{
-			$Exp += ("ParentId eq guid'{0}'" -f $ParentTenantId);
+			$Exp += ("ParentId eq guid'{0}'" -f $ParentId.Guid);
 		}
-		elseIf ($PSCmdlet.ParameterSetName -eq 'ExternalId') 
+		elseif ($PSCmdlet.ParameterSetName -eq 'ExternalId') 
 		{
 			$Exp += ("ExternalId eq '{0}'" -f $ExternalId);
 		}
-		elseIf ($PSCmdlet.ParameterSetName -eq 'Name') 
+		elseif ($PSCmdlet.ParameterSetName -eq 'Name') 
 		{
 			$Exp += ("substringof('{0}', tolower(Name))" -f $Name.ToLower());
 		}
 		
-		if ($TenantTyp -ne 'All')
+		if($ExternalType)
 		{
-			$Exp += ("ExternalType eq '{0}'" -f $TenantTyp);
+			$Exp += ("ExternalType eq '{0}'" -f $ExternalType);
 		}
 		
-		$FilterExpression = [String]::Join(' and ', $Exp);
+		$FilterExpression = [string]::Join(' and ', $Exp);
 		$Response = $svc.Core.$EntitySetName.AddQueryOption('$filter', $FilterExpression) | Select;
 	}
 	
-	# $OutputParameter = $result
 	$OutputParameter = Format-ResultAs $Response $As
 	$fReturn = $true;
 }
@@ -280,11 +271,28 @@ End
 } # function
 
 if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Tenant; } 
+
+# 
+# Copyright 2016 d-fens GmbH
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUuNxpqYdtE1RmnHHpd2PSYFay
-# 8cigghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUeWuXhnj2nZlh1RdcX1ye1Gzb
+# UGKgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -383,26 +391,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Get-Tenant; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQxDKVYCr9eBGG0
-# 0F7CidXuN2rQHjANBgkqhkiG9w0BAQEFAASCAQB8dYWB7cw4oQUb3Nwk3KaqCh9b
-# 6gsacOMg+Df1lAYIDTsLsqwPqqh2hAy4QNiZ7IrQ03mr0Ic3GZ1DFf5UCCKBcVw4
-# UZzTDCF/EnFg0wwvyrpV6IQXX9A4eBLxU2Gw+5TofL0Wtt2ukC756jsQAc7waRrC
-# zOeA2EN/x8jwXwRtlELGIIOJjQR5H3su+JrOi2Ltj9RCUFsHRRPPU9evH3G06ui9
-# E6Yb35+WmIjdORpKd3g48BbIVg33XpXP1oYeAYbOSzqiR1okGZKRpWd/Ip44viZJ
-# ZKsefF1vVDj1e5K3vbuozELfB8Ty8T4rPH5DkyioT81gvK8FVSuSjrS4tXFjoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQsLmnltaql1T0t
+# Wn51rAzSk8tzNzANBgkqhkiG9w0BAQEFAASCAQAiPHXkKr8p8/O6UIl5V4WrFl0V
+# cHdC5pkGSHQN9HpEGTmtD03kucLV5huCO+navQTr/O+mdg9OafuCHHGNNTXmKXqS
+# XL48bIIrkbbI5pcvF4gWGdjP/kN+o/fDePnRI+KNGNfo2hM+yjwWUdXVczlXzHln
+# 4svpfoFCP/YEFxKZvxDA3lrW/L4M+xzGMG/YarcavJyGehFR5EGxBAIE/8D1xf9u
+# CY5AyTPz4K7n2rnpEiQhWKkh2Y++9TX7qK87SdSdei3sKmJjH1VEpDP+n9BNVUb4
+# 5rCRNw4cHpgReDxLVX5xRm8h3kzWdtOQ4ncdP+F14vFLVJ4FtK6qMzx0MAxHoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcxNTA1NTA1MFowIwYJKoZIhvcNAQkEMRYEFFwLJBbmlISzUWlliw78dQotzGAZ
+# MDcyNDEwNTY0NVowIwYJKoZIhvcNAQkEMRYEFMWU1yIfH3Kd9nc0kX4S6LQKbpQw
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCDW1INb1b58B3mBeyv
-# XxcxumaTrSgoVEzML5HQP+338xOBuHfwER1/r9QHiV3NamzJ+99JFwfchI8WRx/2
-# w1XmhPX1MKqKWdHILgDxIppL6yg7WOXQL5L/CY800H18RZseOffGamP9EmRSGo4p
-# RTr5J882hp6bE9JaM3aq2ru6ptCM8lehZMssJ8sqbxcvqZxDi+o0j4tA0dgmsAOV
-# K5OlVNdIKdYMLrfHBSpHd+Q52h2rSfUt1DwGka6cEf/tNl/CER9D23v87koxYFzX
-# DA1vQ1JjFtK9GWgZo/4DjEJO5P9Jv265PQTUIH7REAEHZZX3c1Rnqn5DsQ6rueFI
-# BOck
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBXHInPdTCTz2+MN0bl
+# GRv+yJS9uLZg+4Lxs0mgp+x63nJLcKvCItkiXx3ex+HR723tvCghlh+9p9Yq9Rtc
+# zF+kdKsQ918uZ15MylILSK/+erIjQwU6RkY0LStKsgt7WvceYrsUqz91wD10jFgW
+# NqWLi7BT1D/QYErp8FItvX8ev9i+NMJcShAe7tA9npwud0EPk2TQ29VzXzw6iqX+
+# EiTQDpDml7atAWKk6SxEWt1JvRgSUQP2fNzge9LZYexuHtNbDUweCFEPy6/4Iuk0
+# /0ZwrUOz02lnp0u+6rVGEHeFCc4r59Fza+31rWEz61SzuCxdZ9FQN5FvNR3c3ord
+# wATp
 # SIG # End signature block

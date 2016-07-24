@@ -1,185 +1,97 @@
-function Test-Status {
-<#
-.SYNOPSIS
-Test the connection to an Appclusive server.
 
-.DESCRIPTION
-Test the connection to an Appclusive server.
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-This Cmdlet lets you 'ping' an Appclusive server and display its response.
+Describe -Tags "Set-SessionTenant.Tests" "Set-SessionTenant.Tests" {
 
-.INPUTS
-See PARAMETERS section on possible inputs.
-
-.OUTPUTS
-default | json | json-pretty | xml | xml-pretty
-
-.EXAMPLE
-# Sends the text 'tralala' to a server and waits for its response. 
-# Upon successful execution the server returns the input string. 
-# Note: input length is limited.
-PS > Test-Status tralala
-tralala
-
-.EXAMPLE
-# Connects to the Appclusive 'Ping' endpoint and waits for the response.
-# Upon successful execution the server returns an HTTP 204 which will be 
-# displayed as true.
-# Note: input length is limited.
-PS > Test-Status
-$true
-
-.EXAMPLE
-# Connects to the Appclusive 'AuthenticatedPing' endpoint and waits for the 
-# response. Upon successful execution the server returns an HTTP 204 which 
-# will be displayed as true.
-# Note: input length is limited.
-PS > Test-Status -Authenticate
-$true
-
-.LINK
-Online Version: http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/
-
-.NOTES
-See module manifest for required software versions and dependencies.
-#>
-[CmdletBinding(
-    SupportsShouldProcess = $false
-	,
-    ConfirmImpact = 'Low'
-	,
-	HelpURI = 'http://dfch.biz/biz/dfch/PS/Appclusive/Client/Test-Status/'
-	,
-	DefaultParameterSetName = 'ping'
-)]
-PARAM 
-(
-	# The text that should be echoed by the server
-	[Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'echo')]
-	[ValidateLength(1, 32)]
-	[string] $InputObject
-	,
-	# Specifies if the connection to the server will be authenticated with current credentials
-	[Parameter(Mandatory = $false, ParameterSetName = 'ping')]
-	[switch] $Authenticate = $false
-	,
-	# Service reference to Appclusive
-	[Parameter(Mandatory = $false)]
-	[Alias('Services')]
-	[hashtable] $svc = (Get-Variable -Name $MyInvocation.MyCommand.Module.PrivateData.MODULEVAR -ValueOnly).Services
-	,
-	# Specifies the return format of the Cmdlet
-	[ValidateSet('default', 'json', 'json-pretty', 'xml', 'xml-pretty')]
-	[Parameter(Mandatory = $false)]
-	[alias('ReturnFormat')]
-	[string] $As = 'default'
-)
-
-Begin 
-{
-	trap { Log-Exception $_; break; }
-
-	$datBegin = [datetime]::Now;
-	[string] $fn = $MyInvocation.MyCommand.Name;
-	Log-Debug -fn $fn -msg ("CALL. svc '{0}'. InputObject '{1}'." -f ($svc -is [Object]), $InputObject) -fac 1;
+	Mock Export-ModuleMember { return $null; }
 	
-	$EntitySetName = 'Endpoints';
+	. "$here\$sut"
+	. "$here\Get-ModuleVariable.ps1"
+	. "$here\Format-ResultAs.ps1"
+	. "$here\Get-SessionTenant.ps1"
 	
-	# Parameter validation
-	Contract-Requires ($svc.Core -is [biz.dfch.CS.Appclusive.Api.Core.Core]) "Connect to the server before using the Cmdlet"
-}
-# Begin
-
-Process 
-{
-
-	trap { Log-Exception $_; break; }
-
-	# Default test variable for checking function response codes.
-	[Boolean] $fReturn = $false;
-	# Return values are always and only returned via OutputParameter.
-	$OutputParameter = $null;
-
-	if($PSCmdlet.ParameterSetName -eq 'ping')
-	{
-		if($Authenticate)
-		{
-			$actionName = 'AuthenticatedPing';
+	Context "Set-SessionTenant.Tests" {
+	
+		# Context wide constants
+		# N/A
+		
+		BeforeEach {
+			$error.Clear();
 		}
-		else
-		{
-			$actionName = 'Ping';
+		
+		AfterEach {
+			if(0 -ne $error.Count)
+			{
+				Write-Warning ($error | Out-String);
+			}
 		}
-
-		try
-		{
-			$svc.Diagnostics.InvokeEntitySetActionWithVoidResult($EntitySetName, $actionName, $null);
-			$Response = $true;
+		
+		It "Warmup" -Test {
+			$true | Should Be $true;
 		}
-		catch
-		{
-			$Response = Format-ApcException;
-			Write-Error $Response;
-			$Response = $false;
+		
+		It "SetSessionTenantWithInvalidId-Throws" -Test {
+		
+			# Arrange
+			$tenantId = [Guid]::NewGuid()
+			
+			# Act
+			{ $result = Set-SessionTenant $tenantId -svc $svc; } | Should ThrowErrorId Contract;
+			
+			# Assert
+			# N/A
 		}
+		
+		It "SetSessionTenantWithValidId-Throws" -Test {
+		
+			# Arrange
+			$tenantId = '11111111-1111-1111-1111-111111111111'
+			
+			# Act
+			$result = Set-SessionTenant $tenantId -svc $svc;
+			
+			# Assert
+			$result | Should Not Be $null;
+			$result.Id | Should Be $tenantId;
+		}
+		
+		It "SetSessionTenantClear-Succeeds" -Test {
+		
+			# Arrange
+			#
+			
+			# Act
+			$result = Set-SessionTenant -Clear -svc $svc;
+			
+			# Assert
+			$result | Should Be $null;
+		}
+		
 	}
-	else
-	{
-		try
-		{
-			$Response = $svc.Diagnostics.InvokeEntitySetActionWithSingleResult($EntitySetName, 'Echo', [string], @{'Content' = $InputObject});
-		}
-		catch
-		{
-			$Response = Format-ApcException;
-			Write-Error $Response;
-			$Response = $false;
-		}
-	}
-
-	$OutputParameter = Format-ResultAs $Response $As;
-	$fReturn = $true;
-
 }
-# Process
 
-End 
-{
-
-$datEnd = [datetime]::Now;
-Log-Debug -fn $fn -msg ("RET. fReturn: [{0}]. Execution time: [{1}]ms. Started: [{2}]." -f $fReturn, ($datEnd - $datBegin).TotalMilliseconds, $datBegin.ToString('yyyy-MM-dd HH:mm:ss.fffzzz')) -fac 2;
-
-# Return values are always and only returned via OutputParameter.
-return $OutputParameter;
-
-}
-# End
-
-} # function
-
-if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; } 
-
-# 
-# Copyright 2014-2016 d-fens GmbH
-# 
+#
+# Copyright 2015-2016 d-fens GmbH
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwJcAacSbawkTi97iyz6Pcjvp
-# P+OgghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUkg0xfnOVGFR/qr2ozqx/qfVj
+# pSagghHCMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
 # VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
 # BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
 # MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
@@ -278,26 +190,26 @@ if($MyInvocation.ScriptName) { Export-ModuleMember -Function Test-Status; }
 # MDAuBgNVBAMTJ0dsb2JhbFNpZ24gQ29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBH
 # MgISESENFrJbjBGW0/5XyYYR5rrZMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEM
 # MQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQB
-# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQi7x/jG1h/1iNJ
-# nAWPL5yesbsytDANBgkqhkiG9w0BAQEFAASCAQCiKPcVoZ1j8WT61wAfdVOweae6
-# x+L7c1EvHMSWa5xl3VgPx7tWiPSS/9x4YKQqp8N+egTumD+BXpEBQnuQCgi8C/kG
-# v4TMsoasjTu3cp4lVydWcHZYaO4LVKaXNnbSip1tk+bIdUPg91J6TAkojrT25zOg
-# xkLlpiENcllVjYW8j0u6jyPKvefyzYN4ud1GF4jVBjMXIEoYRhNr5tJHQXdDQLvW
-# Qb7srb6R+meFZ32UAint33xS/lAv0fCAqS8OnHX7l1jo5Jg5umH5Cx+7eISYVSFV
-# iqA2tUKsXt6Zq6aORqHAuNFUomCkkwrYmY0+Q1iOly02Zj+V6cpF1Wg+Qz1uoYIC
+# gjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBRCvHqBT6oXbePK
+# xZTdtmc82EzcWzANBgkqhkiG9w0BAQEFAASCAQAnP4X2owppzQb0dTtGQwgKWINC
+# LAJGm5PKlsxWNc5sJRVqgyHAYGf1LpwfG1pjmNg13cEQYOh818jGLwbVEf+9Vnn2
+# 0sXpwIAKY6JUr/PqySX2C7IopSz+BeV4MnfHuTFwgNG2PKHy5NtYqkcWPreAEhMx
+# UKSjWuwvES15fu9WSynLEiEQRBZoyQ5eitqqtJb0MdcqJoUcFMYtx668QqkGCr8l
+# tjcWlr3YnH1vIiwG7zCUU3lx2wlTS7lSrMc7WKct/JIJuYUvajkDdtfw7JxCFLsE
+# 26Tb/s9thCkZIKeiLHyaR5msN3gktHtdmC2ThaZLu2pPB2pcJ75S6do3mZ1CoYIC
 # ojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgwUjELMAkGA1UEBhMCQkUxGTAX
 # BgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGlt
 # ZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDAJBgUrDgMCGgUA
 # oIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2
-# MDcyNDEwNTcwMlowIwYJKoZIhvcNAQkEMRYEFGNaimd36vTyqMRYZCcQgFVoGKbh
+# MDcyNDEwNTcwMVowIwYJKoZIhvcNAQkEMRYEFAiG6Ez87pPvxz6Al+mDZkYn1X1h
 # MIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQUY7gvq2H1g5CWlQULACScUCkz
 # 7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYt
 # c2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh
-# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQBP/AW8ZdliFGbrW9Y2
-# hi5Y96nSQHK1ux/TtroVxCAEbyFvXZUCqg/cS3YDRxJW3bbpAedbU1rG1hUfT1rp
-# IB2lUCnHhwSRK0XI0+79F3aG6eNPItSx5sF12OLSuwNpyQaxefKzaRheKxK9dxCd
-# KcIbIEFyHv+sCDqA7xAB1COcD6l6szHrhuR1rXrwsPiRdESqH01/GfxNgae1eYg1
-# JVOUo0DSAs1pN6jdRPAzY6rIt9RUJm8JRR2P/RbvFIR0tE9ntXaPF0cHqjlUGSJj
-# G8s30trFb5258I3nK8xOFEZ30xMVFBqkqZ3RCbbQtZ1Dtvff2hBCOGXcI1uQ5nun
-# zQ6Z
+# 1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEFAASCAQCnKvrJl0VP90Pj8A2X
+# 1R0qvSsM669T9+/yc3dBaVfh5CsrFv2iyKtdmUx2uuPH85zXWcWXNbvvnH/iMChd
+# QRt+nrGmtq0bJYiJyQeIXCKzp+vH6DXyLcxrmV6/elGUfTWWckpsj7OIvn5H7t1O
+# cqWqCG/8LZyA6ySJODOqCyAdStj3iyT8Wcf/0aVObgIMqyU/lT4pKYbrq2VAX4fB
+# 9ueMnj/XGZBnPAl1x/W3ut95f3LmW2ZLH86vZo1o0gu+/dg0gSb0DlTE6jxTc4Vj
+# g042zcbjPdCHe2abbul/XUNbT8T8aouiMRu8zMrnucXbkPQhcqOHWYvs7yxB6uEj
+# X4uk
 # SIG # End signature block

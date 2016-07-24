@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>biz.dfch.PS.Appclusive.Client</id>
-    <version>3.0.0</version>
+    <version>4.2.0</version>
     <title>biz.dfch.PS.Appclusive.Client</title>
     <authors>d-fens GmbH</authors>
     <owners>Ronald Rink</owners>
@@ -27,18 +27,44 @@ Third party (and Microsoft) DLLs are not part of this Apache 2.0 licensed projec
 See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detailed description on how to use the Cmdlets in this module.
 </description>
     <summary>This Microsoft PowerShell module contains Cmdlets to perform various base actions and utilties/convenience functions with the our open-source based automation framework "Appclusive".</summary>
-    <releaseNotes>20160715
-* changed Test-Status Cmdlet
-	* changed behaviour to return bool instead of null
-	* Cmdlet now uses Format-Exception to render exception
+    <releaseNotes>20160724
+# BUGFIXES
+
+Get-Tenant
+
+* changed OData action from entity based to entity set action
+
+Format-Exception
+
+* fixed error in json extraction
+
+# FEATURES
+
+Enter-Server
+
+* added MergeOption to be settable in module configuration file
+  * default is `AppendOnly` which is also the DataServiceContext default
+
+Set-SessionTenant
+
+* updated cmdlet to read endpoints from Services instead of hard coded in cmdlet
+* added more examples
+* improved error handling
+* changed input parameter to be native guid and removed unnecessary ValidateScript validation
+* renamed id switch and added aliases for compatibility
+* added Clear switch to remove any set tenant id
+
+Get-SessionTenant
+
+* added Cmdlet to support display of currently set tenant id
 
 * installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter</releaseNotes>
     <copyright>(c) 2015-2016 d-fens GmbH</copyright>
     <language>en-US</language>
     <tags>dfch PowerShell Appclusive Automation OData</tags>
     <dependencies>
-      <dependency id="biz.dfch.PS.System.Logging" version="1.3.1" />
-      <dependency id="biz.dfch.PS.System.Utilities" version="1.1.0" />
+      <dependency id="biz.dfch.PS.System.Logging" version="1.4.1" />
+      <dependency id="biz.dfch.PS.System.Utilities" version="2.2.0" />
     </dependencies>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System.Data.Entity" targetFramework="" />
@@ -92,16 +118,17 @@ See https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/wiki for a detail
 	<file src="Get-CatalogueItem.ps1" target="tools\Get-CatalogueItem.ps1" />
 	<file src="Get-Tenant.ps1" target="tools\Get-Tenant.ps1" />
 	<file src="Set-SessionTenant.ps1" target="tools\Set-SessionTenant.ps1" />
+	<file src="Get-SessionTenant.ps1" target="tools\Get-SessionTenant.ps1" />
 	<file src="Get-Version.ps1" target="tools\Get-Version.ps1" />
 	<file src="Format-Exception.ps1" target="tools\Format-Exception.ps1" />
     <file src="..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll" target="tools\Microsoft.Data.Edm.dll" />
     <file src="..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll" target="tools\Microsoft.Data.OData.dll" />
     <file src="..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll" target="tools\Microsoft.Data.Services.Client.dll" />
     <file src="..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll" target="tools\System.Spatial.dll" />
-    <file src="..\packages\biz.dfch.CS.Appclusive.Api.2.8.0\lib\biz.dfch.CS.Appclusive.Api.dll" target="tools\biz.dfch.CS.Appclusive.Api.dll" />
-	<file src="..\packages\biz.dfch.CS.Appclusive.Public.2.17.1\lib\biz.dfch.CS.Appclusive.Public.dll" target="tools\biz.dfch.CS.Appclusive.Public.dll" />
-    <file src="..\packages\biz.dfch.CS.Appclusive.Public.2.17.1\lib\Newtonsoft.Json.dll" target="tools\Newtonsoft.Json.dll" />
-    <file src="..\packages\biz.dfch.CS.Appclusive.Public.2.17.1\lib\System.Net.Http.Formatting.dll" target="tools\System.Net.Http.Formatting.dll" />
-    <file src="..\packages\biz.dfch.CS.Appclusive.Public.2.17.1\lib\System.Web.Http.dll" target="tools\System.Web.Http.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Api.3.4.1\lib\biz.dfch.CS.Appclusive.Api.dll" target="tools\biz.dfch.CS.Appclusive.Api.dll" />
+	<file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\biz.dfch.CS.Appclusive.Public.dll" target="tools\biz.dfch.CS.Appclusive.Public.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\Newtonsoft.Json.dll" target="tools\Newtonsoft.Json.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\System.Net.Http.Formatting.dll" target="tools\System.Net.Http.Formatting.dll" />
+    <file src="..\packages\biz.dfch.CS.Appclusive.Public.3.4.0\lib\System.Web.Http.dll" target="tools\System.Web.Http.dll" />
   </files>
 </package>
