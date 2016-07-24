@@ -103,7 +103,7 @@ Process
 
 	if($PSCmdlet.ParameterSetName -eq 'id')
 	{
-		$tenant = Get-ApcTenant -Id $TenantId;
+		$tenant = Get-Tenant -Id $Id;
 		Contract-Assert (!!$tenant) "Tenant not found"
 
 		foreach($key in $svc.Keys) 
@@ -118,7 +118,7 @@ Process
 				continue;
 			}
 
-			$endpoint.TenantID = $TenantId;
+			$endpoint.TenantID = $Id;
 		}
 		
 		$OutputParameter = Format-ResultAs $tenant $As
