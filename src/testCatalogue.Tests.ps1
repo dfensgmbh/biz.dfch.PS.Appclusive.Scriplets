@@ -91,6 +91,14 @@ function Create-CatalogueItem {
 
 }
 
+function Delete-CatalogueItem {
+	Param(
+	$catalogueItem
+	)
+	$svc.Core.DeleteObject($catalogueItem);
+	$result = $svc.Core.SaveChanges();
+}
+
 
 
 Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
@@ -176,7 +184,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$newCatalogueItem.Id | Should Not Be $null;
 			
 			#delete catalogue item
-			
+			Delete-CatalogueItem -catalogueItem $newCatalogueItem;
 			
 			#delete product
 			Delete-Product -product $newProduct;
