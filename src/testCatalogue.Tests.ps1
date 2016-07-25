@@ -62,6 +62,14 @@ function Create-Product {
 
 }
 
+function Delete-Product {
+	Param (
+	$product
+	)
+	$svc.Core.DeleteObject($product);
+	$result = $svc.Core.SaveChanges();
+}
+
 function Create-CatalogueItem {
 	Param(
 	$productId
@@ -171,6 +179,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 			
 			#delete product
+			Delete-Product -product $newProduct;
 		}#>
 		
 		It "UpdateCatalogue" -Test {
@@ -181,8 +190,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$catNewDescription = "This is the new description for catalogue";
 			
 			#ACT - create catalogue
-			#$catalogue = Create-Catalogue -Name $catName;
-			
+			#$newCatalogue = Create-Catalogue -Name $catName;
 			$catVersion = "1";
 			$catStatus = "Published";
 	
@@ -199,8 +207,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$result = $svc.Core.SaveChanges();
 	
 			$result.StatusCode | Should Be 201;
-	
-					
+			
 			#ASSERT
 			$newCatalogue | Should Not Be $null;
 			$newCatalogue.Id | Should Not Be $null;
@@ -221,8 +228,29 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$updatedCatalogue.Description | Should Be $catNewDescription;
 			
 			#create product
+			#$newProduct = Create-Product;
+			$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
+			$newProduct.Name = "new Product";
+			$newProduct.Description = "Test Product";
+			$newProduct.Type = "Test Product";
+			$newProduct.EntityKindId = 4864;
+			$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
+			
+			$newProduct = $svc.Core.AddToProducts($newProduct);
+			$result = $svc.Core.SaveChanges();
+
+			$result.StatusCode | Should Be 201;
 			
 			#create catalogue item
+			$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+			$newCatalogueItem.Name = "NewCatalogueItem";
+			$newCatalogueItem.ProductId = $newProduct.Id;
+			$newCatalogueItem.CatalogueId = $newCatalogue.Id;
+
+			$svc.Core.AddToCatalogueItems($newCatalogueItem);
+			$result = $svc.Core.SaveChanges();
+			
+			$result.StatusCode | Should be 201;
 			
 			#update catalogue with a catalogue item
 			
