@@ -28,9 +28,15 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$svc.Core.AddToNodes($node);
 			$result = $svc.Core.SaveChanges();
 			
+			
 			#get the node
 			$query = "Name eq '{0}'" -f $nodeName;
 			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query);
+			
+			#ASSERT node
+			$node | Should Not Be $null;
+			$node.Id | Should Not Be $null;
+			#get Id of the node
 			$nodeId = $node.Id;
 			
 			#get the job of the node
@@ -54,9 +60,22 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$query = "Name eq '{0}'" -f $childName;
 			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query);
 			
+			#ASSERT child Node
+			$childNode | Should Not Be $null;
+			$childNode.Id | Should Not Be $null;
+			$childNode.ParentId | Should Be $nodeId;
+			
+			$childId = $childNode.Id;
+			
 			#remove Node
 			$svc.Core.DeleteObject($node);
 			$result = $svc.Core.SaveChanges();
+			
+			#ASSERT that child Node is not deleted
+			$query = "Id eq '{0}'" -f $childId;
+			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query);
+			Contract-Assert(!!$childNode);
+			
 			
 		}
 		
