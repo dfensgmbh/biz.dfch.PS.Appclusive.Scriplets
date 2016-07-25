@@ -34,12 +34,12 @@ function Create-Catalogue {
 function Delete-Catalogue{
 	Param
 	(
-	[System.Object] $newCatalogue
+	$catalogue
 	)
 	
 	#Write-Host $catalogToDelete;
 	#delete catalogue
-	$svc.Core.DeleteObject($newCatalogue);
+	$svc.Core.DeleteObject($catalogue);
 	$result = $svc.Core.SaveChanges();
 	
 	return $result;
@@ -63,22 +63,33 @@ function Create-Product {
 }
 
 function Delete-Product {
-	Param (
-	$product
+	Param 
+	(
+		$product
 	)
 	$svc.Core.DeleteObject($product);
 	$result = $svc.Core.SaveChanges();
+	
+	return $result;
 }
 
 function Create-CatalogueItem {
-	Param(
-	$productId
-	,
-	$catalogId
+	Param
+	(
+		$productId
+		,
+		$catalogId
 	)
 	
+	$template = $svc.Core.InvokeEntitySetActionWithSingleResult('CatalogueItems', 'Template', [biz.dfch.CS.Appclusive.Api.Core.CatalogueItem], $null);
+	
 	$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
+	$newCatalogueItem.ValidFrom = $template.ValidFrom
+	$newCatalogueItem.ValidUntil = $template.ValidUntil
+	$newCatalogueItem.EndOfLife = $template.EndOfLife
 	$newCatalogueItem.Name = "NewCatalogueItem";
+	$newCatalogueItem.Parameters = '{}';
+	$newCatalogueItem.Description = 'some description';
 	$newCatalogueItem.ProductId = $productId;
 	$newCatalogueItem.CatalogueId = $catalogId;
 	
@@ -97,6 +108,8 @@ function Delete-CatalogueItem {
 	)
 	$svc.Core.DeleteObject($catalogueItem);
 	$result = $svc.Core.SaveChanges();
+	
+	return result;
 }
 
 
@@ -141,7 +154,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$newCatalogue.Tid |Should Not Be $null;
 			
 			#ACT - DeleteCatalogue
-			#$result = Delete-Catalogue -newCatalogue $newCatalogue;
+			#$result = Delete-Catalogue -catalogue $newCatalogue;
 			$catalogToDelete = $svc.Core.DeleteObject($newCatalogue);
 			#$result = $svc.Core.SaveChanges();
 			
@@ -156,19 +169,19 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 		}#>
 		
-		<#
+		#<#
 		It "CreateCatalogueItemInCatalogue" -Test {
 			
 			#ARRANGE
 			$catName = "TestCatalogue";
 			
 			#ACT - create catalogue
-			$catalog = Create-Catalogue -Name $catName;
+			$catalogue = Create-Catalogue -Name $catName;
 	
 			#ASSERT for catalogue creation
-			$catalog | Should Not Be $null;
-			$catalog.Id | Should Not Be $null;
-			$catalog.Tid |Should Not Be $null;
+			$catalogue | Should Not Be $null;
+			$catalogue.Id | Should Not Be $null;
+			$catalogue.Tid |Should Not Be $null;
 			
 			#ACT - create product
 			$newProduct = Create-Product;
@@ -178,7 +191,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$newProduct.Id | Should Not Be $null;
 			
 			#create catalogue item
-			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalog.Id;
+			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalogue.Id;
 			
 			#ASSERT catalogue item
 			$newCatalogueItem.Id | Should Not Be $null;
@@ -188,8 +201,11 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 			#delete product
 			Delete-Product -product $newProduct;
+			
+			#delete catalogue
+			Delete-Catalogue -catalogue $catalogue;
 		}#>
-		
+		<#
 		It "UpdateCatalogue" -Test {
 			
 			#ARRANGE
@@ -270,19 +286,19 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			
 			
 		}
-		
+		#>
 		<#
 		It "UpdateCatalogueItem" -Test {
 			#ARRANGE
 			$catName = "TestCatalogue";
 			
 			#ACT - create catalogue
-			$catalog = Create-Catalogue -Name $catName;
+			$catalogue = Create-Catalogue -Name $catName;
 	
 			#ASSERT for catalogue creation
-			$catalog | Should Not Be $null;
-			$catalog.Id | Should Not Be $null;
-			$catalog.Tid |Should Not Be $null;
+			$catalogue | Should Not Be $null;
+			$catalogue.Id | Should Not Be $null;
+			$catalogue.Tid |Should Not Be $null;
 			
 			#ACT - create product
 			$newProduct = Create-Product;
@@ -292,10 +308,17 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			$newProduct.Id | Should Not Be $null;
 			
 			#create catalogue item
-			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalog.Id;
+			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalogue.Id;
 			
 			#ASSERT catalogue item
 			$newCatalogueItem.Id | Should Not Be $null;
+			
+			#ACT update catalogue item
+			$newDescription = "updated Description"
+			$newCatalogueItem.description = $newDescription;
+			$svc.Core.Update($newCatalogueItem);
+			$result = $svc.Core.SaveChanges();
+			
 		
 		}#>
 	}
