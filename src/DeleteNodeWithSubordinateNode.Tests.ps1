@@ -55,6 +55,8 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query);
 			
 			#remove Node
+			$svc.Core.DeleteObject($node);
+			$result = $svc.Core.SaveChanges();
 			
 		}
 		
