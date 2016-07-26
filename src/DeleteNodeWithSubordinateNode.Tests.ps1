@@ -67,9 +67,23 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			
 			$childId = $childNode.Id;
 			
-			#remove Node
-			$svc.Core.DeleteObject($node);
+			#create external node
+			$extName = "external-test-node";
+			$extNode = New-Object biz.dfch.CS.Appclusive.Api.Core.ExternalNode;
+			$extNode.Name = $extName;
+			$extNode.ExternalId = "509f27d7-4380-42fa-ac6d-0731c8f2111c";
+			$extNode.ExternalType = "Cimi";
+			$extNode.NodeId = $nodeId;
+			$svc.Core.AddToExternalNodes($extNode);
 			$result = $svc.Core.SaveChanges();
+			
+			$result.StatusCode | Should Be 201;
+			
+			
+			#remove Node
+			#$svc.Core.DeleteObject($node);
+			#$result = $svc.Core.SaveChanges();
+			Remove-ApcNode -id $childId;
 			
 			#ASSERT that child Node is not deleted
 			$query = "Id eq '{0}'" -f $childId;
