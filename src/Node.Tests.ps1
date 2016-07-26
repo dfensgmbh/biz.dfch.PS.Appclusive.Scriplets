@@ -161,7 +161,7 @@ Describe -Tags "Node.Tests" "Node.Tests" {
 			
 			#check that Initialise transition is included in the EntityKind transitions
 			$transitionInitialiseName = "Initialise";
-			$transitions.Contains(transitionInitialiseName) | Should be $true;
+			$transitions.Contains($transitionInitialiseName) | Should be $true;
 			$transition.Remove($transitionInitialiseName);
 			
 			#split the permission strings
