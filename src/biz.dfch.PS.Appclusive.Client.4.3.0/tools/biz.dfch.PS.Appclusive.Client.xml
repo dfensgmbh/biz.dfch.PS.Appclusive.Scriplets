@@ -1,0 +1,44 @@
+﻿<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>Deserialized.System.Collections.Hashtable</T>
+      <T>Deserialized.System.Object</T>
+    </TN>
+    <DCT>
+      <En>
+        <S N="Key">Format</S>
+        <S N="Value">JSON</S>
+      </En>
+      <En>
+        <S N="Key">SaveChangesDefaultOptions</S>
+        <S N="Value">None</S>
+      </En>
+      <En>
+        <S N="Key">MergeOption</S>
+        <S N="Value">AppendOnly</S>
+      </En>
+      <En>
+        <S N="Key">Credential</S>
+        <Nil N="Value" />
+      </En>
+      <En>
+        <S N="Key">Services</S>
+        <Obj N="Value" RefId="1">
+          <TN RefId="1">
+            <T>System.Collections.Hashtable</T>
+            <T>System.Object</T>
+          </TN>
+          <DCT />
+        </Obj>
+      </En>
+      <En>
+        <S N="Key">ServerBaseUri</S>
+        <URI N="Value">http://appclusive/</URI>
+      </En>
+      <En>
+        <S N="Key">BaseUrl</S>
+        <S N="Value">/api/</S>
+      </En>
+    </DCT>
+  </Obj>
+</Objs>
