@@ -15,7 +15,7 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 	}
 	
 	Context "#CLOUDTCL-DeleteNodeWithSubordinateNode" {
-		It "ServiceReference-MustBeInitialised" -Test {
+		It "DeleteNodeWithChildNode" -Test {
 			#ARRANGE
 			$nodeName = "newtestnode";
 			
@@ -25,23 +25,19 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$node.ParentId = 1680;
 			$node.EntityKindId = 1;
 			$node.Parameters = '{}';
+			$node.Tid = "11111111-1111-1111-1111-111111111111";
 			$svc.Core.AddToNodes($node);
 			$result = $svc.Core.SaveChanges();
 			
-			
 			#get the node
-			$query = "Name eq '{0}'" -f $nodeName;
-			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query);
+			$query = "Name eq '{0}'" -f $node.Name;
+			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
 			
 			#ASSERT node
 			$node | Should Not Be $null;
 			$node.Id | Should Not Be $null;
 			#get Id of the node
 			$nodeId = $node.Id;
-			
-			#get the job of the node
-			$job = Get-ApcNode -Id $nodeId -ExpandJob;
-			$jobId = $job.Id;
 			
 			#create subordinate Node
 			#ARRANGE
@@ -58,7 +54,7 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			
 			#get child Node
 			$query = "Name eq '{0}'" -f $childName;
-			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query);
+			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
 			
 			#ASSERT child Node
 			$childNode | Should Not Be $null;
@@ -66,6 +62,67 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$childNode.ParentId | Should Be $nodeId;
 			
 			$childId = $childNode.Id;
+			
+			try
+			{ 
+				Push-ApcChangeTracker
+				
+				$svc.Core.DeleteObject($node);
+				#remove Node, but it's supposed to fail as we have Children
+				{ $svc.Core.SaveChanges(); } | Should ThrowDataServiceClientException @{StatusCode = 400};
+				# { $svc.Core.SaveChanges(); } | Should Throw;
+			}
+			catch
+			{
+				Write-Host $(Format-ApcException)
+			}
+			finally 
+			{
+				Pop-ApcChangeTracker
+				
+				Contract-Assert(!!$node);
+				Contract-Assert(!!$childNode);
+				
+				#delete childNode
+				#$query = "Id eq '{0}'" -f $childId;
+				#$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+				$svc.Core.DeleteObject($childNode);
+				$result = $svc.Core.SaveChanges();
+				#delete Node
+				#$query = "Id eq '{0}'" -f $nodeId;
+				#$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+				$svc.Core.DeleteObject($node);
+				$result = $svc.Core.SaveChanges();
+			}
+			
+		}
+		<#
+		It "DeleteNodeCheckAttatchedEntitiesDeletion" -Test {
+			#ARRANGE
+			$nodeName = "newtestnode";
+			
+			#ACT create Node
+			$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
+			$node.Name = $nodeName;
+			$node.ParentId = 1680;
+			$node.EntityKindId = 1;
+			$node.Parameters = '{}';
+			$svc.Core.AddToNodes($node);
+			$result = $svc.Core.SaveChanges();
+			
+			#get the node
+			$query = "Name eq '{0}'" -f $nodeName;
+			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			
+			#ASSERT node
+			$node | Should Not Be $null;
+			$node.Id | Should Not Be $null;
+			#get Id of the node
+			$nodeId = $node.Id;
+			
+			#get the job of the node
+			$job = Get-ApcNode -Id $nodeId -ExpandJob;
+			$jobId = $job.Id;
 			
 			#create external node
 			$extName = "external-test-node";
@@ -79,20 +136,9 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			
 			$result.StatusCode | Should Be 201;
 			
-			
-			#remove Node
-			#$svc.Core.DeleteObject($node);
-			#$result = $svc.Core.SaveChanges();
-			Remove-ApcNode -id $childId;
-			
-			#ASSERT that child Node is not deleted
-			$query = "Id eq '{0}'" -f $childId;
-			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query);
-			Contract-Assert(!!$childNode);
-			
-			
+			#Remove-ApcNode -id $childId -Confirm:$false;
 		}
-		
+		#>
 
 		
 		
