@@ -1,3 +1,6 @@
+$svc = Enter-Appclusive LAB3;
+
+
 Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 
     Context "#CLOUDTCL-Warmup" {
@@ -6,7 +9,7 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 		$moduleName = 'biz.dfch.PS.Appclusive.Client';
 		Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 		Import-Module $moduleName;
-		$svc = Enter-ApcServer;
+		$svc = Enter-Appclusive LAB3;
 		}
 	
 		It "ServiceReference-MustBeInitialised" -Test {
@@ -14,7 +17,14 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 		}
 	}
 	
-	Context "#CLOUDTCL-DeleteNodeWithSubordinateNode" {
+	Context "#CLOUDTCL-DeleteNodeWithChildNode" {
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-Appclusive LAB3;
+		}
+		
 		It "DeleteNodeWithChildNode" -Test {
 			#ARRANGE
 			$nodeName = "newtestnode";
@@ -103,23 +113,28 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			}
 			
 		}
-		<#
+		
 		It "DeleteNodeCheckAttatchedEntitiesDeletion" -Test {
 			#ARRANGE
 			$nodeName = "newtestnode";
+			$nodeDescr = "this is a test node";
+			$nodeParentId = 1680;
 			
 			#ACT create Node
 			$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 			$node.Name = $nodeName;
-			$node.ParentId = 1680;
+			$node.Description = $nodeDescr;
+			$node.ParentId = $nodeParentId;
 			$node.EntityKindId = 1;
 			$node.Parameters = '{}';
+			$node.Tid = "11111111-1111-1111-1111-111111111111";
 			$svc.Core.AddToNodes($node);
 			$result = $svc.Core.SaveChanges();
 			
 			#get the node
-			$query = "Name eq '{0}'" -f $nodeName;
+			$query = "Name eq '{0}' and ParentId eq {1}" -f $nodeName, $nodeParentId;
 			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			#$node = Get-ApcNode -Name $nodeName -ParentId $nodeParentId | select;
 			
 			#ASSERT node
 			$node | Should Not Be $null;
@@ -142,10 +157,35 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$result = $svc.Core.SaveChanges();
 			
 			$result.StatusCode | Should Be 201;
+			#get the externa Node
+			$query = "Name eq '{0}' and NodeId eq {1}" -f $extName, $nodeId;
+			$extNode = $svc.Core.ExternalNodes.AddQueryOption('$filter', $query) | select;
+			$extNode | Should Not Be $null;
+			$extNodeId = $extNode.Id;
 			
-			#Remove-ApcNode -id $childId -Confirm:$false;
+			#delete Node
+			$query = "Id eq {0}" -f $nodeId;
+			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			$svc.Core.DeleteObject($node);
+			$result = $svc.Core.SaveChanges();
+			
+			#check that node is deleted
+			$query = "Id eq {0}" -f $nodeId;
+			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			$node | Should Be $null;
+			
+			#check that Job is deleted
+			$query = "Id eq {0}" -f $jobId;
+			$job = $svc.Core.Jobs.AddQueryOption('$filter', $query) | select;
+			$job | Should Be $null;
+			
+			#check that the external Node is Deleted
+			$query = "Id eq {0}" -f $extNodeId;
+			$extNode = $svc.Core.ExternalNodes.AddQueryOption('$filter', $query) | select;
+			$extNode | Should Be $null;
+			
 		}
-		#>
+		
 
 		
 		
