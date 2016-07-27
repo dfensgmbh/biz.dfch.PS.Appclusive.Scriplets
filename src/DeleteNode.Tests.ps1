@@ -175,11 +175,37 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$svc.Core.AddToAcls($acl);
 			$result = $svc.Core.SaveChanges();
 			
-			#get acl
+			#get ACL
 			$query = "Name eq '{0}' and EntityId eq {1}" -f $aclName, $nodeId;
 			$acl = $svc.Core.Acls.AddQueryOption('$filter', $query) | select;
 			$acl | Should Not Be $null;
 			$aclId = $acl.Id;
+			
+			#create ACE
+			$aceName = "newTestAce";
+			$aceDescr = "Test Ace";
+			$ace = New-Object biz.dfch.CS.Appclusive.Api.Core.Ace;
+			$ace.Name = $aceName;
+			$ace.Description = $aceDescr;
+			$ace.AclId = $aclId;
+			$ace.Tid = "11111111-1111-1111-1111-111111111111";
+			$username = $ENV:USERNAME;
+			$query = "Name eq '{0}'" -f $username;
+			$user = $svc.Core.Users.AddQueryOption('$filter', $query) | select;
+			$userId = $user.Id;
+			$ace.TrusteeId = $userId;
+			$ace.TrusteeType = 1; #1 for users
+			$ace.Type = 2;
+			$ace.PermissionId = 2;
+			$svc.Core.AddToAces($ace);
+			$result = $svc.Core.SaveChanges();
+			
+			#get ACE
+			$query = "Name eq '{0}' and AclId eq {1}" -f $aceName, $aclId;
+			$ace = $svc.Core.Aces.AddQueryOption('$filter', $query) | select;
+			$ace | Should Not Be $null;
+			$aceId = $ace.Id;
+			
 			
 			#ACT delete Node
 			$query = "Id eq {0}" -f $nodeId;
@@ -206,6 +232,11 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$query = "Id eq {0}" -f $aclId;
 			$acl = $svc.Core.Acls.AddQueryOption('$filter', $query) | select;
 			$acl | Should Be $null;
+			
+			#check that the ace is deleted
+			$query = "Id eq {0}" -f $aceId;
+			$ace = $svc.Core.Aces.AddQueryOption('$filter', $query) | select;
+			$ace | Should Be $null;
 			
 			
 		}
