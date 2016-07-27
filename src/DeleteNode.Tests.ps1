@@ -163,7 +163,25 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$extNode | Should Not Be $null;
 			$extNodeId = $extNode.Id;
 			
-			#delete Node
+			#create ACL
+			$aclName = "newTestAcl";
+			$aclDescr = "Test Acl";
+			$acl = New-Object biz.dfch.CS.Appclusive.Api.Core.Acl;
+			$acl.Name = $aclName;
+			$acl.Description = $aclDescr;
+			$acl.EntityId = $nodeId;
+			$acl.EntityKindId = 1;
+			$acl.Tid = "11111111-1111-1111-1111-111111111111";
+			$svc.Core.AddToAcls($acl);
+			$result = $svc.Core.SaveChanges();
+			
+			#get acl
+			$query = "Name eq '{0}' and EntityId eq {1}" -f $aclName, $nodeId;
+			$acl = $svc.Core.Acls.AddQueryOption('$filter', $query) | select;
+			$acl | Should Not Be $null;
+			$aclId = $acl.Id;
+			
+			#ACT delete Node
 			$query = "Id eq {0}" -f $nodeId;
 			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
 			$svc.Core.DeleteObject($node);
@@ -183,6 +201,12 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$query = "Id eq {0}" -f $extNodeId;
 			$extNode = $svc.Core.ExternalNodes.AddQueryOption('$filter', $query) | select;
 			$extNode | Should Be $null;
+			
+			#check that the acl is Deleted
+			$query = "Id eq {0}" -f $aclId;
+			$acl = $svc.Core.Acls.AddQueryOption('$filter', $query) | select;
+			$acl | Should Be $null;
+			
 			
 		}
 		
