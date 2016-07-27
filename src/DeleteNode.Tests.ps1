@@ -1,4 +1,4 @@
-Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateNode.Tests" {
+Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 
     Context "#CLOUDTCL-Warmup" {
 	
@@ -33,11 +33,10 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$result = $svc.Core.SaveChanges();
 			
 			#get the node
-			#$query = "Name eq '{0}'" -f $node.Name;
-			#$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
-			$node = Get-ApcNode -Name $nodeName -Description $nodeDescr -ParentId $nodeParentId | select;
+			$query = "Name eq '{0}' and ParentId eq {1}" -f $nodeName, $nodeParentId;
+			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			#$node = Get-ApcNode -Name $nodeName -ParentId $nodeParentId | select;
 			
-
 			#ASSERT node
 			$node | Should Not Be $null;
 			$node.Id | Should Not Be $null;
@@ -47,10 +46,12 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			#create subordinate Node
 			#ARRANGE
 			$childName = "newtestnode-Child";
+			$childDescr = "this is a test subordinate Node";
 			
 			#ACT create child Node
 			$childNode = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 			$childNode.Name = $childName;
+			$childNode.Description = $childDescr;
 			$childNode.ParentId = $nodeId; #it gets the id of the 1st node as parent Node
 			$childNode.EntityKindId = 1;
 			$childNode.Parameters = '{}';
@@ -58,8 +59,9 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$result = $svc.Core.SaveChanges();
 			
 			#get child Node
-			$query = "Name eq '{0}'" -f $childName;
+			$query = "Name eq '{0}' and ParentId eq {1}" -f $childName, $nodeId;
 			$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			#$childNode = Get-ApcNode -Name $childName -ParentId $nodeId | select;
 			
 			#ASSERT child Node
 			$childNode | Should Not Be $null;
@@ -70,12 +72,13 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			
 			try
 			{ 
-				Push-ApcChangeTracker
+				#Push-ApcChangeTracker;
 				
 				$svc.Core.DeleteObject($node);
 				#remove Node, but it's supposed to fail as we have Children
 				{ $svc.Core.SaveChanges(); } | Should ThrowDataServiceClientException @{StatusCode = 400};
 				# { $svc.Core.SaveChanges(); } | Should Throw;
+				Write-Host "Parent not deleted";
 			}
 			catch
 			{
@@ -83,19 +86,18 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			}
 			finally 
 			{
-				Pop-ApcChangeTracker
+				#Pop-ApcChangeTracker;
+				$svc = Enter-Appclusive LAB3;
 				
-				Contract-Assert(!!$node);
-				Contract-Assert(!!$childNode);
 				
 				#delete childNode
-				#$query = "Id eq '{0}'" -f $childId;
-				#$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+				$query = "Id eq {0}" -f $childId;
+				$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
 				$svc.Core.DeleteObject($childNode);
 				$result = $svc.Core.SaveChanges();
 				#delete Node
-				#$query = "Id eq '{0}'" -f $nodeId;
-				#$childNode = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+				$query = "Id eq {0}" -f $nodeId;
+				$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
 				$svc.Core.DeleteObject($node);
 				$result = $svc.Core.SaveChanges();
 			}
