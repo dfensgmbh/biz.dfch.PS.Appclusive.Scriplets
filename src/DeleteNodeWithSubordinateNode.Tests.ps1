@@ -18,11 +18,14 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 		It "DeleteNodeWithChildNode" -Test {
 			#ARRANGE
 			$nodeName = "newtestnode";
+			$nodeDescr = "this is a test node";
+			$nodeParentId = 1680;
 			
 			#ACT create Node
 			$node = New-Object biz.dfch.CS.Appclusive.Api.Core.Node;
 			$node.Name = $nodeName;
-			$node.ParentId = 1680;
+			$node.Description = $nodeDescr;
+			$node.ParentId = $nodeParentId;
 			$node.EntityKindId = 1;
 			$node.Parameters = '{}';
 			$node.Tid = "11111111-1111-1111-1111-111111111111";
@@ -30,9 +33,11 @@ Describe -Tags "DeleteNodeWithSubordinateNode.Tests" "DeleteNodeWithSubordinateN
 			$result = $svc.Core.SaveChanges();
 			
 			#get the node
-			$query = "Name eq '{0}'" -f $node.Name;
-			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			#$query = "Name eq '{0}'" -f $node.Name;
+			#$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
+			$node = Get-ApcNode -Name $nodeName -Description $nodeDescr -ParentId $nodeParentId | select;
 			
+
 			#ASSERT node
 			$node | Should Not Be $null;
 			$node.Id | Should Not Be $null;
