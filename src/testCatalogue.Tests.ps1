@@ -2,8 +2,6 @@ Import-Module biz.dfch.PS.Appclusive.Client;
 #$svc = Enter-ApcServer;
 $svc = Enter-Appclusive LAB3;
 
-
-
 function Create-Catalogue {
 	Param
 	(
@@ -12,17 +10,19 @@ function Create-Catalogue {
 		[string] $Name
 	)
 	
-	$catVersion = "1";
-	$catStatus = "Published";
+	$catalogueVersion = "1";
+	$catalogueStatus = "Published";
+	$catalogueDescription = "Description"
 	
 	#create catalog object
 	$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
 	
-	#add mandatory properties
+	#add mandatory parameters
 	$newCatalogue.Name = $Name;
-	$newCatalogue.Version = $catVersion;
-	$newCatalogue.Status = $catStatus;
+	$newCatalogue.Version = $catalogueVersion;
+	$newCatalogue.Status = $catalogueStatus;
 	$newCatalogue.Tid = "11111111-1111-1111-1111-111111111111";
+	$newCatalogue.Description = $catalogueDescription;
 	
 	#ACT - create new catalogue
 	$svc.Core.AddToCatalogues($newCatalogue);
@@ -74,10 +74,10 @@ function Create-Product {
 		,
 		$productName
 	)
-	#add properties
+	#add parameters
 	$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
 	$newProduct.Name = $productName;
-	$newProduct.Description = "Aritrary Product";
+	$newProduct.Description = "Arbitrary Product";
 	$newProduct.Type = "Test Product";
 	$newProduct.EntityKindId = 4864;
 	$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
@@ -136,8 +136,9 @@ function Create-CatalogueItem {
 		$catalogueId
 	)
 	
+	#get Catalogue Item template
 	$template = $svc.Core.InvokeEntitySetActionWithSingleResult('CatalogueItems', 'Template', [biz.dfch.CS.Appclusive.Api.Core.CatalogueItem], $null);
-	
+	#add parameters
 	$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
 	$newCatalogueItem.ValidFrom = $template.ValidFrom
 	$newCatalogueItem.ValidUntil = $template.ValidUntil
@@ -166,7 +167,8 @@ function Create-CatalogueItem {
 }
 
 function Delete-CatalogueItem {
-	Param(
+	Param
+	(
 		$svc
 		,
 		$catalogueItemId
@@ -188,6 +190,40 @@ function Delete-CatalogueItem {
 	$deletedCatalogueItem | Should Be $null;
 	
 	return $result;
+}
+
+function Update-Catalogue {
+	Param
+	(
+		$svc
+		,
+		$catalogueId
+		,
+		$newCatalogueDescription
+	)
+	
+	#get the Catalogue 
+	$query = "Id eq {0}" -f $catalogueId;
+	$catalogue = $svc.Core.Catalogues.AddQueryOption('$filter', $query) | select;
+	$catalogueDescription = $catalogue.Description;
+	
+	#update the Catalogue Item
+	$catalogue.Description = $newCatalogueDescription;
+	$svc.Core.UpdateObject($catalogue);
+	$result = $svc.Core.SaveChanges();
+	
+	#get the updated Catalogue 
+	$query = "Id eq {0}" -f $catalogueId;
+	$updatedCatalogue = $svc.Core.Catalogues.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT - update
+	$query = "Id eq {0}" -f $catalogueId;
+	$updatedCatalogue = $svc.core.Catalogues.AddQueryOption('$filter', $query);
+	$updatedCatalogue.Description | Should Be $newCatalogueDescription;
+	$updatedCatalogue.Description | Should Not Be $catalogueDescription;
+	$updatedCatalogue.Id | Should Be $catalogueId;
+	
+	return $updatedCatalogue;
 }
 
 
@@ -212,15 +248,14 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 		
 		It "CreateAndDeleteCatalogue" -Test {
 			#ARRANGE
-			$catName = "newTestCatalogue";
+			$catalogueName = "newTestCatalogue";
 			
 			#ACT
-			$newCatalogue = Create-Catalogue -svc $svc -Name $catName;
+			$newCatalogue = Create-Catalogue -svc $svc -Name $catalogueName;
 			$catalogueId = $newCatalogue.Id;
 			
 			#ACT - DeleteCatalogue
-			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
-			
+			Delete-Catalogue -svc $svc -catalogueId $catalogueId;	
 		}
 		
 		It "CreateCatalogueItemInCatalogue" -Test {
@@ -250,88 +285,56 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			#delete catalogue
 			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
 		}
-		<#
-		It "UpdateCatalogue" -Test {
-			
+		
+		It "UpdateEmptyCatalogue" -Test {
 			#ARRANGE
-			$catName = "EmptyCatalogue";
-			$catNewName = "EmptyCatalogue Updated";
-			$catNewDescription = "This is the new description for catalogue";
+			$catalogueName = "newTestCatalogue";
+			$newCatalogueDescription = "Updated Description";
 			
-			#ACT - create catalogue
-			#$newCatalogue = Create-Catalogue -Name $catName;
-			$catVersion = "1";
-			$catStatus = "Published";
-	
-			#create catalog object
-			$newCatalogue = New-Object biz.dfch.CS.Appclusive.Api.Core.Catalogue;
-	
-			#add mandatory properties
-			$newCatalogue.Name = $catName;
-			$newCatalogue.Version = $catVersion;
-			$newCatalogue.Status = $catStatus;
-	
-			#ACT - create new catalogue
-			$svc.Core.AddToCatalogues($newCatalogue);
-			$result = $svc.Core.SaveChanges();
-	
-			$result.StatusCode | Should Be 201;
+			#ACT - create empty catalogue
+			$newCatalogue = Create-Catalogue -svc $svc -Name $catalogueName;
+			$catalogueId = $newCatalogue.Id;
 			
-			#ASSERT
-			$newCatalogue | Should Not Be $null;
-			$newCatalogue.Id | Should Not Be $null;
-			$newCatalogue.Tid |Should Not Be $null;
-			$newCatalogue.Name | Should Not Be $null;
-			Write-Host $catalogue.Name;
+			#ACT - update description of empty catalogue
+			$updatedCatalogue = Update-Catalogue -svc $svc -catalogueId $catalogueId -newCatalogueDescription $newCatalogueDescription;
 			
-			#$catalogue.Name = $catNewName;
-			$newcatalogue.Description = $catNewDescription;
+			#ACT - delete catalogue
+			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
+		}
+		
+		
+		It "UpdateCatalogueWithCatalogueItem" -Test {	
+			#ARRANGE
+			$catalogueName = "newTestCatalogue";
+			$productName = "newTestProduct";
+			$catalogueItemName = "newTestCatalogueItem";
+			$newCatalogueDescription = "Updated Description";
 			
-			#ACT - update empty 
-			$svc.Core.UpdateObject($newCatalogue);
-			$result = $svc.Core.SaveChanges();
-			
-			#ASSERT - update
-			$query = "Id eq {0}" -f $newCatalogue.Id;
-			$updatedCatalogue = $svc.core.Catalogues.AddQueryOption('$filter', $query);
-			$updatedCatalogue.Description | Should Be $catNewDescription;
+			#create catalogue
+			$newCatalogue = Create-Catalogue -svc $svc -Name $catalogueName;
+			$catalogueId = $newCatalogue.Id;
 			
 			#create product
-			#$newProduct = Create-Product;
-			$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
-			$newProduct.Name = "new Product";
-			$newProduct.Description = "Test Product";
-			$newProduct.Type = "Test Product";
-			$newProduct.EntityKindId = 4864;
-			$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
-			
-			$newProduct = $svc.Core.AddToProducts($newProduct);
-			$result = $svc.Core.SaveChanges();
-
-			$result.StatusCode | Should Be 201;
-			
+			$newProduct = Create-Product -svc $svc -productName $productName;
+			$productId = $newProduct.Id;
+						
 			#create catalogue item
-			$newCatalogueItem = New-Object biz.dfch.CS.Appclusive.Api.Core.CatalogueItem;
-			$newCatalogueItem.Name = "NewCatalogueItem";
-			$newCatalogueItem.ProductId = $newProduct.Id;
-			$newCatalogueItem.CatalogueId = $newCatalogue.Id;
-
-			$svc.Core.AddToCatalogueItems($newCatalogueItem);
-			$result = $svc.Core.SaveChanges();
+			$newCatalogueItem = Create-CatalogueItem -svc $svc -catalogueItemName $catalogueItemName -productId $productId -catalogueId $catalogueId;
+			$catalogueItemId = $newCatalogueItem.Id;
 			
-			$result.StatusCode | Should be 201;
-			
-			#update catalogue with a catalogue item
+			#ACT - update description of catalogue
+			$updatedCatalogue = Update-Catalogue -svc $svc -catalogueId $catalogueId -newCatalogueDescription $newCatalogueDescription;
 			
 			#delete catalogue item
+			Delete-CatalogueItem -svc $svc -catalogueItemId $catalogueItemId;
 			
 			#delete product
+			Delete-Product -svc $svc -productId $productId;
 			
 			#delete catalogue
-			
-			
+			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
 		}
-		#>
+		
 		<#
 		It "UpdateCatalogueItem" -Test {
 			#ARRANGE
