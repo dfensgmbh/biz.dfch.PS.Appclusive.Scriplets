@@ -90,10 +90,20 @@ Process
 	[Uri] $Uri = '{0}{1}' -f $ServerBaseUri.AbsoluteUri.TrimEnd('/'), ('{0}/' -f $BaseUrl.TrimEnd('/'));
 	
 	# get all available DataServiceContexts from Api module
-	$endpoints = (Get-DataType 'System.Data.Services.Client.DataServiceContext' -Literal -CaseSensitive -BaseType -AssemblyName biz.dfch.CS.Appclusive.Api) -cmatch '^biz.dfch.CS.Appclusive.Api.';
+	$endpoints = (Get-DataType 'biz.dfch.CS.Appclusive.Api.DataServiceContextBase' -Literal -CaseSensitive -BaseType -AssemblyName biz.dfch.CS.Appclusive.Api); # -cmatch '^biz.dfch.CS.Appclusive.Api.';
 	foreach($endpoint in $endpoints) 
 	{ 
-		$endpointName = $endpoint.Split('.')[-1];
+		$endpointParts = $endpoint.Split('.'); 
+		if(2 -gt $endpointParts.Count)
+		{
+			continue;
+		}
+		if($endpointParts[-1] -ne $endpointParts[-2]) 
+		{ 
+			continue;
+		}
+		
+		$endpointName = $endpointParts[-1];
 		[Uri] $UriService = '{0}{1}' -f $Uri.AbsoluteUri, $endpointName;
 		Log-Debug $fn ("Creating service '{0}': '{1}' ..." -f $endpoint, $UriService.AbsoluteUri);
 		
