@@ -7,9 +7,9 @@ $svc = Enter-Appclusive LAB3;
 function Create-Catalogue {
 	Param
 	(
-	$svc
-	,
-	[string] $Name
+		$svc
+		,
+		[string] $Name
 	)
 	
 	$catVersion = "1";
@@ -44,9 +44,9 @@ function Create-Catalogue {
 function Delete-Catalogue{
 	Param
 	(
-	$svc
-	,
-	$catalogueId
+		$svc
+		,
+		$catalogueId
 	)
 	
 	#get the catalogue
@@ -68,29 +68,58 @@ function Delete-Catalogue{
 }
 
 function Create-Product {
+	Param
+	(
+		$svc
+		,
+		$productName
+	)
+	#add properties
 	$newProduct = New-Object biz.dfch.CS.Appclusive.Api.Core.Product;
-	$newProduct.Name = "new Product";
-	$newProduct.Description = "Test Product";
+	$newProduct.Name = $productName;
+	$newProduct.Description = "Aritrary Product";
 	$newProduct.Type = "Test Product";
 	$newProduct.EntityKindId = 4864;
 	$newProduct.Tid = "11111111-1111-1111-1111-111111111111";
 	
+	#create product
 	$svc.Core.AddToProducts($newProduct);
 	$result = $svc.Core.SaveChanges();
-
+	
+	#get product
+	$query = "Id eq {0}" -f $newProduct.Id;
+	$newProduct = $svc.Core.Products.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT product
+	$newProduct | Should Not Be $null;
+	$newProduct.Id | Should Not Be $null;
 	$result.StatusCode | Should Be 201;
 
 	return $newProduct;
-
 }
 
 function Delete-Product {
 	Param 
 	(
-		$product
+		$svc
+		,
+		$productId
 	)
+	
+	#get the product
+	$query = "Id eq {0}" -f $productId;
+	$product = $svc.Core.Products.AddQueryOption('$filter', $query) | select;
+	
+	#delete product
 	$svc.Core.DeleteObject($product);
 	$result = $svc.Core.SaveChanges();
+	
+	#get the product
+	$query = "Id eq {0}" -f $productId;
+	$deletedProduct = $svc.Core.Products.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT that product is deleted
+	$deletedProduct | Should Be $null;
 	
 	return $result;
 }
@@ -98,9 +127,13 @@ function Delete-Product {
 function Create-CatalogueItem {
 	Param
 	(
+		$svc
+		,
+		$catalogueItemName
+		,
 		$productId
 		,
-		$catalogId
+		$catalogueId
 	)
 	
 	$template = $svc.Core.InvokeEntitySetActionWithSingleResult('CatalogueItems', 'Template', [biz.dfch.CS.Appclusive.Api.Core.CatalogueItem], $null);
@@ -109,16 +142,24 @@ function Create-CatalogueItem {
 	$newCatalogueItem.ValidFrom = $template.ValidFrom
 	$newCatalogueItem.ValidUntil = $template.ValidUntil
 	$newCatalogueItem.EndOfLife = $template.EndOfLife
-	$newCatalogueItem.Name = "NewCatalogueItem";
+	$newCatalogueItem.Name = $catalogueItemName;
 	$newCatalogueItem.Parameters = '{}';
-	$newCatalogueItem.Description = 'some description';
+	$newCatalogueItem.Description = 'Test Catalogue Item';
 	$newCatalogueItem.ProductId = $productId;
-	$newCatalogueItem.CatalogueId = $catalogId;
+	$newCatalogueItem.CatalogueId = $catalogueId;
 	
+	#create catalogueItem
 	$svc.Core.AddToCatalogueItems($newCatalogueItem);
 	$result = $svc.Core.SaveChanges();
 	
-	$result.StatusCode | Should be 201;
+	#get catalogueItem
+	$query = "Id eq {0}" -f $newCatalogueItem.Id;
+	$newCatalogueItem = $svc.Core.CatalogueItems.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT catalogue Item
+	$newCatalogueItem | Should Not Be $null;
+	$newCatalogueItem.Id | Should Not Be $null;
+	$result.StatusCode | Should Be 201;
 	
 	return $newCatalogueItem;
 
@@ -126,12 +167,27 @@ function Create-CatalogueItem {
 
 function Delete-CatalogueItem {
 	Param(
-	$catalogueItem
+		$svc
+		,
+		$catalogueItemId
 	)
+	
+	#get the Catalogue Item
+	$query = "Id eq {0}" -f $catalogueItemId;
+	$catalogueItem = $svc.Core.CatalogueItems.AddQueryOption('$filter', $query) | select;
+	
+	#delete the Catalogue Item
 	$svc.Core.DeleteObject($catalogueItem);
 	$result = $svc.Core.SaveChanges();
 	
-	return result;
+	#get the deleted Catalogue Item
+	$query = "Id eq {0}" -f $catalogueItemId;
+	$deletedCatalogueItem = $svc.Core.CatalogueItems.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT that Catalogue Item is deleted
+	$deletedCatalogueItem | Should Be $null;
+	
+	return $result;
 }
 
 
@@ -151,6 +207,7 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
 			Import-Module $moduleName;
 			$svc = Enter-Appclusive LAB3;
+			#$svc = Enter-ApcServer;
 		}
 		
 		It "CreateAndDeleteCatalogue" -Test {
@@ -160,49 +217,39 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 			#ACT
 			$newCatalogue = Create-Catalogue -svc $svc -Name $catName;
 			$catalogueId = $newCatalogue.Id;
-			Write-Host $catalogueId;
 			
 			#ACT - DeleteCatalogue
 			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
 			
-		}#>
+		}
 		
-		<#
 		It "CreateCatalogueItemInCatalogue" -Test {
-			
 			#ARRANGE
-			$catName = "TestCatalogue";
+			$catalogueName = "newTestCatalogue";
+			$productName = "newTestProduct";
+			$catalogueItemName = "newTestCatalogueItem";
 			
-			#ACT - create catalogue
-			$catalogue = Create-Catalogue -Name $catName;
-	
-			#ASSERT for catalogue creation
-			$catalogue | Should Not Be $null;
-			$catalogue.Id | Should Not Be $null;
-			$catalogue.Tid |Should Not Be $null;
+			#create catalogue
+			$newCatalogue = Create-Catalogue -svc $svc -Name $catalogueName;
+			$catalogueId = $newCatalogue.Id;
 			
-			#ACT - create product
-			$newProduct = Create-Product;
-			
-			#ASSERT product
-			$newProduct | Should Not Be $null;
-			$newProduct.Id | Should Not Be $null;
-			
+			#create product
+			$newProduct = Create-Product -svc $svc -productName $productName;
+			$productId = $newProduct.Id;
+						
 			#create catalogue item
-			$newCatalogueItem = Create-CatalogueItem -productId $newProduct.Id -catalogId $catalogue.Id;
-			
-			#ASSERT catalogue item
-			$newCatalogueItem.Id | Should Not Be $null;
+			$newCatalogueItem = Create-CatalogueItem -svc $svc -catalogueItemName $catalogueItemName -productId $productId -catalogueId $catalogueId;
+			$catalogueItemId = $newCatalogueItem.Id;
 			
 			#delete catalogue item
-			Delete-CatalogueItem -catalogueItem $newCatalogueItem;
+			Delete-CatalogueItem -svc $svc -catalogueItemId $catalogueItemId;
 			
 			#delete product
-			Delete-Product -product $newProduct;
+			Delete-Product -svc $svc -productId $productId;
 			
 			#delete catalogue
-			Delete-Catalogue -catalogue $catalogue;
-		}#>
+			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
+		}
 		<#
 		It "UpdateCatalogue" -Test {
 			
