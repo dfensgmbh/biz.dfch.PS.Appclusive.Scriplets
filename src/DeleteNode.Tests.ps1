@@ -205,7 +205,23 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$ace = $svc.Core.Aces.AddQueryOption('$filter', $query) | select;
 			$ace | Should Not Be $null;
 			$aceId = $ace.Id;
+						
+			#create EntityBag
+			$entityBagName = "newTestEntityBag";
+			$entityBag = New-Object biz.dfch.CS.Appclusive.Api.Core.EntityBag;
+			$entityBag.Name = $entityBagName;
+			$entityBag.EntityId = $nodeId;
+			$entityBag.EntityKindId = 1;
+			$entityBag.Tid = "11111111-1111-1111-1111-111111111111";
+			$entityBag.Value = 20;
+			$svc.Core.AddToEntityBags($entityBag);
+			$result = $svc.Core.SaveChanges();
 			
+			#get EntityBag
+			$query = "Name eq '{0}' and EntityId eq {1}" -f $entityBagName, $nodeId;
+			$entityBag = $svc.Core.EntityBags.AddQueryOption('$filter', $query) | select;
+			$entityBag | Should Not Be $null;
+			$entityBagId = $entityBag.Id;
 			
 			#ACT delete Node
 			$query = "Id eq {0}" -f $nodeId;
@@ -213,6 +229,7 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$svc.Core.DeleteObject($node);
 			$result = $svc.Core.SaveChanges();
 			
+			#ASSERT
 			#check that node is deleted
 			$query = "Id eq {0}" -f $nodeId;
 			$node = $svc.Core.Nodes.AddQueryOption('$filter', $query) | select;
@@ -237,6 +254,11 @@ Describe -Tags "DeleteNode.Tests" "DeleteNode.Tests" {
 			$query = "Id eq {0}" -f $aceId;
 			$ace = $svc.Core.Aces.AddQueryOption('$filter', $query) | select;
 			$ace | Should Be $null;
+			
+			#check that the entityBag is deleted
+			$query = "Id eq {0}" -f $entityBagId;
+			$entityBag = $svc.Core.EntityBags.AddQueryOption('$filter', $query) | select;
+			$entityBag | Should Be $null;
 			
 			
 		}
