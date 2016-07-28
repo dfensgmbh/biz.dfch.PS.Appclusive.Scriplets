@@ -1,13 +1,14 @@
-Import-Module biz.dfch.PS.Appclusive.Client
-#enter credentials to connect to lab3 (domain of lab3 = w2012r2-t6-10) & connect to server
-#$credentials = Get-Credential -UserName "w2012r2-t6-10\Administrator" -Message "Login To Lab3" 
-#$svc = Enter-ApcServer -ServerBaseUri "http://172.19.115.33/appclusive" -Credential $credentials
+Import-Module biz.dfch.PS.Appclusive.Client;
+#$svc = Enter-ApcServer;
+$svc = Enter-Appclusive LAB3;
 
 
 
 function Create-Catalogue {
 	Param
 	(
+	$svc
+	,
 	[string] $Name
 	)
 	
@@ -21,11 +22,20 @@ function Create-Catalogue {
 	$newCatalogue.Name = $Name;
 	$newCatalogue.Version = $catVersion;
 	$newCatalogue.Status = $catStatus;
+	$newCatalogue.Tid = "11111111-1111-1111-1111-111111111111";
 	
 	#ACT - create new catalogue
 	$svc.Core.AddToCatalogues($newCatalogue);
 	$result = $svc.Core.SaveChanges();
 	
+	#get the catalogue
+	$query = "Id eq {0}" -f $newCatalogue.Id;
+	$newCatalogue = $svc.Core.Catalogues.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT for catalogue creation
+	$newCatalogue | Should Not Be $null;
+	$newCatalogue.Id | Should Not Be $null;
+	$newCatalogue.Tid |Should Not Be $null;
 	$result.StatusCode | Should Be 201;
 	
 	return $newCatalogue;
@@ -34,13 +44,25 @@ function Create-Catalogue {
 function Delete-Catalogue{
 	Param
 	(
-	$catalogue
+	$svc
+	,
+	$catalogueId
 	)
 	
-	#Write-Host $catalogToDelete;
+	#get the catalogue
+	$query = "Id eq {0}" -f $catalogueId;
+	$catalogue = $svc.Core.Catalogues.AddQueryOption('$filter', $query) | select;
+	
 	#delete catalogue
 	$svc.Core.DeleteObject($catalogue);
 	$result = $svc.Core.SaveChanges();
+	
+	#get the catalogue
+	$query = "Id eq {0}" -f $catalogueId;
+	$deletedCatalogue = $svc.Core.Catalogues.AddQueryOption('$filter', $query) | select;
+	
+	#ASSERT that catalogue is deleted
+	$deletedCatalogue | Should Be $null;
 	
 	return $result;
 }
@@ -123,53 +145,29 @@ Describe -Tags "testCatalogue.Tests" "testCatalogue.Tests" {
 		}
 	}
 
-    Context "#CLOUDTCL-Catalogue" {
-	
-        <#
-		It "CreateCatalogue" -Test {
-		
-			#ARRANGE
-			$catName = "TestCatalogue";
-			
-			#ACT
-			$sut = Create-Catalogue -Name $catName;
-						
-			#ASSERT
-			$sut | Should Not Be $null;
-			$sut.Id | Should Not Be $null;
-			$sut.Tid |Should Not Be $null;
+    Context "#CLOUDTCL-Catalogue" {	
+		BeforeEach {
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
+			$svc = Enter-Appclusive LAB3;
 		}
-		#>
-		<#
-		It "DeleteCatalogue" -Test {
+		
+		It "CreateAndDeleteCatalogue" -Test {
 			#ARRANGE
-			$catName = "TestCatalogue-tobeDeleted";
+			$catName = "newTestCatalogue";
 			
 			#ACT
-			$newCatalogue = Create-Catalogue -Name $catName;
-			
-			#ASSERT for catalogue creation
-			$newCatalogue | Should Not Be $null;
-			$newCatalogue.Id | Should Not Be $null;
-			$newCatalogue.Tid |Should Not Be $null;
+			$newCatalogue = Create-Catalogue -svc $svc -Name $catName;
+			$catalogueId = $newCatalogue.Id;
+			Write-Host $catalogueId;
 			
 			#ACT - DeleteCatalogue
-			#$result = Delete-Catalogue -catalogue $newCatalogue;
-			$catalogToDelete = $svc.Core.DeleteObject($newCatalogue);
-			#$result = $svc.Core.SaveChanges();
-			
-			#ASSERT for catalogue deletion
-			#$query = "Id eq {0}" -f $newCatalogue.Id;
-			#$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
-			#$deletedCatalog | Should Be $null;
-			
-			$query = "Id eq 98";
-			$deletedCatalog = $svc.Core.Catalogues.AddQueryOption('$filter', $query);
-			
+			Delete-Catalogue -svc $svc -catalogueId $catalogueId;
 			
 		}#>
 		
-		#<#
+		<#
 		It "CreateCatalogueItemInCatalogue" -Test {
 			
 			#ARRANGE
