@@ -220,26 +220,26 @@ PrivateData = @{
 	PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @("dfch PowerShell Appclusive Automation OData")
-
+        Tags = @("dfch", "PowerShell", "Appclusive", "Automation", "OData")
+		
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/blob/master/LICENSE'
-
+		
         # A URL to the main website for this project.
         ProjectUri = 'https://github.com/dfensgmbh/biz.dfch.PS.Appclusive.Client'
-
+		
         # A URL to an icon representing this module.
         IconUri = 'https://raw.githubusercontent.com/dfensgmbh/biz.dfch.PS.Appclusive.Client/master/logo-32x32.png'
-
+		
         # ReleaseNotes of this module
         ReleaseNotes = '20160728
 			#BUGFIXES 
 			Enter-Server
 			* fixed endpoint extraction due to changed base class
-			* installation base path is '$env:ProgramFiles\WindowsPowerShell\Modules' and can be manually set as input parameter'
+			* installation base path is "$env:ProgramFiles\WindowsPowerShell\Modules" and can be manually set as input parameter'
 
-    } # End of PSData hashtable
-	,
+    } 
+	
 	"MODULEVAR" = "biz_dfch_PS_Appclusive_Client"
 }
 
