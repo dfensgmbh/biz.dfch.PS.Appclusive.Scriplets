@@ -45,23 +45,9 @@ foreach($notification in $notifications)
 			1
 			{
 				# Node job notification handling
-				if ($job.Status -ne 'InitialState')
-				{
-					$Message = "State transition succeeded";
-					$jobResult = @{Version = "1"; Message = $Message; Succeeded = $true};
-					$null = Invoke-ApcEntityAction -InputObject $job -EntityActionName "JobResult" -InputParameters $jobResult;
-				}
-			}
-			21
-			{
-				# Order item job notification handling
-				$query = "ParentId eq {0} and EntityKindId eq 1" -f $job.Id;
-				$nodeJob = $svc.Core.Jobs.AddQueryOption('$filter', $query) | Select;
-				Contract-Assert (!!$nodeJob);
-			
 				$Message = "State transition succeeded";
 				$jobResult = @{Version = "1"; Message = $Message; Succeeded = $true};
-				$null = Invoke-ApcEntityAction -InputObject $nodeJob -EntityActionName "JobResult" -InputParameters $jobResult;
+				$null = Invoke-ApcEntityAction -InputObject $job -EntityActionName "JobResult" -InputParameters $jobResult;
 			}
 			default 
 			{
