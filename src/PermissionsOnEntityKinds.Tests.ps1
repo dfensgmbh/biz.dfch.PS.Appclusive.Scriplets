@@ -14,11 +14,11 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 	Context "PermissionsOnEntityKinds" {
 		
 		BeforeEach {
-			# $moduleName = 'biz.dfch.PS.Appclusive.Client';
-			# Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			# Import-Module $moduleName;
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
 			
-			# $svc = Enter-Apc;
+			$svc = Enter-Apc;
 		}
 		
 		It "Warmup" -Test {
@@ -81,7 +81,7 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 
 					foreach($transition in $transitions)
 					{
-						$permissionName = "{0}:{1}" -f $ek.Version, $transition;
+						$permissionName = "{0}:{1}" -f $ek.Name, $transition;
 						$q = "Name eq '{0}'" -f $permissionName;
 						$permission = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
 						if($permission)
@@ -98,7 +98,7 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 						$result = $svc.Core.SaveChanges();
 					}
 
-					$permissionName = "{0}:{1}" -f $ek.Version, '*';
+					$permissionName = "{0}:{1}" -f $ek.Name, '*';
 					$q = "Name eq '{0}'" -f $permissionName;
 					$permission = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
 					if(!$permission)
