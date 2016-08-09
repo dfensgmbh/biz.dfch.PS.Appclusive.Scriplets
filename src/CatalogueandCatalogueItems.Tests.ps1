@@ -17,12 +17,8 @@ Describe -Tags "CatalogueandCatalogueItems.Tests" "CatalogueandCatalogueItems.Te
 	Mock Export-ModuleMember { return $null; }
 	. "$here\$sut"
 
-    <#Context "TestServer" {
-	
-		It "ServiceReference-MustBeInitialised" -Test {
-			$svc | Should Not Be $null;
-		}
-	}#>
+    $entityPrefix = "TestItem-";
+	$usedEntitySets = @("Catalogues", "CatalogueItems", "Products");
 
     Context "#CLOUDTCL-2191-Catalogue" {	
 		BeforeEach {
@@ -33,9 +29,25 @@ Describe -Tags "CatalogueandCatalogueItems.Tests" "CatalogueandCatalogueItems.Te
 			#$svc = Enter-ApcServer;
 		}
 		
+		AfterAll {
+            $svc = Enter-ApcServer;
+            $entityFilter = "startswith(Name, '{0}')" -f $entityPrefix;
+
+            foreach ($entitySet in $usedEntitySets)
+            {
+                $entities = $svc.Core.$entitySet.AddQueryOption('$filter', $entityFilter) | Select;
+         
+                foreach ($entity in $entities)
+                {
+                    Remove-ApcEntity -svc $svc -Id $entity.Id -EntitySetName $entitySet -Confirm:$false;
+                }
+            }
+        } 
+
+		
 		It "CreateAndDeleteCatalogue" -Test {
 			#ARRANGE
-			$catalogueName = "newTestCatalogue";
+			$catalogueName = $entityPrefix + "newTestCatalogue";
 			
 			#ACT
 			$newCatalogue = Create-Catalogue -svc $svc -Name $catalogueName;
@@ -47,9 +59,9 @@ Describe -Tags "CatalogueandCatalogueItems.Tests" "CatalogueandCatalogueItems.Te
 		
 		It "CreateAndDeleteCatalogueItemInCatalogue" -Test {
 			#ARRANGE
-			$catalogueName = "newTestCatalogue";
-			$productName = "newTestProduct";
-			$catalogueItemName = "newTestCatalogueItem";
+			$catalogueName = $entityPrefix + "newTestCatalogue";
+			$productName = $entityPrefix + "newTestProduct";
+			$catalogueItemName = $entityPrefix + "newTestCatalogueItem";
 			
 			#create catalogue
 			$newCatalogue = Create-Catalogue -svc $svc -Name $catalogueName;
@@ -75,7 +87,7 @@ Describe -Tags "CatalogueandCatalogueItems.Tests" "CatalogueandCatalogueItems.Te
 		
 		It "UpdateEmptyCatalogue" -Test {
 			#ARRANGE
-			$catalogueName = "newTestCatalogue";
+			$catalogueName = $entityPrefix + "newTestCatalogue";
 			$newCatalogueDescription = "Updated Description";
 			
 			#ACT - create empty catalogue
@@ -92,9 +104,9 @@ Describe -Tags "CatalogueandCatalogueItems.Tests" "CatalogueandCatalogueItems.Te
 		
 		It "UpdateCatalogueWithCatalogueItem" -Test {	
 			#ARRANGE
-			$catalogueName = "newTestCatalogue";
-			$productName = "newTestProduct";
-			$catalogueItemName = "newTestCatalogueItem";
+			$catalogueName = $entityPrefix + "newTestCatalogue";
+			$productName = $entityPrefix + "newTestProduct";
+			$catalogueItemName = $entityPrefix + "newTestCatalogueItem";
 			$newCatalogueDescription = "Updated Description";
 			
 			#create catalogue
@@ -124,9 +136,9 @@ Describe -Tags "CatalogueandCatalogueItems.Tests" "CatalogueandCatalogueItems.Te
 		
 		It "UpdateCatalogueItem" -Test {
 			#ARRANGE
-			$catalogueName = "newTestCatalogue";
-			$productName = "newTestProduct";
-			$catalogueItemName = "newTestCatalogueItem";
+			$catalogueName = $entityPrefix + "newTestCatalogue";
+			$productName = $entityPrefix + "newTestProduct";
+			$catalogueItemName = $entityPrefix + "newTestCatalogueItem";
 			$newCatalogueItemDescription = "Updated Description for Catalogue Item";
 			
 			#create catalogue
