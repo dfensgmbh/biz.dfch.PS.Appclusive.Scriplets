@@ -6,15 +6,15 @@ select * from core.ExternalNodeBag where ExternaldNodeId = 147
 select * from core.Job where EntityKindId = 1 and RefId = 635
 -- Worker job
 --select * from core.Job where ParentId = 1504
--- order item job
+-- Order item job
 select * from core.Job where Id = 1502
--- order item
+-- Order item
 select * from core.OrderItem where Id = 165
--- order job
+-- Order job
 select * from core.Job where Id = 1501
--- order
+-- Order
 select * from core.[Order] where Id = 165
--- approval job
+-- Approval job
 select * from core.Job where EntityKindId = 5 and parentId = 1501
--- approval
+-- Approval
 select * from core.Approval where Id = 165
