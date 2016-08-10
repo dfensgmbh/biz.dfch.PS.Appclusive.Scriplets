@@ -1,4 +1,4 @@
-#Requires -Modules @{ ModuleName = 'biz.dfch.PS.Appclusive.Client'; ModuleVersion = "4.5.0" }
+#Requires -Modules @{ ModuleName = 'biz.dfch.PS.Appclusive.Client'; ModuleVersion = "4.2.1" }
 
 PARAM
 (
