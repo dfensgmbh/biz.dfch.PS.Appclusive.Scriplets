@@ -3,7 +3,7 @@
 $svc = Enter-Appclusive;
 
 # Load all Gates referencing a Job
-$jobGates = $svc.Core.Gates.AddQueryOption('$filter', "startswith(Name, 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job')");
+$jobGates = $svc.Core.Gates.AddQueryOption('$filter', "startswith(Name, 'biz.dfch.CS.Appclusive.Core.OdataServices.Core.Job')").Execute();
 	
 while($true)
 {
