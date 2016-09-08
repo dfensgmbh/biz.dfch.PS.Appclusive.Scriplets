@@ -1,5 +1,6 @@
 #Requires -Modules biz.dfch.PS.Appclusive.Client
 
+$deletedGatesCount = 0;
 $svc = Enter-Appclusive;
 
 # Load all Gates referencing a Job
@@ -31,6 +32,7 @@ while($true)
 			$svc.Core.DeleteObject($jobGate);
 			$result = $svc.Core.SaveChanges();
 			Contract-Assert (204 -eq $result.StatusCode);
+			$deletedGatesCount ++;
 		}
 		catch
 		{
@@ -45,6 +47,8 @@ while($true)
 	}
 	$jobGates = $svc.Core.Execute($continuation);
 }
+
+Write-Host ("Removing orphaned Gates completed. '{0}' Gates deleted." -f $deletedGatesCount) -ForegroundColor Green;
 
 #
 # Copyright 2016 d-fens GmbH
