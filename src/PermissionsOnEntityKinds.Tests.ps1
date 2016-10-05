@@ -7,18 +7,18 @@ function Stop-Pester($message = "EMERGENCY: Script cannot continue.")
 	$PSCmdlet.ThrowTerminatingError($e);
 }
 
-Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests" {
+Describe "PermissionsOnEntityKinds" -Tags "PermissionsOnEntityKinds.Tests" {
 
 	Mock Export-ModuleMember { return $null; }
 
 	Context "PermissionsOnEntityKinds" {
 		
 		BeforeEach {
-			# $moduleName = 'biz.dfch.PS.Appclusive.Client';
-			# Remove-Module $moduleName -ErrorAction:SilentlyContinue;
-			# Import-Module $moduleName;
+			$moduleName = 'biz.dfch.PS.Appclusive.Client';
+			Remove-Module $moduleName -ErrorAction:SilentlyContinue;
+			Import-Module $moduleName;
 			
-			# $svc = Enter-Apc;
+			$svc = Enter-Apc;
 		}
 		
 		It "Warmup" -Test {
@@ -26,8 +26,6 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 		}
 
 		It "ExtractStateTransitions" -Test {
-
-			# [string] $fn = $MyInvocation.MyCommand.Name;
 			[string] $fn = "ExtractStateTransitions";
 
 			$eks = New-Object System.Collections.Generic.List``1[biz.dfch.CS.Appclusive.Api.Core.EntityKind];
@@ -42,6 +40,7 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 					{
 						continue;
 					}
+
 					if($ek.Name -eq $ek.Version)
 					{
 						Log-Warn $fn ("{0} [{1}] has identical Version. Skipping ..." -f $ek.Name, $ek.Id);
@@ -67,6 +66,7 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 					$dic = New-Object biz.dfch.CS.Appclusive.Public.DictionaryParameters($ek.Parameters);
 					$statesAndTransistions = $dic.Keys.Split("-");
 					$transitions = New-Object System.Collections.ArrayList;
+
 					for($c = 1; $c -lt $statesAndTransistions.Count; $c += 2)
 					{
 						$transition = $statesAndTransistions[$c];
@@ -77,39 +77,94 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 						$transitions.Add($transition);
 					}
 
-					Write-Host ("{0}: {1}" -f $ek.Id, $transitions);
+                    if ($transitions.Count -eq 0)
+                    {
+                        continue;
+                    }
+                    
+                    Write-Host "";
+                    Write-Host "EntityKind " -ForegroundColor Yellow -NoNewline;
+                    Write-Host ("{0} | {1}" -f $ek.Name, $ek.Version);
+
 
 					foreach($transition in $transitions)
 					{
-						$permissionName = "{0}:{1}" -f $ek.Version, $transition;
+                        Write-Host "  Transition " -ForegroundColor Yellow -NoNewline;
+                        Write-Host ("{0} " -f $transition) -NoNewline;
+
+                        # Check if None-Versioned Permission exists --> Continue
+						$permissionName = "{0}:{1}" -f $ek.Name, $transition;
+
 						$q = "Name eq '{0}'" -f $permissionName;
 						$permission = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
 						if($permission)
 						{
 							Log-Warn $fn ("{0}: {1} {2}. PermissionName '{3}' already exists. Skipping ..." -f $ek.Id, $ek.Name, $ek.Version, $permissionName);
+                            Write-Host "Exists" -ForegroundColor magenta;
 							continue;
 						}
-						Write-Host $permissionName
+
+                        # Check if Versioned Permission exists --> Rename
+                        $versionPermissionName = "{0}:{1}" -f $ek.Version, $transition;
+
+						$q = "Name eq '{0}'" -f $versionPermissionName;
+						$permission = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
+						if($permission)
+						{
+                            $permission.Name = $permissionName;
+                            $permission.Description = $permissionName;
+						    $svc.Core.UpdateObject($permission);
+						    $result = $svc.Core.SaveChanges();
+
+                            Write-Host "Renamed" -ForegroundColor Gray;
+                            continue;
+						}
+
+                        # Create New
 						$permission = New-Object biz.dfch.CS.Appclusive.Api.Core.Permission;
 						$svc.Core.AddToPermissions($permission);
 						$svc.Core.UpdateObject($permission);
 						$permission.Name = $permissionName;
 						$permission.Description = $permissionName;
+                        Write-Host "Created" -ForegroundColor Green;
 						$result = $svc.Core.SaveChanges();
 					}
 
-					$permissionName = "{0}:{1}" -f $ek.Version, '*';
+                    
+                    Write-Host "  Transition " -ForegroundColor Yellow -NoNewline;
+                    Write-Host ("* " -f $transition) -NoNewline;
+					$permissionName = "{0}:{1}" -f $ek.Name, '*';
 					$q = "Name eq '{0}'" -f $permissionName;
 					$permission = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
-					if(!$permission)
+                    if($permission)
 					{
-						$permission = New-Object biz.dfch.CS.Appclusive.Api.Core.Permission;
-						$svc.Core.AddToPermissions($permission);
-						$svc.Core.UpdateObject($permission);
-						$permission.Name = $permissionName;
-						$permission.Description = $permissionName;
-						$result = $svc.Core.SaveChanges();
+                        Write-Host "Exists" -ForegroundColor Magenta;
+						continue;
 					}
+
+                    # Check if Versioned Permission exists --> Rename
+                    $versionPermissionName = "{0}:{1}" -f $ek.Version, '*';
+
+					$q = "Name eq '{0}'" -f $versionPermissionName;
+					$permission = $svc.Core.Permissions.AddQueryOption('$filter', $q) | Select;
+					if($permission)
+					{
+                        $permission.Name = $permissionName;
+                        $permission.Description = $permissionName;
+						$svc.Core.UpdateObject($permission);
+						$result = $svc.Core.SaveChanges();
+
+                        Write-Host "Renamed" -ForegroundColor Gray;
+                        continue;
+					}
+
+					$permission = New-Object biz.dfch.CS.Appclusive.Api.Core.Permission;
+					$svc.Core.AddToPermissions($permission);
+					$svc.Core.UpdateObject($permission);
+					$permission.Name = $permissionName;
+					$permission.Description = $permissionName;
+					$result = $svc.Core.SaveChanges();
+                    Write-Host "Created" -ForegroundColor Green;
 				}
 				catch
 				{
@@ -117,10 +172,7 @@ Describe -Tags "PermissionsOnEntityKinds.Tests" "PermissionsOnEntityKinds.Tests"
 					Log-Exception $_;
 				}
 			}
-
-			# Write-Host ($eks|Select Id, Name, Version);
 		}
-
 	}
 }
 

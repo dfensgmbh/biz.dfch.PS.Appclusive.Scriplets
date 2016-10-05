@@ -15,3 +15,19 @@ $Svcs['Cimi'] = Enter-CimiServer -OAuthBaseUrl $OAuthBaseUrl -ApiBrokerBaseUrl $
 $nodeId = NODE_ID_HERE;
 $Node = Get-ApcNode -Id $nodeId -svc $Svcs.Apc;
 $Job = $Svcs.Apc.Core.Jobs.AddQueryOption('$filter', ("EntityKindId eq 1 and RefId eq '{0}'" -f $Node.Id)) | Select;
+
+#
+# Copyright 2016 d-fens GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
