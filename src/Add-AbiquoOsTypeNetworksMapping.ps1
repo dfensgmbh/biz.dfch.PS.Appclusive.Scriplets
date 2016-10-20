@@ -11,10 +11,55 @@ $knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
 
 # Mapping of OS types to network names
 $osTypeToNetworkNameMapping = @{
-	"osType" = "Bluenet Linux|Bluenet Unix"
-	;
-	"osType2" = "Bluenet Windows"
-	;
+	"OTHER" = "Bluenet Linux|Bluenet Unix";
+	"MACOS" = "";
+	"SOLARIS" = "";
+	"LINUX" = "";
+	"FREEBSD" = "";
+	"NETBSD" = "";
+	"OPENBSD" = "";
+	"NOT_APPLICABLE" = "";
+	"WINDOWS" = "";
+	"WINDOWS_SERVER_2003" = "";
+	"WINDOWS_SERVER_2003_64" = "";
+	"WINDOWS_SERVER_2008" = "";
+	"WINDOWS_SERVER_2008_64" = "";
+	"FREEBSD_64" = "";
+	"RHEL" = "";
+	"RHEL_64" = "";
+	"SOLARIS_64" = "";
+	"SUSE" = "";
+	"SUSE_64" = "";
+	"SLES" = "";
+	"SLES_64" = "";
+	"NOVELL_OES" = "";
+	"MANDRIVA" = "";
+	"MANDRIVA_64" = "";
+	"TURBOLINUX" = "";
+	"TURBOLINUX_64" = "";
+	"UBUNTU" = "";
+	"UBUNTU_64" = "";
+	"DEBIAN" = "";
+	"DEBIAN_64" = "";
+	"LINUX_2_4" = "Bluenet Linux";
+	"LINUX_2_4_64" = "Bluenet Linux";
+	"LINUX_2_6" = "Bluenet Linux";
+	"LINUX_2_6_64" = "Bluenet Linux";
+	"LINUX_64" = "Bluenet Linux";
+	"OTHER_64" = "Bluenet Linux";
+	"WINDOWS_SERVER_2008_R2" = "";
+	"ESXI" = "";
+	"WINDOWS_7" = "";
+	"CENTOS" = "";
+	"CENTOS_64" = "";
+	"ORACLE_ENTERPRISE_LINUX" = "";
+	"ORACLE_ENTERPRISE_LINUX_64" = "";
+	"ECOMSTATION_32" = "";
+	"WINDOWS_SERVER_2011" = "Bluenet Windows";
+	"WINDOWS_SERVER_2012" = "Bluenet Windows";
+	"WINDOWS_8" = "Bluenet Windows";
+	"WINDOWS_8_64" = "Bluenet Windows";
+	"UNRECOGNIZED" = "";
 }
 
 function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
