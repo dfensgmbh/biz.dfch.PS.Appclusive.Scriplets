@@ -1,3 +1,5 @@
+#Requires -Modules 'biz.dfch.PS.Appclusive.Client'
+
 PARAM
 (
 	# Stack Id (Equal to the "iss" property of the JWT token)
