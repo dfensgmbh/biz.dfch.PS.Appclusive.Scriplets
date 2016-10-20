@@ -70,7 +70,7 @@ function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 	
 	if (!$knv)
 	{
-		New-ApcKeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
+		$null = New-ApcKeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
 		
 		$msg = "Adding Abiquo OS type <-> network mapping with name '$Name' SUCCEEDED" -f $Name;
 		Write-Host -ForegroundColor Green $msg;
