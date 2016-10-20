@@ -11,7 +11,7 @@ Contract-Assert (!!$stackIdentifier);
 $svc = Enter-ApcServer;
 $knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
 
-# Mapping of OS types to network names
+# Mapping of OS types to network names (Delimiter: '|')
 $osTypeToNetworkNameMapping = @{
 	"OTHER" = "Bluenet Linux|Bluenet Unix";
 	"MACOS" = "";
