@@ -14,6 +14,35 @@ function DoSomething($uri)
 	return $result;
 }
 
+function GetTwitter($uri)
+{
+	$result = Invoke-Restmethod $uri;
+	
+	return $result;
+}
+
+function DoubleIt($name)
+{
+	Contract-Assert (![string]::IsNullOrEmpty($name));
+	
+	$result = $name + " - " + $name;
+	
+	return $result;
+}
+
+function Patch-VM($server)
+{
+	
+}
+
+function SetCpuCount([long] $count)
+{
+	Contract-Assert ($count -gt 0)
+	Contract-Assert ($count -le 128)
+	
+	# call vSphere ...
+}
+
 # SIG # Begin signature block
 # MIIXDwYJKoZIhvcNAQcCoIIXADCCFvwCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR

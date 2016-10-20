@@ -31,6 +31,7 @@ Describe -Tags "Tralala.Tests" "Tralala.Tests" {
 		}
 	
 		It "Check-InstallationDirectory" -Test {
+		
 			Test-Path C:\Logs | Should Be $true;
 		}
 		
@@ -40,9 +41,59 @@ Describe -Tags "Tralala.Tests" "Tralala.Tests" {
 			
 			$result | Should Be 4;
 		}
+		
+		It "PowerShellVersion-ShouldBeFive" -Test {
+		
+			$result = $host.Version.Major;
+
+			$result	-ge 5 | Should Be $true
+		
+		}
+		
+		It "TwitterFromDfensGmbh-ContainsDfens" -Test {
+		
+			$result = GetTwitter https://twitter.com/dfensgmbh;
+			
+			$result.Contains('abrakadabra') | Should Be $false;
+		}
+		
+		It "DoubleItWithName-ReturnsDoubleNameWithDash" -Test {
+		
+			$name = "hotzenhausen400";
+			
+			$result = DoubleIt $name;
+			
+			$result | Should Be ($name + " - " + $name);
+		
+		}
+
+		It "DoubleItWithNullName-Throws" -Test {
+		
+			$name = $null;
+			
+			{ DoubleIt $name } | Should Throw;
+		
+		}
+		
+		It "PatchingARunningVmSucceeds" -Test {
+		
+			$server = "server1";
+			
+			$result = Patch-VM $server;
+		
+			$result | Should Be $true;
+		}
+
+		It "PatchingNullVmThrows" -Test {
+		
+			$server = $null;
+			
+			{ Patch-VM $server } | Should Throw;
+		}
 	}
 
 	Context "DividingTwoNumbers-Succeeds" {
+
 		It "DividingTwoAndTwo-ShouldBeOne" -Test {
 		
 			$result = Div 2 2
