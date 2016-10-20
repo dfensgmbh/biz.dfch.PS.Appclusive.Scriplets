@@ -3,21 +3,18 @@ PARAM
 	# Stack Id (Equal to the "iss" property of the JWT token)
 	[Parameter(Mandatory = $true)]
 	[string] $stackIdentifier
-	,
-	# Abiquo OS type
-	[Parameter(Mandatory = $true)]
-	[string] $osType
-	,
-	# Comma separated list of network Ids for the correspoding OS type
-	[Parameter(Mandatory = $true)]
-	[string] $networkIds
 )
 Contract-Assert (!!$stackIdentifier);
-Contract-Assert (!!$osType);
-Contract-Assert (!!$networkIds);
 
 $svc = Enter-ApcServer;
-$knvKeyTemplate = "com.abiquo.cms.osTypeNetworkMapping.{0}";
+$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
+
+# Mapping of OS types to network names
+$osTypeToNetworkNameMapping = @{
+	"osType" = "Bluenet Linux|Bluenet Unix"
+	;
+	"osType2" = "Bluenet Windows"
+}
 
 function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 {
@@ -37,8 +34,10 @@ function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 	}
 }
 
-$knvKey = $knvKeyTemplate -f $stackIdentifier;
-CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $osType -Value $networkIds;
+foreach ($item in $osTypeToNetworkNameMapping.GetEnumerator())
+{
+	CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $item.Name -Value $item.Value;
+}
 
 #
 # Copyright 2016 d-fens GmbH
