@@ -84,7 +84,15 @@ function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 
 foreach ($item in $osTypeToNetworkNameMapping.GetEnumerator())
 {
-	CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $item.Name -Value $item.Value;
+	if ($item.Value)
+	{
+		CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $item.Name -Value $item.Value;
+	}
+	else
+	{
+		$msg = "Adding KNV entry for Abiquo OS type <-> network mapping with name '$Name' could not be added, as no network name(s) are provided" -f $Name;
+		Write-Host -ForegroundColor Yellow $msg;
+	}
 }
 
 #
