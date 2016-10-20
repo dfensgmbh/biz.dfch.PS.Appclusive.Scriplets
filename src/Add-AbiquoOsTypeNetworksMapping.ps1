@@ -72,12 +72,12 @@ function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 	{
 		$null = New-ApcKeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
 		
-		$msg = "Adding KNV entry for Abiquo OS type <-> network mapping with name '$Name' SUCCEEDED" -f $Name;
+		$msg = "Adding KNV entry for Abiquo OS type <-> network mapping with name '{0}' SUCCEEDED" -f $Name;
 		Write-Host -ForegroundColor Green $msg;
 	}
 	else
 	{
-		$msg = "KNV entry for Abiquo OS type <-> network mapping with name '$Name' already exists" -f $Name;
+		$msg = "KNV entry for Abiquo OS type <-> network mapping with name '{0}' already exists" -f $Name;
 		Write-Host -ForegroundColor Yellow $msg;
 	}
 }
@@ -90,7 +90,7 @@ foreach ($item in $osTypeToNetworkNameMapping.GetEnumerator())
 	}
 	else
 	{
-		$msg = "Adding KNV entry for Abiquo OS type <-> network mapping with name '$Name' could not be added, as no network name(s) are provided" -f $Name;
+		$msg = "Adding KNV entry for Abiquo OS type <-> network mapping with name '{0}' FAILED (No network name(s) provided)" -f $item.Name;
 		Write-Host -ForegroundColor Yellow $msg;
 	}
 }
