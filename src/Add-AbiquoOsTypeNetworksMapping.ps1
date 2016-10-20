@@ -14,6 +14,7 @@ $osTypeToNetworkNameMapping = @{
 	"osType" = "Bluenet Linux|Bluenet Unix"
 	;
 	"osType2" = "Bluenet Windows"
+	;
 }
 
 function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
