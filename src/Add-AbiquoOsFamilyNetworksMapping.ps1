@@ -1,10 +1,15 @@
 PARAM
 (
 	# Stack Id (Equal to the "iss" property of the JWT token)
+	[Parameter(Mandatory = $true)]
 	[string] $stackIdentifier
 	,
+	# Abiquo OS type
+	[Parameter(Mandatory = $true)]
 	[string] $osType
 	,
+	# Comma separated list of network Ids for the correspoding OS type
+	[Parameter(Mandatory = $true)]
 	[string] $networkIds
 )
 Contract-Assert (!!$stackIdentifier);
@@ -12,7 +17,7 @@ Contract-Assert (!!$osType);
 Contract-Assert (!!$networkIds);
 
 $svc = Enter-ApcServer;
-$knvKeyTemplate = "com.abiquo.cms.osFamilyNetworkMapping.{0}";
+$knvKeyTemplate = "com.abiquo.cms.osTypeNetworkMapping.{0}";
 
 function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 {
@@ -21,6 +26,14 @@ function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 	if (!$knv)
 	{
 		New-ApcKeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
+		
+		$msg = "Adding Abiquo OS type <-> network mapping with name '$Name' SUCCEEDED" -f $Name;
+		Write-Host -ForegroundColor Green $msg;
+	}
+	else
+	{
+		$msg = "Abiquo OS type <-> network mapping with name '$Name' already exists" -f $Name;
+		Write-Host -ForegroundColor Yellow $msg;
 	}
 }
 
