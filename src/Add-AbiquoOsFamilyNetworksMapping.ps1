@@ -3,12 +3,12 @@ PARAM
 	# Stack Id (Equal to the "iss" property of the JWT token)
 	[string] $stackIdentifier
 	,
-	[string] $osFamily
+	[string] $osType
 	,
 	[string] $networkIds
 )
 Contract-Assert (!!$stackIdentifier);
-Contract-Assert (!!$osFamily);
+Contract-Assert (!!$osType);
 Contract-Assert (!!$networkIds);
 
 $svc = Enter-ApcServer;
@@ -25,7 +25,7 @@ function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
 }
 
 $knvKey = $knvKeyTemplate -f $stackIdentifier;
-CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $osFamily -Value $networkIds;
+CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $osType -Value $networkIds;
 
 #
 # Copyright 2016 d-fens GmbH
