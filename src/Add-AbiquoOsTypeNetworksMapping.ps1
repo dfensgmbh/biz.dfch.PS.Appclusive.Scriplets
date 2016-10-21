@@ -12,8 +12,8 @@ $svc = Enter-ApcServer;
 $knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
 
 # Mapping of OS types to network names (Delimiter: '|')
-$osTypeToNetworkNameMapping = @{
-	"OTHER" = "Bluenet Linux|Bluenet Unix";
+$osTypeToNetworkNameMappings = @{
+	"OTHER" = "";
 	"MACOS" = "";
 	"SOLARIS" = "";
 	"LINUX" = "";
