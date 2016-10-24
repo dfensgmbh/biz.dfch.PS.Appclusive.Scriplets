@@ -12,6 +12,8 @@ $svc = Enter-ApcServer;
 $knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
 
 # Mapping of OS types to network names (Delimiter: '|')
+# The OS types listed here represent the OS types of
+# the OsTypeEnum in biz.dfch.CS.Abiquo.Client
 $osTypeToNetworkNameMappings = @{
 	"OTHER" = "";
 	"MACOS" = "";
