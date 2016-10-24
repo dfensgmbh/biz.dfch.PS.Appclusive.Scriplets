@@ -4,12 +4,12 @@ PARAM
 (
 	# Stack Id (Equal to the "iss" property of the JWT token)
 	[Parameter(Mandatory = $true)]
-	[string] $stackIdentifier
+	[string] $StackIdentifier
 )
-Contract-Assert (!!$stackIdentifier);
+Contract-Assert (!!$StackIdentifier);
 
 $svc = Enter-ApcServer;
-$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
+$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $StackIdentifier;
 
 # Mapping of OS types to network names (Delimiter: '|')
 $osTypeToNetworkNameMappings = @{
