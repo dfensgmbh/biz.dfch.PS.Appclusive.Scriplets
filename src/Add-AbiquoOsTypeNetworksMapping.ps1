@@ -4,12 +4,12 @@ PARAM
 (
 	# Stack Id (Equal to the "iss" property of the JWT token)
 	[Parameter(Mandatory = $true)]
-	[string] $StackIdentifier
+	[string] $stackIdentifier
 )
-Contract-Assert (!!$StackIdentifier);
+Contract-Assert (!!$stackIdentifier);
 
 $svc = Enter-ApcServer;
-$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $StackIdentifier;
+$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
 
 # Mapping of OS types to network names (Delimiter: '|')
 $osTypeToNetworkNameMappings = @{
@@ -64,24 +64,6 @@ $osTypeToNetworkNameMappings = @{
 	"UNRECOGNIZED" = "";
 }
 
-function CreateAndPersistKeyNameValueIfNotExists($svc, $Key, $Name, $Value)
-{
-	$knv = Get-ApcKeyNameValue -svc $svc -Key $Key -Name $Name;
-	
-	if (!$knv)
-	{
-		$null = New-ApcKeyNameValue -svc $svc -Key $Key -Name $Name -Value $Value;
-		
-		$msg = "Adding KNV entry for Abiquo OS type <-> network mapping with name '{0}' SUCCEEDED" -f $Name;
-		Write-Host -ForegroundColor Green $msg;
-	}
-	else
-	{
-		$msg = "KNV entry for Abiquo OS type <-> network mapping with name '{0}' already exists" -f $Name;
-		Write-Host -ForegroundColor Yellow $msg;
-	}
-}
-
 foreach ($osTypeToNetworkNameMapping in $osTypeToNetworkNameMappings.GetEnumerator())
 {
 	if (!$osTypeToNetworkNameMapping.Value)
@@ -91,7 +73,7 @@ foreach ($osTypeToNetworkNameMapping in $osTypeToNetworkNameMappings.GetEnumerat
 
 	foreach($network in $osTypeToNetworkNameMapping.Value.Trim('|').Split('|'))
 	{
-		CreateAndPersistKeyNameValueIfNotExists -svc $svc -Key $knvKey -Name $osTypeToNetworkNameMapping.Name -Value $network;
+		Set-ApcKeyNameValue -svc $svc -Key $knvKey -Name $osTypeToNetworkNameMapping.Name -Value $network -CreateIfNotExist;
 	}
 }
 
