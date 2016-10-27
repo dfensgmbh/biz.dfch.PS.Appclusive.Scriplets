@@ -4,50 +4,50 @@ PARAM
 (
 	# Stack Id (Equal to the "iss" property of the JWT token)
 	[Parameter(Mandatory = $true, Position = 0)]
-	[string] $stackIdentifier
+	[string] $StackIdentifier
 	,
 	# Stack specific API base URI
 	[Parameter(Mandatory = $true, Position = 1)]
-	[uri] $abiquoApiBaseUri
+	[uri] $AbiquoApiBaseUri
 	,
 	[Parameter(Mandatory = $true, Position = 2)]
-	[string] $abiquoApiUsername
+	[string] $AbiquoApiUsername
 	,
 	[Parameter(Mandatory = $true, Position = 1)]
-	[string] $abiquoApiPassword
+	[string] $AbiquoApiPassword
 )
-Contract-Assert (!!$stackIdentifier);
-Contract-Assert (![string]::IsNullOrWhiteSpace($stackIdentifier));
+Contract-Assert (!!$StackIdentifier);
+Contract-Assert (![string]::IsNullOrWhiteSpace($StackIdentifier));
 
-$connectionInfoName = "com.abiquo.cms.api.{0}" -f $stackIdentifier;
+$connectionInfoName = "com.abiquo.cms.api.{0}" -f $StackIdentifier;
 
 $svc = Enter-ApcServer;
 
 # Create ManagementCredential
-$credential = Get-ApcManagementCredential -Name $Name -Svc $svc;
+$mgmtCredential = Get-ApcManagementCredential -Name $connectionInfoName -Svc $svc;
 Contract-Assert (!$mgmtCredential);
 
-$credential = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
-$credential.Name = $connectionInfoName;
-$credential.Description = 'Stack specific API credential';
-$credential.Username = $abiquoApiUsername;
-$credential.Password = $abiquoApiPassword;
-$credential.EncryptedPassword = $credential.Password;
+$mgmtCredential = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredential;
+$mgmtCredential.Name = $connectionInfoName;
+$mgmtCredential.Description = 'Stack specific API credential';
+$mgmtCredential.Username = $AbiquoApiUsername;
+$mgmtCredential.Password = $AbiquoApiPassword;
+$mgmtCredential.EncryptedPassword = $mgmtCredential.Password;
 		
-$svc.Core.AddToManagementCredentials($credential);
+$svc.Core.AddToManagementCredentials($mgmtCredential);
 $null = $svc.Core.SaveChanges();
 
 # Create ManagementUri
-$mgmtUri = Get-ApcManagementUri -svc $svc -Name $Name;
+$mgmtUri = Get-ApcManagementUri -svc $svc -Name $connectionInfoName;
 
 Contract-Assert(!$mgmtUri);
 
 $mgmtUri = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementUri;
-$mgmtUri.Name = $Name;
+$mgmtUri.Name = $connectionInfoName;
 $mgmtUri.Description = 'Stack specific API base URI';
 $mgmtUri.Type = 'uri';
-$mgmtUri.Value = $abiquoApiBaseUri.AbsoluteUri;
-$mgmtUri.ManagementCredentialId = $mc.Id;
+$mgmtUri.Value = $AbiquoApiBaseUri.AbsoluteUri;
+$mgmtUri.ManagementCredentialId = $mgmtCredential.Id;
 	
 $svc.Core.AddToManagementUris($mgmtUri);
 $null = $svc.Core.SaveChanges();
