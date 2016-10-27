@@ -47,6 +47,7 @@ $mgmtUri.Name = $Name;
 $mgmtUri.Description = 'Stack specific API base URI';
 $mgmtUri.Type = 'uri';
 $mgmtUri.Value = $abiquoApiBaseUri.AbsoluteUri;
+$mgmtUri.ManagementCredentialId = $mc.Id;
 	
 $svc.Core.AddToManagementUris($mgmtUri);
 $null = $svc.Core.SaveChanges();
