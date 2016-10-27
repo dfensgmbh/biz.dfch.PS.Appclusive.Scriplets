@@ -7,6 +7,7 @@ PARAM
 	[string] $stackIdentifier
 )
 Contract-Assert (!!$stackIdentifier);
+Contract-Assert (![string]::IsNullOrWhiteSpace($stackIdentifier))
 
 $svc = Enter-ApcServer;
 $knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
