@@ -3,11 +3,11 @@
 PARAM
 (
 	# Stack Id (Equal to the "iss" property of the JWT token)
-	[Parameter(Mandatory = $true)]
+	[Parameter(Mandatory = $true, Position = 0)]
 	[string] $stackIdentifier
 	,
 	# Stack specific API base URI
-	[Parameter(Mandatory = $true)]
+	[Parameter(Mandatory = $true, Position = 1)]
 	[uri] $abiquoApiBaseUri
 )
 Contract-Assert (!!$stackIdentifier);
