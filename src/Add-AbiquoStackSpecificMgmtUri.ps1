@@ -33,7 +33,7 @@ function CreateAndPersistManagementUriIfNotExist($Name, $Description, $Type, $Va
 	$null = $svc.Core.SaveChanges();
 }
 
-CreateAndPersistManagementUriIfNotExist -Name $mgmtUriName -Description 'Stack specific API base URI' -Type 'uri' -Value $abiquoApiBaseUr.AbsoluteUri;
+CreateAndPersistManagementUriIfNotExist -Name $mgmtUriName -Description 'Stack specific API base URI' -Type 'uri' -Value $abiquoApiBaseUri.AbsoluteUri;
 
 #
 # Copyright 2016 d-fens GmbH
