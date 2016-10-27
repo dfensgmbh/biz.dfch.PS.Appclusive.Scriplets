@@ -11,10 +11,10 @@ PARAM
 	[uri] $AbiquoApiBaseUri
 	,
 	[Parameter(Mandatory = $true, Position = 2)]
-	[string] $AbiquoApiUsername
+	[string] $AbiquoApiToken
 	,
-	[Parameter(Mandatory = $true, Position = 1)]
-	[string] $AbiquoApiPassword
+	[Parameter(Mandatory = $false)]
+	[string] $AbiquoApiUsername = "None"
 )
 Contract-Assert (!!$StackIdentifier);
 Contract-Assert (![string]::IsNullOrWhiteSpace($StackIdentifier));
@@ -31,7 +31,7 @@ $mgmtCredential = New-Object biz.dfch.CS.Appclusive.Api.Core.ManagementCredentia
 $mgmtCredential.Name = $connectionInfoName;
 $mgmtCredential.Description = 'Stack specific API credential';
 $mgmtCredential.Username = $AbiquoApiUsername;
-$mgmtCredential.Password = $AbiquoApiPassword;
+$mgmtCredential.Password = $AbiquoApiToken;
 $mgmtCredential.EncryptedPassword = $mgmtCredential.Password;
 		
 $svc.Core.AddToManagementCredentials($mgmtCredential);
