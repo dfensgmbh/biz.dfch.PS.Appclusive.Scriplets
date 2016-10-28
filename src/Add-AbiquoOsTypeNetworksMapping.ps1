@@ -2,14 +2,14 @@
 
 PARAM
 (
-	# Stack Id (Equal to the "iss" property of the JWT token)
+	# Id of the Abiquo instance
 	[Parameter(Mandatory = $true, Position = 0)]
 	[ValidateNotNullOrEmpty()]
-	[string] $stackIdentifier
+	[string] $InstanceIdentifier
 )
 
 $svc = Enter-ApcServer;
-$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $stackIdentifier;
+$knvKey = "com.abiquo.cms.osTypeNetworkMapping.{0}" -f $InstanceIdentifier;
 
 # Mapping of OS types to network names (Delimiter: '|')
 # The OS types listed here represent the OS types of
