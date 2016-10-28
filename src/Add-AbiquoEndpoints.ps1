@@ -32,6 +32,7 @@ PARAM
 $abiquoApiMgmtUriName = "com.abiquo.{0}.endpoint" -f $InstanceIdentifier;
 $ssoApiMgmtUriName = "com.abiquo.{0}.sso" -f $InstanceIdentifier;
 $dnsSuffixKnvKey = "com.abiquo.{0}" -f $InstanceIdentifier;
+$dnsSuffixKnvName = "ManagedServicesDnsSuffix";
 
 
 $svc = Enter-ApcServer;
@@ -56,7 +57,7 @@ $mgmtUri = Get-ApcManagementUri -Name $ssoApiMgmtUriName -svc $svc;
 Contract-Assert(!$mgmtUri);
 $null = New-ApcManagementUri -Name $ssoApiMgmtUriName -Type 'uri' -Value $SSOApiBaseUri.AbsoluteUri -ManagementCredentialId $mgmtCredential.Id -Description 'Instance specific SSO base URI' -svc $svc
 
-$null = Set-ApcKeyNameValue -svc $svc -Key $dnsSuffixKnvKey -Name 'ManagedServicesDnsSuffix' -Value $ManagedServicesDnsSuffix -CreateIfNotExist;
+$null = Set-ApcKeyNameValue -svc $svc -Key $dnsSuffixKnvKey -Name $dnsSuffixKnvName -Value $ManagedServicesDnsSuffix -CreateIfNotExist;
 
 #
 # Copyright 2016 d-fens GmbH
