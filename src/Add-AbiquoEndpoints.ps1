@@ -13,7 +13,7 @@ PARAM
 	[ValidateNotNullOrEmpty()]
 	[string] $OAuth2Username
 	,
-	[Parameter(Mandatory = $true, Position = 3]
+	[Parameter(Mandatory = $true, Position = 3)]
 	[ValidateNotNullOrEmpty()]
 	[string] $OAuth2AccessToken
 	,
