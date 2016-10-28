@@ -18,10 +18,10 @@ PARAM
 	[string] $OAuth2AccessToken
 	,
 	[Parameter(Mandatory = $true, Position = 4)]
-	[uri] $OAuth2AccessRefreshToken
+	[ValidateNotNullOrEmpty()]
+	[string] $OAuth2AccessRefreshToken
 	,
 	[Parameter(Mandatory = $true, Position = 5)]
-	[ValidateNotNullOrEmpty()]
 	[uri] $SSOApiBaseUri
 	,
 	[Parameter(Mandatory = $true, Position = 6)]
