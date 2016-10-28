@@ -39,24 +39,24 @@ $svc = Enter-ApcServer;
 # Create ManagementCredential for Abiquo API communication
 $mgmtCredential = Get-ApcManagementCredential -Name $abiquoApiMgmtUriName -Svc $svc;
 Contract-Assert (!$mgmtCredential);
-New-ApcManagementCredential -Name $abiquoApiMgmtUriName -Username $OAuth2Username -Password $OAuth2AccessToken -Description 'Instance specific API credential' -svc $svc
+$mgmtCredential = New-ApcManagementCredential -Name $abiquoApiMgmtUriName -Username $OAuth2Username -Password $OAuth2AccessToken -Description 'Instance specific API credential' -svc $svc
 
 # Create ManagementUri for Abiquo API communication
 $mgmtUri = Get-ApcManagementUri -Name $abiquoApiMgmtUriName -svc $svc;
 Contract-Assert(!$mgmtUri);
-New-ApcManagementUri -Name $abiquoApiMgmtUriName -Type 'uri' -Value $AbiquoApiBaseUri.AbsoluteUri -ManagementCredentialId $mgmtCredential.Id -Description 'Instance specific API base URI' -svc $svc
+$null = New-ApcManagementUri -Name $abiquoApiMgmtUriName -Type 'uri' -Value $AbiquoApiBaseUri.AbsoluteUri -ManagementCredentialId $mgmtCredential.Id -Description 'Instance specific API base URI' -svc $svc
 
 # Create ManagementCredential for SSO communication
 $mgmtCredential = Get-ApcManagementCredential -Name $ssoApiMgmtUriName -Svc $svc;
 Contract-Assert (!$mgmtCredential);
-New-ApcManagementCredential -Name $ssoApiMgmtUriName -Username $OAuth2Username -Password $OAuth2AccessRefreshToken -Description 'Instance specific SSO credential' -svc $svc
+$mgmtCredential = New-ApcManagementCredential -Name $ssoApiMgmtUriName -Username $OAuth2Username -Password $OAuth2AccessRefreshToken -Description 'Instance specific SSO credential' -svc $svc
 
 # Create ManagementUri for SSO communication
 $mgmtUri = Get-ApcManagementUri -Name $ssoApiMgmtUriName -svc $svc;
 Contract-Assert(!$mgmtUri);
-New-ApcManagementUri -Name $ssoApiMgmtUriName -Type 'uri' -Value $SSOApiBaseUri.AbsoluteUri -ManagementCredentialId $mgmtCredential.Id -Description 'Instance specific SSO base URI' -svc $svc
+$null = New-ApcManagementUri -Name $ssoApiMgmtUriName -Type 'uri' -Value $SSOApiBaseUri.AbsoluteUri -ManagementCredentialId $mgmtCredential.Id -Description 'Instance specific SSO base URI' -svc $svc
 
-Set-ApcKeyNameValue -svc $svc -Key $dnsSuffixKnvKey -Name 'ManagedServicesDnsSuffix' -Value $ManagedServicesDnsSuffix -CreateIfNotExist;
+$null = Set-ApcKeyNameValue -svc $svc -Key $dnsSuffixKnvKey -Name 'ManagedServicesDnsSuffix' -Value $ManagedServicesDnsSuffix -CreateIfNotExist;
 
 #
 # Copyright 2016 d-fens GmbH
