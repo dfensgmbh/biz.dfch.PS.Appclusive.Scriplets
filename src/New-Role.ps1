@@ -1,3 +1,4 @@
+#Requires -Modules biz.dfch.PS.Appclusive.Client
 [CmdletBinding(
     ConfirmImpact = 'Medium'
 	,
@@ -23,6 +24,9 @@ PARAM
 
 $fn = "New-Role";
 
+$svc = Enter-Apc;
+$null = Set-ApcSessionTenant -Id $TenantId -svc $svc;
+
 $q = "Name eq '{0}'" -f $Name;
 $role = $svc.Core.Roles.AddQueryOption('$filter', $q).AddQueryOption('$top', 1) | Select;
 Contract-Assert (!$role) "Role already exists. Aborting ..."
@@ -32,6 +36,7 @@ $role.Name = $Name;
 $role.Description = $Description;
 $role.RoleType = [biz.dfch.CS.Appclusive.Public.Security.RoleTypeEnum]::Default;
 $svc.Core.AddToRoles($role);
+$null = $svc.Core.SaveChanges();
 
 $message = "Role '{0}'. Permissions '{1}'" -f $Name, [string]::Join([System.Environment]::NewLine, $PermissionNames);
 
@@ -51,31 +56,5 @@ foreach($permissionName in ($permissionNames | Select -Unique))
 	}
 	
 	$svc.Core.AddLink($role, 'Permissions', $permission);
+	$null = $svc.Core.SaveChanges();
 }
-
-$svc.Core.UpdateObject($role);
-$svc.Core.SaveChanges();
-
-
-# New-Role
-# PARAM
-# (
-	# [string] $Name
-	# ,
-	# [string[]] $PermissionNames
-# )
-# {
-	# Set-Role -Name $Name -PermissionNamesToBeAdded $PermissionNames -CreateIfNotExist
-# }
-
-# Set-Role
-# PARAM
-# (
-	# [string] $Name
-	# ,
-	# [switch] $CreateIfNotExist
-	# ,
-	# [string[]] $PermissionNamesToBeAdded
-	# ,
-	# [string[]] $PermissionNamesToBeRemoved
-# )
